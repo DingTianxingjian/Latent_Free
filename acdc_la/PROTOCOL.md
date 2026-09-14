@@ -43,3 +43,6 @@ Tier 3 → 4: few-label recovery at 10% labels ≥ baseline, **and** offline cha
   U = r, Stage-III transfer with the residual zeroed, then the LIBERO policy recipe with `--tokenizer s4_pcrr --transport s4_pcrr`.
   Result (job 20627479): (a) N_TC 0.106 -> 0.035 but N_TI(r) -0.001 (dropped, not routed); (b) transfer 0.288 vs control 0.321 **fail**;
   (c) action from the core 0.261 vs 0.324 **fail**, the residual reads the action at 0.114.  **Failed at Tier 2**; downstream (job 20642928): latent R2 0.38 vs 0.46 for the full code, chain L1 0.427 unchanged, closed-loop 7 %: **failed at Tier 4** as well.  Closed.
+* VQ gate (`downstream/libero_vqgate.py`, job 20660076, 2026-09-14): post-hoc per-cell / product quantisation of the ACDC code as
+  the policy target.  Rule: chain L1 <= continuous - 0.015.  Best 0.425 vs 0.430 (-0.005); oracle loses 0.03-0.04.  **Not passed**;
+  a deployment prior needs a jointly learned discrete bottleneck, not started before the deadline.
