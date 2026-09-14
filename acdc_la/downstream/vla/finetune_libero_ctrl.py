@@ -89,7 +89,7 @@ def build_labeller(cfg, device_id):
         sd = {k.replace("lam.", "", 1): v for k, v in sd.items()}
         res = lam.load_state_dict(sd, strict=False)          # rala2 does not save the frozen DINO encoder (built from the hub cache) and adds lang_proj
         assert all(k.startswith("dino_encoder.") for k in res.missing_keys) and all(k.startswith("lang_proj.") for k in res.unexpected_keys), (res.missing_keys[:5], res.unexpected_keys[:5])
-        lam = lam.to(device_id).eval(); lam.device = torch.device(device_id); return lam, 4, 16
+        lam = lam.to(device_id).eval(); return lam, 4, 16          # their class exposes .device as a read-only property
     from .acdc_tokens import ACDCLatentTokenizer
     t = ACDCLatentTokenizer(cfg.acdc_tag, cfg.acdc_codebook, dev=f"cuda:{device_id}" if isinstance(device_id, int) else device_id)
     return t, t.n_tokens, t.codebook_size
@@ -105,6 +105,7 @@ def finetune(cfg: Cfg) -> None:
 
     AutoConfig.register("openvla", OpenVLAConfig); AutoImageProcessor.register(OpenVLAConfig, PrismaticImageProcessor)
     AutoProcessor.register(OpenVLAConfig, PrismaticProcessor); AutoModelForVision2Seq.register(OpenVLAConfig, OpenVLAForActionPrediction)
+    time.sleep(int(os.environ.get("CTRL_STAGGER_SEC", "0")) * state.local_process_index)   # small-RAM hosts: stagger the 7B loads across ranks
     processor = AutoProcessor.from_pretrained(cfg.vla_path, trust_remote_code=True)
     vla = AutoModelForVision2Seq.from_pretrained(cfg.vla_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True)
 
