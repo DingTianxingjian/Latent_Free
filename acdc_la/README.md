@@ -70,6 +70,6 @@ Checkpoint attribute names are unchanged, so `claude_survey/ckpt/swaplam_*.pt` l
 
 ## Ledger
 
-Numbers and decisions live in `/anvil/scratch/x-tding2/SUMMARY.md` (confirmed / provisional / retracted).  Every
+Numbers and decisions live in `LEDGER.md` at the repository root (confirmed / provisional / retracted).  Every
 run here writes `results/<tag>.json` and `results/<tag>_val.npz`; probes append to `results/stage{1,2,3}_probes.json`
 and `results/recovery_curve.json`.
