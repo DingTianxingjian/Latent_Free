@@ -1,5 +1,6 @@
 # Reproducing the ACDC-LA experiments on a new server
 
+Repository: https://github.com/DingTianxingjian/Latent_Free (branch `main`; `git clone https://github.com/DingTianxingjian/Latent_Free.git latent_free`).
 Written 2026-09-13.  Everything below was verified on Anvil (Slurm, H100/A100).  Paths are relative to the
 repository root, which must be called `latent_free/` (the code resolves `LF = latent_free/` from `acdc_la/paths.py`
 and imports `data.py` from it).
