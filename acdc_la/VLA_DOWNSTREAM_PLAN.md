@@ -21,7 +21,11 @@ The toy heads (MLP, 4-frame transformer) put every latent and no latent inside o
   their pretrained UniVLA-7B would favour their tokens (the LLM already speaks that 16-word vocabulary); starting
   from raw Prismatic gives the lowest absolute numbers.  Their own UniVLA-7B result stays as a reference row.
 * Arm A (UniVLA, same data): `lam_path` = `claude_survey/ckpt/s2mix_1ep.pt` (their Stage-2 recipe on our capped mixture
-  at our budget).  Check first that its state dict loads into `ControllableDINOLatentActionModel` (rala2 wraps it).
+  at our budget).  Its state dict loads into `ControllableDINOLatentActionModel` with `strict=False` (the frozen DINO
+  encoder is rebuilt from the hub cache; rala2's `lang_proj` is unused at labelling time).  NOT a warm start: their
+  `init_from_stage1` copies 5,120 of 201.8M params (the uncontrollable codebook + a query embedding), the deployed
+  `vq_action` codebook does not exist in stage 1, and codebook restarts move even those 5,120 numbers during training
+  (`downstream/vla/check_univla_tokens.py` measures this).
 * Arm B (ours): tokens = per-cell VQ of `s1_acdc_1ep` (8 cells x Kc codes; Kc from the gate `libero_vqgate`, codebook
   fitted on the OXE validation dump, not on LIBERO).  Window 12 frames -> 5 frames at stride 3 -> DINO g4 -> effect cells
   -> 8 `<ACT_i>` tokens.  `ActionDecoder` reads the last 8 latent-token states instead of 4 (one-line change); prompt,
