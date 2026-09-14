@@ -100,6 +100,10 @@ def load_ckpt(path, dev):
     """Build the LAM described by a ckpt (this repo's or a legacy swaplam_*.pt) and load its weights."""
     ck = torch.load(path, map_location=dev)
     a = ck.get("args", {})
+    if ck.get("kind") == "tcvq":                        # native-VQ task-centric tokenizer (common/tcvq.py)
+        from .tcvq import TCVQ
+        cfg = dict(ck["tcvq"]); K = cfg.pop("K"); m = TCVQ(K, **cfg).to(dev)
+        m.load_state_dict(ck["state_dict"], strict=True); return m, float(ck["dstats"]), ck
     if ck.get("kind") == "pcrr":                        # portable core + residual on top of a frozen LAM (common/pcrr.py)
         from .pcrr import PCRR
         cfg = ck["pcrr"]; m = PCRR(LAM(**cfg["base"]).to(dev), cfg["d_p"], cfg["d_r"]).to(dev)

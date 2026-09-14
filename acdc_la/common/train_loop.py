@@ -48,7 +48,7 @@ def resolve_ckpt(spec):
     return here if os.path.exists(here) else legacy_path(spec)
 
 
-def run(a, step_fn, ramp_keys=(), pairs_for_train=False, stage="", build=None):
+def run(a, step_fn, ramp_keys=(), pairs_for_train=False, stage="", build=None, on_step=None):
     """build(a, dev) -> (model, dstats): a stage that wraps an initial checkpoint in its own module (Stage IV)."""
     torch.manual_seed(a.seed); np.random.seed(a.seed)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -65,6 +65,7 @@ def run(a, step_fn, ramp_keys=(), pairs_for_train=False, stage="", build=None):
         model, dstats, _ = load_ckpt(ck_path, dev)
     elif build is not None and not a.eval_only:
         model, dstats = build(a, dev); a.d, a.d_u = model.d, model.d_u
+        if dstats is None: dstats = Fz.estimate_dstats(dino, dl, dev)            # a stage that builds from scratch
         print(f"[{a.tag}] built {type(model).__name__} from {a.init_from} (dF rms {dstats:.4f})", flush=True)
     elif a.eval_only or a.init_from:
         model, dstats, ck0 = load_ckpt(ck_path if a.eval_only else resolve_ckpt(a.init_from), dev)
@@ -110,6 +111,7 @@ def run(a, step_fn, ramp_keys=(), pairs_for_train=False, stage="", build=None):
         opt.zero_grad(set_to_none=True); loss.backward()
         torch.nn.utils.clip_grad_norm_(params, 1.0); opt.step(); sched.step()
         for k, v in out.items(): log.setdefault(k, []).append(float(v))
+        if on_step is not None: on_step(model, s)
         if (s + 1) % 200 == 0 or s + 1 == a.steps:
             msg = " ".join(f"{k}={np.mean(v[-200:]):.4f}" for k, v in log.items())
             print(f"[{a.tag}] step {s+1} ramp={ramp:.2f} {msg} ({(time.time()-t0)/(s+1-start):.2f}s/step)", flush=True)

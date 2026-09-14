@@ -35,8 +35,12 @@ def dump_val(model, feat, dl_val, distractor, path, max_batches=10 ** 9, extra_f
         if k >= max_batches: break
         b = feat(batch, distractor)
         B = b["dF"].shape[0]
-        zmu, zlv, umu, ulv = model.encode(b["cells"])
-        zp, _, up, _ = model.encode(b["cells_patch"]); zr = model.encode(feat.cells_reversed(b["dF"]))[0]
+        eb = getattr(model, "encode_batch", None)                 # models whose encoder needs the state, not just cells
+        if eb is not None:
+            zmu, zlv, umu, ulv = eb(b, "clean"); zp, _, up, _ = eb(b, "patch"); zr = eb(b, "rev")[0]
+        else:
+            zmu, zlv, umu, ulv = model.encode(b["cells"])
+            zp, _, up, _ = model.encode(b["cells_patch"]); zr = model.encode(feat.cells_reversed(b["dF"]))[0]
         rec = model.decode(b["f0"], b["c"], zmu, umu)
         agg.setdefault("rec", []).append(float(torch.nn.functional.mse_loss(rec, b["dF"])))
         agg.setdefault("kl_z", []).append(float(0.5 * (zmu.pow(2) + zlv.exp() - 1 - zlv).sum(-1).mean()))
