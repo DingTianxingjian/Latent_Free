@@ -1959,6 +1959,21 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   Pretraining caches: capped `cache/oxe` (1.8 TB) + `cache/bridge_big` (95 GB) on `/data/ti874297/latent_free_cache`
   (symlinked), transfer in progress; `cache/oxe_full` (5.3 TB) not copied.
 
+### 2026-09-14 — 2-GPU DDP on the workstation: NCCL 2.26.2 crashes, 2.31.2 works; production probe 3.1 s/step, 16 GB RSS
+
+- **Failure.** Any NCCL collective between the two Blackwell cards (PCIe, different host bridges, IOMMU on) died with
+  `CUDA error: an illegal memory access` in the NCCL watchdog, also with `NCCL_P2P_DISABLE=1` or `NCCL_CUMEM_ENABLE=0`;
+  only P2P + SHM both disabled (socket transport) passed — too slow for ~1.5 GB of gradients per micro-batch.
+  Fix: `nvidia-nccl-cu12` 2.26.2 -> 2.31.2 in `envs/univla_vla` (torch loads it at runtime); default transport and
+  P2P-disabled both pass a 2-rank all_reduce up to 256 MB (`logs_migrate/nccl_test.py`).  **Confirmed (infrastructure).**
+- **Probe (plan B = arms in sequence, 2 GPUs each; univla arm, batch 8 x accum 4 per GPU = 64, shuffle 16000,
+  `CTRL_STAGGER_SEC=90`, 105 steps, killed before any save; GPUs shared with another job).** Stable NCCL; token_acc
+  0.40 -> 0.71, action_l1 0.45 -> 0.195 over steps 10-105 (train batch, code-path check only); 3.1 s/step after the
+  shuffle buffer fills -> ~13 h per arm at 15k steps; process-tree RSS 15-16 GB steady, 19 GB peak at the staggered
+  loads, host MemAvailable min 13 GB.  Merge at the end (rank 0 reloads the 7B base) peaked at 35 GB RSS in the smoke.
+- **Next.** Production via `logs_migrate/vla_production.sh` (tmux): univla then acdc (K64 codebook, the 09-13 default;
+  the VQ gate has not run), each 15k steps x 64 on 2 GPUs, then 50 trials x 10 tasks LIBERO-spatial eval per arm.
+
 ## Registered next method: intervention first, real pairs second
 
 ### 2026-09-01 — temporally consistent nuisance intervention v0
