@@ -1,0 +1,113 @@
+{
+ "n_init": 20,
+ "max_steps": 220,
+ "exec": 4,
+ "per_task": {
+  "s1_acdc_1ep": {
+   "pick up the black bowl between the plate and the ramekin and place it on the plate": 0.3,
+   "pick up the black bowl next to the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl from table center and place it on the plate": 0.0,
+   "pick up the black bowl on the cookie box and place it on the plate": 0.5,
+   "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate": 0.4,
+   "pick up the black bowl on the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl next to the cookie box and place it on the plate": 0.0,
+   "pick up the black bowl on the stove and place it on the plate": 0.1,
+   "pick up the black bowl next to the plate and place it on the plate": 0.0,
+   "pick up the black bowl on the wooden cabinet and place it on the plate": 0.6
+  },
+  "s1_acdc_1ep+T": {
+   "pick up the black bowl between the plate and the ramekin and place it on the plate": 0.1,
+   "pick up the black bowl next to the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl from table center and place it on the plate": 0.0,
+   "pick up the black bowl on the cookie box and place it on the plate": 0.1,
+   "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate": 0.0,
+   "pick up the black bowl on the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl next to the cookie box and place it on the plate": 0.0,
+   "pick up the black bowl on the stove and place it on the plate": 0.0,
+   "pick up the black bowl next to the plate and place it on the plate": 0.1,
+   "pick up the black bowl on the wooden cabinet and place it on the plate": 0.2
+  },
+  "s1_mean_1ep": {
+   "pick up the black bowl between the plate and the ramekin and place it on the plate": 0.3,
+   "pick up the black bowl next to the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl from table center and place it on the plate": 0.0,
+   "pick up the black bowl on the cookie box and place it on the plate": 0.2,
+   "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate": 0.1,
+   "pick up the black bowl on the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl next to the cookie box and place it on the plate": 0.0,
+   "pick up the black bowl on the stove and place it on the plate": 0.2,
+   "pick up the black bowl next to the plate and place it on the plate": 0.1,
+   "pick up the black bowl on the wooden cabinet and place it on the plate": 0.8
+  },
+  "s1_mean_1ep+T": {
+   "pick up the black bowl between the plate and the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl next to the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl from table center and place it on the plate": 0.0,
+   "pick up the black bowl on the cookie box and place it on the plate": 0.5,
+   "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate": 0.5,
+   "pick up the black bowl on the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl next to the cookie box and place it on the plate": 0.0,
+   "pick up the black bowl on the stove and place it on the plate": 0.1,
+   "pick up the black bowl next to the plate and place it on the plate": 0.0,
+   "pick up the black bowl on the wooden cabinet and place it on the plate": 0.3
+  },
+  "s1_acdc": {
+   "pick up the black bowl between the plate and the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl next to the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl from table center and place it on the plate": 0.0,
+   "pick up the black bowl on the cookie box and place it on the plate": 0.1,
+   "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate": 0.1,
+   "pick up the black bowl on the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl next to the cookie box and place it on the plate": 0.0,
+   "pick up the black bowl on the stove and place it on the plate": 0.1,
+   "pick up the black bowl next to the plate and place it on the plate": 0.1,
+   "pick up the black bowl on the wooden cabinet and place it on the plate": 0.7
+  },
+  "s1_acdc+T": {
+   "pick up the black bowl between the plate and the ramekin and place it on the plate": 0.1,
+   "pick up the black bowl next to the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl from table center and place it on the plate": 0.0,
+   "pick up the black bowl on the cookie box and place it on the plate": 0.0,
+   "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate": 0.5,
+   "pick up the black bowl on the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl next to the cookie box and place it on the plate": 0.0,
+   "pick up the black bowl on the stove and place it on the plate": 0.0,
+   "pick up the black bowl next to the plate and place it on the plate": 0.0,
+   "pick up the black bowl on the wooden cabinet and place it on the plate": 0.8
+  },
+  "univla_s2mix_1ep": {
+   "pick up the black bowl between the plate and the ramekin and place it on the plate": 0.2,
+   "pick up the black bowl next to the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl from table center and place it on the plate": 0.0,
+   "pick up the black bowl on the cookie box and place it on the plate": 0.3,
+   "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate": 0.3,
+   "pick up the black bowl on the ramekin and place it on the plate": 0.1,
+   "pick up the black bowl next to the cookie box and place it on the plate": 0.3,
+   "pick up the black bowl on the stove and place it on the plate": 0.4,
+   "pick up the black bowl next to the plate and place it on the plate": 0.1,
+   "pick up the black bowl on the wooden cabinet and place it on the plate": 0.5
+  },
+  "nolatent": {
+   "pick up the black bowl between the plate and the ramekin and place it on the plate": 0.2,
+   "pick up the black bowl next to the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl from table center and place it on the plate": 0.0,
+   "pick up the black bowl on the cookie box and place it on the plate": 0.7,
+   "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate": 0.5,
+   "pick up the black bowl on the ramekin and place it on the plate": 0.0,
+   "pick up the black bowl next to the cookie box and place it on the plate": 0.0,
+   "pick up the black bowl on the stove and place it on the plate": 0.0,
+   "pick up the black bowl next to the plate and place it on the plate": 0.1,
+   "pick up the black bowl on the wooden cabinet and place it on the plate": 0.3
+  }
+ },
+ "success": {
+  "s1_acdc_1ep": 0.19,
+  "s1_acdc_1ep+T": 0.05,
+  "s1_mean_1ep": 0.17,
+  "s1_mean_1ep+T": 0.14,
+  "s1_acdc": 0.11000000000000001,
+  "s1_acdc+T": 0.13999999999999999,
+  "univla_s2mix_1ep": 0.22000000000000003,
+  "nolatent": 0.18
+ }
+}

@@ -1,0 +1,16 @@
+#!/bin/bash
+#SBATCH --account=cis250950-ai
+#SBATCH --partition=ai
+#SBATCH --gres=gpu:1
+#SBATCH -N 1 -n 8 --mem=120G
+#SBATCH -t 06:00:00
+#SBATCH -J acdc_vlaeval
+#SBATCH -o /anvil/scratch/x-tding2/latent_free/acdc_la/logs/vlaeval_%j.out
+# UniVLA's LIBERO evaluator on a controlled checkpoint: RUN=<run_dir under ckpt/vla_runs>, SUITE (libero_spatial), TRIALS (50).
+set -u -o pipefail
+cd /anvil/scratch/x-tding2/latent_free
+export PYTHONPATH=/anvil/scratch/x-tding2/latent_free:/anvil/scratch/x-tding2/latent_free/third_party/UniVLA:/anvil/scratch/x-tding2/envs/LIBERO WANDB_MODE=disabled TORCH_HOME=/anvil/scratch/x-tding2/latent_free/cache/torch PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python MUJOCO_GL=egl PYOPENGL_PLATFORM=egl
+PY=/anvil/scratch/x-tding2/envs/univla_vla/bin/python
+R=/anvil/scratch/x-tding2/latent_free/acdc_la/ckpt/vla_runs/${RUN:?set RUN}
+echo n | $PY -m acdc_la.downstream.vla.run_libero_eval_ctrl --pretrained_checkpoint $R --task_suite_name ${SUITE:-libero_spatial} --num_trials_per_task ${TRIALS:-50} --local_log_dir /anvil/scratch/x-tding2/latent_free/acdc_la/results/vla_eval --run_id_note $(basename $R | cut -c1-40) 2>&1 | grep --line-buffered -vE "xFormers|warnings.warn|UserWarning|tensorflow/|I0000|E0000|W0000|oneDNN|TF-TRT|cuda_|AtomicFunction|NoneType|Exception ignored|^Traceback|atomic_function.py|robosuite WARNING|macros"
+echo "VLA EVAL exit ${PIPESTATUS[1]} $(date)"

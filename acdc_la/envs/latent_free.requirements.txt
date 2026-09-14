@@ -1,0 +1,10 @@
+diffusers==0.39.0
+h5py==3.16.0
+imageio==2.37.4
+imageio-ffmpeg==0.6.0
+joblib==1.5.3
+rotary-embedding-torch==0.9.1
+scikit-learn==1.7.2
+scipy==1.15.3
+sentencepiece==0.2.2
+threadpoolctl==3.6.0

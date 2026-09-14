@@ -1,0 +1,17 @@
+# large artefacts -- regenerate with run_all.sh
+/data/
+/cache/
+/logs/
+# upstream clones (UniVLA, t5-base); see README for sources
+third_party/
+figs/example_*.png
+figs/_check_*.png
+__pycache__/
+*.pyc
+
+# phase1 model checkpoints (large, regenerable)
+results/phase1/*.pt
+# nested repos with their own git history (moved here 2026-09-09)
+claude_survey/
+codex_survey/
+/transfer/

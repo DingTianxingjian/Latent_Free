@@ -1,0 +1,21 @@
+{
+ "tag": "univla_official",
+ "arm": "official_stage2",
+ "n_val_clips": 11488,
+ "baseline": "univla_stage2",
+ "args": {
+  "arm": "official_stage2",
+  "tag": "univla_official",
+  "sources": null,
+  "T": 5,
+  "stride": 4,
+  "batch": 32,
+  "workers": 8,
+  "val_per_source": 400,
+  "limit_eps": null,
+  "val_batches": 1000000000,
+  "dstats": 0.16423001210030563,
+  "steps": 8,
+  "seed": 0
+ }
+}

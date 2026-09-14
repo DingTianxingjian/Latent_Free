@@ -1,0 +1,48 @@
+{
+ "n_train": 43126,
+ "n_test": 11124,
+ "iters": 8000,
+ "ours": {
+  "chain": {
+   "l1": 0.42699363827705383,
+   "tok_acc": 0.08531906559819182
+  },
+  "oracle": {
+   "l1": 0.3735148012638092,
+   "tok_acc": 0.08494664046848513
+  },
+  "latent_r2": 0.37858134508132935
+ },
+ "ours_noeff": {
+  "chain": {
+   "l1": 0.4274005889892578,
+   "tok_acc": 0.08386066805362923
+  },
+  "oracle": {
+   "l1": 0.3733634054660797,
+   "tok_acc": 0.08152097138747624
+  },
+  "latent_r2": 0.38848620653152466
+ },
+ "rollout": {
+  "n_init": 20,
+  "max_steps": 220,
+  "per_task": {
+   "ours": {
+    "pick up the black bowl between the plate and the ramekin and place it on the plate": 0.2,
+    "pick up the black bowl next to the ramekin and place it on the plate": 0.0,
+    "pick up the black bowl from table center and place it on the plate": 0.0,
+    "pick up the black bowl on the cookie box and place it on the plate": 0.2,
+    "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate": 0.0,
+    "pick up the black bowl on the ramekin and place it on the plate": 0.0,
+    "pick up the black bowl next to the cookie box and place it on the plate": 0.0,
+    "pick up the black bowl on the stove and place it on the plate": 0.0,
+    "pick up the black bowl next to the plate and place it on the plate": 0.0,
+    "pick up the black bowl on the wooden cabinet and place it on the plate": 0.3
+   }
+  },
+  "success": {
+   "ours": 0.06999999999999999
+  }
+ }
+}

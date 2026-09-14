@@ -1,0 +1,17 @@
+condition,stride,feature,dim_group,metric,value,hyperparam,n_train,n_val,codebook_used,latent_dim
+clean,1,univla_lam_z_q,xyz,r2,0.47640833258628845,alpha=1,49126,12624,16,512
+clean,1,univla_lam_z_q,rot,r2,0.09388992935419083,alpha=1,49126,12624,16,512
+clean,1,univla_lam_z_q,cont6,r2,0.28514912724494934,alpha=1,49126,12624,16,512
+clean,1,univla_lam_z_q,gripper,balanced_accuracy,0.6115418530344149,C=100,49126,12624,16,512
+clean,1,univla_lam_z_prevq,xyz,r2,0.6947622299194336,alpha=0.01,49126,12624,16,512
+clean,1,univla_lam_z_prevq,rot,r2,0.27994504570961,alpha=0.01,49126,12624,16,512
+clean,1,univla_lam_z_prevq,cont6,r2,0.487353652715683,alpha=0.01,49126,12624,16,512
+clean,1,univla_lam_z_prevq,gripper,balanced_accuracy,0.8035875387517535,C=10,49126,12624,16,512
+clean,4,univla_lam_z_q,xyz,r2,0.6193731427192688,alpha=1,47926,12324,16,512
+clean,4,univla_lam_z_q,rot,r2,0.13488399982452393,alpha=1,47926,12324,16,512
+clean,4,univla_lam_z_q,cont6,r2,0.37712860107421875,alpha=1,47926,12324,16,512
+clean,4,univla_lam_z_q,gripper,balanced_accuracy,0.6445537133982122,C=1,47926,12324,16,512
+clean,4,univla_lam_z_prevq,xyz,r2,0.8041942715644836,alpha=0.01,47926,12324,16,512
+clean,4,univla_lam_z_prevq,rot,r2,0.33185267448425293,alpha=0.01,47926,12324,16,512
+clean,4,univla_lam_z_prevq,cont6,r2,0.5680235028266907,alpha=0.01,47926,12324,16,512
+clean,4,univla_lam_z_prevq,gripper,balanced_accuracy,0.8113437391739636,C=10,47926,12324,16,512

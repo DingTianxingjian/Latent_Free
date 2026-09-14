@@ -1,0 +1,6 @@
+{
+ "tag": "s1_pair16_x4",
+ "pairwise_from": "s1_pair16",
+ "n_val_clips": 11488,
+ "dims": 256
+}

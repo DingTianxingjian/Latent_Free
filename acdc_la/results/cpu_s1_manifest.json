@@ -1,0 +1,41 @@
+{
+ "T": 5,
+ "stride": 4,
+ "split": "train",
+ "n_sources": 2,
+ "n_clips": 1542,
+ "sampling": "p_i = w_i * n_transitions_i(full, est. = episodes_available x mean converted episode length) / Z; spread uniformly over the converted clips of source i (UniVLA rlds/dataset.py balance_weights=True)",
+ "sources": [
+  {
+   "source": "bridge_big",
+   "w": 1.0,
+   "episodes": 20,
+   "clips": 542,
+   "lang": true,
+   "action_kind": "delta",
+   "episodes_all": 5000,
+   "frames": 187587,
+   "episodes_available": 53192,
+   "n_transitions_full_est": 1144554,
+   "p_univla": 0.77927,
+   "p_univla_on_cache_counts": 0.21322,
+   "p_uniform_clips": 0.35149
+  },
+  {
+   "source": "taco_play",
+   "w": 2.0,
+   "episodes": 20,
+   "clips": 1000,
+   "lang": true,
+   "action_kind": "delta",
+   "episodes_all": 3242,
+   "frames": 213972,
+   "episodes_available": 3242,
+   "n_transitions_full_est": 162100,
+   "p_univla": 0.22073,
+   "p_univla_on_cache_counts": 0.78678,
+   "p_uniform_clips": 0.64851
+  }
+ ],
+ "batch_mode": "source"
+}
