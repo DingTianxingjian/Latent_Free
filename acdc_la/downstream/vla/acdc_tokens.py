@@ -21,17 +21,31 @@ class ACDCLatentTokenizer(nn.Module):
         cb = np.load(os.path.join(CKPT, codebook)); self.register_buffer("C", torch.as_tensor(cb["C"], dtype=torch.float32).to(dev))   # (n_tokens, Kc, d_sub)
         self.n_sub = int(cb["n_sub"]) if "n_sub" in cb else 1                       # product quantisation: n_sub sub-vectors per cell
         self.n_tokens, self.codebook_size, self.T, self.dev = self.tok.n_cells * self.n_sub, int(cb["Kc"]), self.tok.K + 1, dev
+        zs = np.load(os.path.join(CKPT, f"z_stats_{tag}.npz"))                    # standardisation of the continuous code
+        self.register_buffer("zmean", torch.as_tensor(zs["mean"]).to(dev)); self.register_buffer("zstd", torch.as_tensor(zs["std"]).to(dev))
+        self.dz = int(zs["dim"])
         assert self.C.shape[0] == self.n_tokens and self.C.shape[2] * self.n_sub == self.tok.d, (self.C.shape, self.tok.n_cells, self.tok.d)
 
     @property
     def device(self): return self.dev
 
     @torch.no_grad()
-    def encode(self, frames):
-        """frames: sequence of T uint8 images (H,W,3) -> LongTensor (n_cells,) of code indices."""
+    def encode_continuous(self, frames):
+        """The un-quantised posterior mean (n_cells*d,), standardised by the OXE-validation statistics: the target of
+        the continuous-head arm, which asks whether the VLM can carry the continuous code the quantiser truncates."""
+        z = self._code(frames).reshape(-1)
+        return (z - self.zmean) / self.zstd
+
+    @torch.no_grad()
+    def _code(self, frames):
         x = torch.as_tensor(np.stack([np.asarray(f) for f in frames])).to(self.dev).permute(0, 3, 1, 2).float().div_(255.)
         x = F.interpolate(x, size=(IMG, IMG), mode="bilinear", align_corners=False)
-        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(self.dev == "cuda")): g4 = Fz.dino_g4(self.dino, x).float()   # (T,16,768)
-        dF = ((g4[1:] - g4[:-1]) / self.feat.dstats)[None]                       # (1,K,16,768)
-        z = self.tok.encode(self.feat.cells_of(dF))[0][0].reshape(self.n_tokens, -1)   # (n_tokens, d_sub) posterior mean, cells split into sub-vectors
+        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(self.dev == "cuda")): g4 = Fz.dino_g4(self.dino, x).float()
+        dF = ((g4[1:] - g4[:-1]) / self.feat.dstats)[None]
+        return self.tok.encode(self.feat.cells_of(dF))[0][0]
+
+    @torch.no_grad()
+    def encode(self, frames):
+        """frames: sequence of T uint8 images (H,W,3) -> LongTensor (n_cells,) of code indices."""
+        z = self._code(frames).reshape(self.n_tokens, -1)                         # (n_tokens, d_sub), cells split into sub-vectors
         return ((z[:, None, :] - self.C) ** 2).sum(-1).argmin(-1)

@@ -29,6 +29,9 @@ class RLDSBatchTransformCtrl:
     predict_stop_token: bool = True
 
     def tokens(self, imgs, ro):
+        if self.latent == "acdc_cont":
+            stride = self.window_size // (self.labeller.T - 1)
+            return self.labeller.encode_continuous([imgs[ro + k * stride] for k in range(self.labeller.T)])
         if self.latent == "univla":
             a = self.image_transform_lam(Image.fromarray(imgs[ro])); b = self.image_transform_lam(Image.fromarray(imgs[self.window_size - 1 + ro]))
             return self.labeller.vq_encode(torch.stack([a, b], 0).unsqueeze(0).to(self.labeller.device))["indices"].reshape(-1)
@@ -42,6 +45,15 @@ class RLDSBatchTransformCtrl:
         pixel_values = self.image_transform(Image.fromarray(imgs[ro]))
         with torch.no_grad():
             idx = self.tokens(imgs, ro); hist = self.tokens(imgs, 0) if ro > 0 else None
+        if self.latent == "acdc_cont":
+            # no latent vocabulary: the prompt is the bare instruction and the whole label is ignored; the VLM's hidden
+            # state feeds a regression head instead of the LM head (the history trick has no discrete token to carry)
+            pb = self.prompt_builder_fn("openvla")
+            for turn in ({"from": "human", "value": f"What action should the robot take to {lang}?"}, {"from": "gpt", "value": ""}):
+                pb.add_turn(turn["from"], turn["value"])
+            input_ids = torch.tensor(self.base_tokenizer(pb.get_prompt(), add_special_tokens=True).input_ids)
+            return dict(pixel_values=pixel_values, input_ids=input_ids, labels=torch.full_like(input_ids, IGNORE_INDEX),
+                        actions=rlds_batch["action"][ro: self.window_size + ro], latent_action_idx=idx.float().cpu(), dataset_name=dataset_name)
         action_tokens = "".join(f"<ACT_{int(i)}>" for i in idx)
         input_prompt = f"What action should the robot take to {lang}?"
         if hist is not None: input_prompt += " History action " + "".join(f"<ACT_{int(i)}>" for i in hist)

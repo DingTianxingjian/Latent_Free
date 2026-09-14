@@ -49,25 +49,57 @@ class ActionDecoder(nn.Module):
         return self.proj(self.latent_action_pool(latent_action_tokens[:, -self.n_tokens:], init_embed=visual_embed))
 
 
-class WrappedModel(nn.Module):
-    def __init__(self, vla, window_size=12, n_tokens=4):
-        super().__init__(); self.vla, self.window_size = vla, window_size; self.action_decoder = ActionDecoder(window_size, n_tokens=n_tokens)
+class ContHeads(nn.Module):
+    """Continuous-latent arm: no latent vocabulary.  The VLM's last hidden state is pooled into a prediction of the
+    CONTINUOUS ACDC code, and the action head is conditioned on that code, so the only thing removed relative to the
+    token arms is the quantiser.  Mirrors the oracle->predicted curriculum of downstream/libero_policy.py."""
+    def __init__(self, dz, window_size=12, hidden=512):
+        super().__init__(); self.dz = dz
+        self.vis_pool = MAPBlock(n_latents=1, vis_dim=4096, embed_dim=hidden, n_heads=hidden // 64)
+        self.z_pool = MAPBlock(n_latents=1, vis_dim=4096, embed_dim=hidden, n_heads=hidden // 64)
+        self.to_z = nn.Sequential(nn.LayerNorm(hidden), nn.Linear(hidden, dz))
+        self.act = nn.Sequential(nn.Linear(hidden + dz, hidden), nn.GELU(), nn.Linear(hidden, 7 * window_size), nn.Tanh())
 
-    def forward(self, batch):
+    def forward(self, visual, text, z_for_head=None):
+        v = self.vis_pool(visual); z_pred = self.to_z(self.z_pool(text, init_embed=v))
+        z = z_pred if z_for_head is None else z_for_head
+        return self.act(torch.cat([v, z], -1)), z_pred
+
+
+class WrappedModel(nn.Module):
+    def __init__(self, vla, window_size=12, n_tokens=4, continuous=False, dz=0):
+        super().__init__(); self.vla, self.window_size, self.continuous = vla, window_size, continuous
+        if continuous: self.heads = ContHeads(dz, window_size)
+        else: self.action_decoder = ActionDecoder(window_size, n_tokens=n_tokens)
+
+    def forward(self, batch, p_oracle=0.0):
         with torch.autocast("cuda", dtype=torch.bfloat16):
-            out = self.vla(input_ids=batch["input_ids"], attention_mask=batch["attention_mask"], pixel_values=batch["pixel_values"], labels=batch["labels"], output_hidden_states=True)
+            out = self.vla(input_ids=batch["input_ids"], attention_mask=batch["attention_mask"], pixel_values=batch["pixel_values"],
+                           labels=None if self.continuous else batch["labels"], output_hidden_states=True)
         n_patches = self.vla.vision_backbone.featurizer.patch_embed.num_patches
         visual_embed = out.hidden_states[-1][:, :n_patches].to(torch.float); latent_tokens = out.hidden_states[-1][:, n_patches:]
+        if self.continuous:
+            z_star = batch["latent_action_idx"].to(torch.float)
+            zh = self.heads(visual_embed, latent_tokens.to(torch.float))[1]
+            use_star = (torch.rand(len(z_star), 1, device=z_star.device) < p_oracle).float()
+            pred, _ = self.heads(visual_embed, latent_tokens.to(torch.float), z_for_head=use_star * z_star + (1 - use_star) * zh)
+            pred = pred.reshape(-1, self.window_size, 7)
+            l1 = torch.nn.functional.l1_loss(pred, batch["actions"], reduction="none")
+            lat = torch.nn.functional.mse_loss(zh, z_star)
+            r2 = 1 - lat / z_star.var(0).mean().clamp_min(1e-6)
+            return out, l1.mean(), l1[:, 0].mean(), lat, r2
         mask = batch["labels"] > LATENT_TOKEN_BASE
         lat = torch.stack([latent_tokens[i][mask[i]] for i in range(len(latent_tokens))]).to(torch.float)
         pred = self.action_decoder(lat, visual_embed).reshape(-1, self.window_size, 7)
         l1 = torch.nn.functional.l1_loss(pred, batch["actions"], reduction="none")
-        return out, l1.mean(), l1[:, 0].mean()
+        return out, l1.mean(), l1[:, 0].mean(), None, None
 
 
 @dataclass
 class Cfg:
-    latent: str = "acdc"                                   # univla | acdc
+    latent: str = "acdc"                                   # univla | acdc | acdc_cont
+    lam_z: float = 1.0                                     # weight of the latent regression loss (continuous arm)
+    curriculum_frac: float = 0.6                           # oracle -> predicted anneal, as in downstream/libero_policy.py
     vla_path: str = os.path.join(LF, "cache", "vla", "openvla-7b")
     lam_path: str = os.path.join(LF, "claude_survey", "ckpt", "s2mix_1ep.pt")      # univla arm: their Stage-2 recipe on our data
     acdc_tag: str = "s1_acdc_1ep"; acdc_codebook: str = "vq_s1_acdc_1ep_K64.npz"    # acdc arm
@@ -80,6 +112,10 @@ class Cfg:
 
 
 def build_labeller(cfg, device_id):
+    if cfg.latent == "acdc_cont":
+        from .acdc_tokens import ACDCLatentTokenizer
+        t = ACDCLatentTokenizer(cfg.acdc_tag, cfg.acdc_codebook, dev=f"cuda:{device_id}" if isinstance(device_id, int) else device_id)
+        return t, 0, 0                                                    # no vocabulary: the head regresses t.dz values
     if cfg.latent == "univla":
         from ...paths import TORCH_HUB
         torch.hub.set_dir(TORCH_HUB)                                     # offline DINO for their LAM (compute nodes have no network)
@@ -97,7 +133,7 @@ def build_labeller(cfg, device_id):
 
 @draccus.wrap()
 def finetune(cfg: Cfg) -> None:
-    assert torch.cuda.is_available(); assert cfg.latent in ("univla", "acdc")
+    assert torch.cuda.is_available(); assert cfg.latent in ("univla", "acdc", "acdc_cont")
     state = PartialState(); torch.cuda.set_device(device_id := state.local_process_index); torch.cuda.empty_cache()
     exp_id = f"{cfg.latent}+{cfg.dataset_name}+b{cfg.batch_size * cfg.grad_accumulation_steps}x{state.num_processes}+lr{cfg.learning_rate}+r{cfg.lora_rank}+s{cfg.max_steps}" + (f"--{cfg.run_id_note}" if cfg.run_id_note else "")
     run_dir = cfg.run_root_dir / exp_id; adapter_dir = cfg.run_root_dir / "adapters" / exp_id; os.makedirs(run_dir, exist_ok=True); os.makedirs(adapter_dir, exist_ok=True)
@@ -110,13 +146,17 @@ def finetune(cfg: Cfg) -> None:
     vla = AutoModelForVision2Seq.from_pretrained(cfg.vla_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True)
 
     labeller, n_tokens, codebook_size = build_labeller(cfg, device_id)
-    # the latent vocabulary: <ACT_0..K-1> appended after <PAD> (32000) -> ids 32001..; embeddings + lm_head rows are trained
-    assert len(processor.tokenizer) == LATENT_TOKEN_BASE + 1, len(processor.tokenizer)
-    processor.tokenizer.add_special_tokens({"additional_special_tokens": [f"<ACT_{i}>" for i in range(codebook_size)]})
-    vla.resize_token_embeddings(len(processor.tokenizer)); vla = vla.to(device_id)
-    lora = LoraConfig(r=cfg.lora_rank, lora_alpha=min(cfg.lora_rank, 16), lora_dropout=cfg.lora_dropout, target_modules="all-linear", init_lora_weights="gaussian", modules_to_save=["embed_tokens", "lm_head"])
+    cont = cfg.latent == "acdc_cont"; dz = getattr(labeller, "dz", 0) if cont else 0
+    if not cont:
+        # the latent vocabulary: <ACT_0..K-1> appended after <PAD> (32000) -> ids 32001..; embeddings + lm_head rows are trained
+        assert len(processor.tokenizer) == LATENT_TOKEN_BASE + 1, len(processor.tokenizer)
+        processor.tokenizer.add_special_tokens({"additional_special_tokens": [f"<ACT_{i}>" for i in range(codebook_size)]})
+        vla.resize_token_embeddings(len(processor.tokenizer))
+    vla = vla.to(device_id)
+    lora = LoraConfig(r=cfg.lora_rank, lora_alpha=min(cfg.lora_rank, 16), lora_dropout=cfg.lora_dropout, target_modules="all-linear",
+                      init_lora_weights="gaussian", modules_to_save=None if cont else ["embed_tokens", "lm_head"])
     vla = get_peft_model(vla, lora); vla.print_trainable_parameters()
-    model = WrappedModel(vla, cfg.window_size, n_tokens).to(device_id)
+    model = WrappedModel(vla, cfg.window_size, n_tokens, continuous=cont, dz=dz).to(device_id)
     model = DDP(model, device_ids=[device_id], find_unused_parameters=True, gradient_as_bucket_view=True)
     opt = AdamW([p for p in model.parameters() if p.requires_grad], lr=cfg.learning_rate)
     sched = torch.optim.lr_scheduler.StepLR(opt, step_size=int(cfg.max_steps * 0.8), gamma=0.1)
@@ -135,30 +175,37 @@ def finetune(cfg: Cfg) -> None:
     for bi, batch in enumerate(dl):
         for k in ("input_ids", "attention_mask", "labels", "actions", "latent_action_idx"): batch[k] = batch[k].to(device_id)
         batch["pixel_values"] = batch["pixel_values"].to(torch.bfloat16).to(device_id)
-        out, act_loss, loss_1 = model(batch)
-        loss = act_loss + out.loss
+        p_or = max(0.0, 1.0 - (bi // cfg.grad_accumulation_steps) / (cfg.curriculum_frac * cfg.max_steps)) if model.module.continuous else 0.0
+        out, act_loss, loss_1, lat_loss, lat_r2 = model(batch, p_oracle=p_or)
+        loss = act_loss + (cfg.lam_z * lat_loss if model.module.continuous else out.loss)
         (loss / cfg.grad_accumulation_steps).backward()
         with torch.no_grad():
-            preds = out.logits[:, n_patches:-1].argmax(2); gt = batch["labels"][:, 1:]; m = gt > LATENT_TOKEN_BASE
-            acc_buf.append(float(((preds == gt) & m).sum() / m.sum())); l1_buf.append(float(act_loss)); loss_buf.append(float(out.loss))
+            if model.module.continuous: acc_buf.append(float(lat_r2)); loss_buf.append(float(lat_loss))
+            else:
+                preds = out.logits[:, n_patches:-1].argmax(2); gt = batch["labels"][:, 1:]; m = gt > LATENT_TOKEN_BASE
+                acc_buf.append(float(((preds == gt) & m).sum() / m.sum())); loss_buf.append(float(out.loss))
+            l1_buf.append(float(act_loss))
         step = bi // cfg.grad_accumulation_steps
         if (bi + 1) % cfg.grad_accumulation_steps == 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step(); opt.zero_grad(); sched.step()
             if state.is_main_process and (step + 1) % cfg.log_every == 0:
-                rec = dict(step=step + 1, token_acc=sum(acc_buf) / len(acc_buf), token_loss=sum(loss_buf) / len(loss_buf), action_l1=sum(l1_buf) / len(l1_buf), lr=opt.param_groups[0]["lr"], seconds=int(time.time() - t0))
+                key = "latent_r2" if model.module.continuous else "token_acc"
+                rec = {"step": step + 1, key: sum(acc_buf) / len(acc_buf), "latent_loss" if model.module.continuous else "token_loss": sum(loss_buf) / len(loss_buf),
+                       "action_l1": sum(l1_buf) / len(l1_buf), "p_oracle": p_or, "lr": opt.param_groups[0]["lr"], "seconds": int(time.time() - t0)}
                 print(f"[ctrl:{cfg.latent}] " + " ".join(f"{k}={v:.4f}" if isinstance(v, float) else f"{k}={v}" for k, v in rec.items()), flush=True); log.write(json.dumps(rec) + "\n"); log.flush()
                 acc_buf, l1_buf, loss_buf = [], [], []
             if (step + 1) % cfg.save_steps == 0 or step + 1 == cfg.max_steps:
                 if state.is_main_process:
-                    model.module.vla.save_pretrained(adapter_dir); torch.save(model.module.action_decoder.state_dict(), run_dir / "action_decoder.pt")
-                    json.dump(dict(latent=cfg.latent, n_tokens=n_tokens, codebook_size=codebook_size, window_size=cfg.window_size, step=step + 1, vla_path=cfg.vla_path,
+                    model.module.vla.save_pretrained(adapter_dir)
+                    torch.save((model.module.heads if cont else model.module.action_decoder).state_dict(), run_dir / "action_decoder.pt")
+                    json.dump(dict(latent=cfg.latent, n_tokens=n_tokens, codebook_size=codebook_size, dz=dz, window_size=cfg.window_size, step=step + 1, vla_path=cfg.vla_path,
                                    lam_path=cfg.lam_path, acdc_tag=cfg.acdc_tag, acdc_codebook=cfg.acdc_codebook), open(run_dir / "ctrl_meta.json", "w"), indent=1)
                     print(f"[ctrl] saved adapter + decoder at step {step + 1}", flush=True)
                 dist.barrier()
             if step + 1 >= cfg.max_steps: break
     if state.is_main_process:                                       # merge LoRA into a standalone checkpoint for the evaluator
         base = AutoModelForVision2Seq.from_pretrained(cfg.vla_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True)
-        base.resize_token_embeddings(len(processor.tokenizer))
+        if not cont: base.resize_token_embeddings(len(processor.tokenizer))
         merged = PeftModel.from_pretrained(base, adapter_dir).merge_and_unload(); merged.save_pretrained(run_dir)
         print(f"[ctrl-done] merged checkpoint at {run_dir} ({int(time.time() - t0)}s)", flush=True)
     dist.barrier()
