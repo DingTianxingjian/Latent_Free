@@ -20,6 +20,12 @@ def _predict_latent_action_n(self, input_ids=None, unnorm_key=None, **kwargs):
     mask = (ids > 32000)[:, 1:]
     return last[:, 256:][:, -n:], last[:, :256], ids[:, 1:][:, mask[0]][:, -n:]
 _OVLA.predict_latent_action = _predict_latent_action_n
+import experiments.robot.openvla_utils as _OU                   # their loader forces flash_attention_2; training used standard attention
+_orig_from_pretrained = _OU.AutoModelForVision2Seq.from_pretrained
+class _AutoModelSDPA:
+    @staticmethod
+    def from_pretrained(*a, **k): k["attn_implementation"] = "sdpa"; return _orig_from_pretrained(*a, **k)
+_OU.AutoModelForVision2Seq = _AutoModelSDPA
 import os
 import sys
 from dataclasses import dataclass
