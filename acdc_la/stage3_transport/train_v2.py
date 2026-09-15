@@ -156,7 +156,33 @@ def step(model, feat, b, a, ctx, train=True):
     for i in range(B): ctx["buf"].append((zt[i], int(si[i]), int(ge[i])))
     del ctx["buf"][:max(0, len(ctx["buf"]) - a.buffer * B)]
 
-    # ---- L_recover: a self-chosen intervention must be readable back out of its realisation ------------
+    # ---- L_effect: the realisation of an ONLINE code on a new state must have the DONOR'S REAL EFFECT --
+    # The fix for the closed-loop pathology.  With the target in CODE space (L_recover below) E and T only have to
+    # agree with each other: any injective channel satisfies it, and so does a joint collapse, which is why rec_cos
+    # reached 0.98 on data with no semantics at all.  Here the target is Psi(dF_i) -- the fixed [net, AC1] descriptor
+    # of the donor's OWN REAL transition, whitened by real-data statistics, no trainable parameter in Psi.  Neither
+    # network can move it.  A watermark is useless because the requirement is on the realised effect, not the code;
+    # a collapse is useless because Psi(dF_i) varies with i and T learns which i only through z_i.  And the gradient
+    # reaches the ONLINE ENCODER through z_i, which is the whole reason v2 exists.
+    # Known residual degeneracy: T ignoring s_j and replaying dF_i satisfies it exactly.  That solution still means
+    # "z carries the donor's effect", which is what the VLA needs; context adaptation is what L_self, MMD and RTC
+    # shape and ctx_sens monitors.  Cross-context identifiability is not solvable here without counterfactual truth.
+    pi = derangement(B, dev, b["ge"])                                      # same batch, different episode
+    sim = torch.as_tensor(si.numpy()[pi.cpu().numpy()] == si.numpy(), device=dev)      # and same source
+    if a.lam_effect > 0 and bool(sim.any()):
+        Ye = model.decode(b["f0"], b["c"], z[pi])                          # donor i's ONLINE code on state j
+        psi_syn = _psi(Ye, ctx)[0]
+        with torch.no_grad(): psi_all = _psi(b["dF"], ctx)[0]
+        out["effect_cos"] = F.cosine_similarity(psi_syn, psi_all[pi], dim=1)[sim].mean()
+        out["effect"] = 1 - out["effect_cos"]
+        out["mmd"] = mmd(Ye[sim], b["dF"][sim], ctx["proj"])
+        loss = loss + a.lam_effect * out["effect"] + a.lam_real * out["mmd"]
+        with torch.no_grad():
+            out["effect_shuffle"] = F.cosine_similarity(psi_syn, psi_all[torch.randperm(B, device=dev)], dim=1)[sim].mean()
+            out["effect_margin"] = out["effect_cos"] - out["effect_shuffle"]
+            out["replay_cos"] = F.cosine_similarity(psi_syn, psi_all, dim=1)[sim].mean()   # j's OWN effect: replay check
+
+    # ---- L_recover: the code-space cycle of the original design, kept as a DIAGNOSTIC (lam_recover = 0) ----
     zs, ok = _donors(ctx, si, ge, model.n_tokens, model.d, dev)
     if ok.any():
         Y = model.decode(b["f0"], b["c"], zs)                              # donor code on THIS row's state
@@ -167,8 +193,9 @@ def step(model, feat, b, a, ctx, train=True):
         sl1 = F.smooth_l1_loss(zh_s, zt_s, reduction="none").flatten(1).mean(1)
         out["rec_cos"] = cos[ok].mean()
         out["recover"] = ((1 - cos) + a.recover_l1 * sl1)[ok].mean()
-        out["mmd"] = mmd(Y[ok], b["dF"][ok], ctx["proj"])
-        loss = loss + a.lam_recover * out["recover"] + a.lam_real * out["mmd"]
+        if a.lam_recover > 0:
+            loss = loss + a.lam_recover * out["recover"]
+            if "mmd" not in out: loss = loss + a.lam_real * mmd(Y[ok], b["dF"][ok], ctx["proj"])
         with torch.no_grad():
             # WATERMARK probes.  (1) noise: measured 2026-09-15 to be useless -- on pure random data recovery reached
             # 0.93 and the noised value matched it to four decimals, so the channel is not low-amplitude.  Kept only
@@ -220,7 +247,14 @@ def step(model, feat, b, a, ctx, train=True):
 
 def main():
     ap = common_args(argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter))
-    ap.add_argument("--lam-recover", type=float, default=1.0); ap.add_argument("--lam-real", type=float, default=1.0)
+    ap.add_argument("--lam-effect", type=float, default=1.0,
+                    help="the ANCHORED cycle: an online code realised on a new state must carry the donor's REAL "
+                         "effect descriptor.  This is the term that shapes the encoder; see the note in step().")
+    ap.add_argument("--lam-recover", type=float, default=0.0,
+                    help="the code-space cycle of the original design.  DEFAULT 0: on semantics-free data it reaches "
+                         "0.98, because its target is the code and E and T need only agree with each other.  Still "
+                         "computed and logged so the pathology stays visible beside the anchored term.")
+    ap.add_argument("--lam-real", type=float, default=1.0)
     ap.add_argument("--lam-rel", type=float, default=0.5); ap.add_argument("--recover-l1", type=float, default=1.0)
     ap.add_argument("--tau", type=float, default=0.99, help="EMA rate of the target encoder (SPR/BYOL range)")
     ap.add_argument("--buffer", type=int, default=16, help="donor buffer depth, in batches of TARGET latents")
@@ -237,7 +271,7 @@ def main():
                          "the mechanism is E inverting an injective decoder rather than T co-adapting with it.")
     a = ap.parse_args()
     assert a.init_from or a.eval_only, "LATP v2 starts from a trained tokenizer (--init-from)"
-    run(a, step, ramp_keys=("lam_recover", "lam_real", "lam_rel"), stage="LATP2")
+    run(a, step, ramp_keys=("lam_effect", "lam_recover", "lam_real", "lam_rel"), stage="LATP2")
 
 if __name__ == "__main__":
     main()

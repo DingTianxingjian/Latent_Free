@@ -19,7 +19,7 @@ from acdc_la.stage3_transport import train_v2 as V
 dev = "cuda"; K, P, D, B = 4, 16, 768, 12
 m = TCVQ(K, "endpointdyn", 4, 16, 64, 768, 6, 12, 4, bottleneck="continuous").to(dev)
 a = argparse.Namespace(lam_recover=1.0, lam_real=1.0, lam_rel=0.5, recover_l1=1.0, tau=0.9, buffer=4, recover_detach=False,
-                       rtc_groups=4, psi_dim=512, probe_noise=0.1, lam_var=0.0)
+                       rtc_groups=4, psi_dim=512, probe_noise=0.1, lam_var=0.0, lam_effect=1.0)
 ctx = dict(dev=dev, proj=jl_projection(K * P * D, 512, 0, dev))
 def batch(seed):
     g = torch.Generator(device="cpu").manual_seed(seed)
@@ -36,8 +36,9 @@ for det in (False, True):
         l, o = V.step(mm, None, batch(s), aa, cc); oo.zero_grad(); l.backward(); oo.step()
     print(f"[channel] recover_detach={det}: rec_cos={float(o['rec_cos']):.4f} rec_shuffle={float(o['rec_shuffle']):.4f} "
           f"MARGIN={float(o['rec_margin']):.4f} rec_frozen={float(o['rec_frozen']):.4f} "
-          f"z_erank={float(o['z_erank']):.2f}/{m.d} zt_erank={float(o['zt_erank']):.2f} "
-          f"-- margin<=0 means COLLAPSE, not recovery")
+          f"z_erank={float(o['z_erank']):.2f}/{m.d} | ANCHORED effect_cos={float(o['effect_cos']):.4f} "
+          f"effect_MARGIN={float(o['effect_margin']):.4f} replay_cos={float(o['replay_cos']):.4f} "
+          f"-- a margin <= 0 means the term is satisfied without carrying the donor's effect")
 
 opt = torch.optim.AdamW([p for p in m.parameters() if p.requires_grad], lr=1e-4)
 for s in range(6):
