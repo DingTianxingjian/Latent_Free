@@ -2469,6 +2469,29 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Artifacts.** `acdc_la/results/token_bits.json`, arrays `token_bits_<arm>_<suite>_<split>.npz`, log
   `acdc_la/logs/bits_20741108.out`.
 
+### 2026-09-15 — FIRST VALID full-VLA closed loop: matched UniVLA 94.8 % on LIBERO-spatial, and the suite is saturated
+
+- **Result (job 20740894, 50 trials x 10 tasks = 500 episodes, their evaluator, per-step query + temporal ensemble).**
+  **474 / 500 = 94.8 %.**  Per task: 0.90, 0.98, 0.96, **1.00**, 0.86, 0.96, **1.00**, 0.96, **1.00**, 0.86.
+- **This is the first valid full-VLA number in the project.**  Everything before it was either the MLP toy harness or
+  the evaluator bug that scored 181 crashes as failures (retracted earlier today).
+- **The baseline is strong and the suite is saturated.**  Three of ten tasks are at 100 % and the floor is 0.86, so
+  there is no headroom to measure a better tokenizer in.  The acdc arm (job 20740897, post-hoc pq2x64) is tracking
+  at 95.0 % through four tasks with an identical first task (0.90 vs 0.90).
+- **The distinction that must not be collapsed.**  If the two arms finish tied, that is "this measurement cannot
+  separate them", NOT "the extra information is useless".  The bits table of today shows our route delivers 7.5x
+  more nuisance-invariant recovered bits; a saturated success rate gives that information nowhere to show up.
+- **Consequence, prepared but not launched.**  Fine-tune on fewer demonstrations instead of swapping suite: the
+  split counts are verified (`train[:95%]` = 410 episodes, `train[:25%]` = 108, `train[:10%]` = 43, held-out
+  `train[95%:]` = 22).  `LIBERO_TRAIN_FRAC` is patched in and smoke-tested end to end (job 20743597, exit 0).
+  Cheaper than a suite swap in reviewer terms too: it is the axis UniVLA's own paper reports, and it targets the
+  mechanism we claim rather than a different benchmark.  Note that action normalisation statistics are NOT
+  recomputed per split -- every arm loads the same cached `dataset_statistics_eb1c44` -- which keeps arms
+  comparable but must be stated in the method.
+- **Also verified today.** VLA-arm plumbing for both structured tokenizers against partial checkpoints:
+  `tc_cont` (job 20743222, exit 0) and `tc_vq` (job 20743223, exit 0, token acc 0.016 against a 1/256 chance).
+- **Artifacts.** `acdc_la/logs/vlaeval_20740894.out`, `acdc_la/results/vla_eval/`.
+
 ## Registered next method: intervention first, real pairs second
 
 
