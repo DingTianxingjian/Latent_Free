@@ -2373,10 +2373,10 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
 
 ### 2026-09-15 — bits recovered at deployment: the cross-method number that replaces the retracted probe
 
-- **Instrument.** : the reader IS each trained VLA, so the units are the ones it
+- **Instrument.** `downstream/vla/token_bits.py`: the reader IS each trained VLA, so the units are the ones it
   optimises.  residual = latent-position cross-entropy in bits/sample, H = empirical label entropy on the same
   windows, recovered = H - residual.  600 LIBERO-spatial windows through the same RLDS pipeline and augmentation
-  the arms train on;  is the RLDS validation split, which the LoRA fine-tune (train=True) never saw.
+  the arms train on; `--split val` is the RLDS validation split, which the LoRA fine-tune (train=True) never saw.
 
   | arm | code | split | H | residual | recovered | frac |
   |---|---|---|---|---|---|---|
@@ -2401,8 +2401,8 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
 - **What it does not show.** Recovered bits are not usefulness: they may encode nuisance, and our per-token
   stability is 0.126 against their 0.610.  Whether the information converts is what the 500-episode closed-loop
   evaluations (20740894, 20740897) decide.
-- **Artifacts.** , per-window arrays ,
-  log .
+- **Artifacts.** `acdc_la/results/token_bits.json`, per-window arrays `token_bits_<arm>_<suite>_<split>.npz`,
+  log `acdc_la/logs/bits_20739661.out`.
 
 ## Registered next method: intervention first, real pairs second
 
