@@ -50,6 +50,14 @@ class TCVQ(nn.Module):
         enc = nn.TransformerEncoderLayer(width, heads, 4 * width, dropout=0.0, batch_first=True, norm_first=True)
         self.enc = nn.TransformerEncoder(enc, enc_layers)
         self.to_code = nn.Sequential(nn.LayerNorm(width), nn.Linear(width, latent_dim))
+        # DEPLOYMENT PRIOR (review 2026-09-15).  p(z | F_0, language) sees only what the policy will see at deployment;
+        # pulling the posterior towards it prices content that the deployment information set cannot determine.  The
+        # posterior encoder is unchanged, so the downstream labeller needs no language at all.
+        self.prior_lang = nn.Sequential(nn.LayerNorm(T5_DIM), nn.Linear(T5_DIM, width))
+        self.prior_query = nn.Parameter(torch.randn(n_tokens, width) * 0.02)
+        pe = nn.TransformerEncoderLayer(width, heads, 4 * width, dropout=0.0, batch_first=True, norm_first=True)
+        self.prior_enc = nn.TransformerEncoder(pe, 2)
+        self.prior_to_code = nn.Sequential(nn.LayerNorm(width), nn.Linear(width, latent_dim))
         self.vq = VectorQuantizer(codebook, latent_dim) if bottleneck == "vq" else None
         self.dec = LAM(K, n_cells=n_tokens, d=latent_dim, d_u=8, layers=dec_layers)    # decoder only; its E/U are unused
         self.n_cells, self.d, self.d_u = n_tokens, latent_dim, 8                       # train_loop / dump compatibility
@@ -71,6 +79,13 @@ class TCVQ(nn.Module):
         toks = [self.inp[k](ev[k]) + self.pos_emb[None] + self.type_emb[i][None, None] for i, k in enumerate(self.kinds)]
         x = torch.cat([self.query[None].expand(B, -1, -1)] + toks, 1)
         return self.to_code(self.enc(x)[:, :self.n_tokens])
+
+    def prior_code(self, f0, c):
+        """p(z | F_0, language): the deployment information set only -- no future frames."""
+        B = f0.shape[0]
+        toks = self.inp[self.kinds[0]](f0) + self.pos_emb[None]          # the state tokens, same projection as "S"
+        x = torch.cat([self.prior_query[None].expand(B, -1, -1), toks, self.prior_lang(c)[:, None]], 1)
+        return self.prior_to_code(self.prior_enc(x)[:, :self.n_tokens])
 
     def quantize(self, f0, dF):
         """vq: (z_q straight-through, z codebook embeddings, x pre-quantisation, indices (B, n_tokens)).

@@ -5,6 +5,13 @@ through a trained policy.  This measures it directly and cheaply from an existin
 
     P = R2( z | F_0 )        ridge from the first-frame quadrant features to the code, per source, episode-disjoint
 
+SCOPE (retraction 2026-09-15): this is a WITHIN-FAMILY instrument only -- valid for comparing arms that share a code
+space, a training domain and a reader.  It is NOT valid against UniVLA: their deployed code is 4 indices into a
+16-entry codebook, not the 2048-d embedding this regresses; the split here is leave-one-SOURCE-out on OXE, not their
+in-domain LIBERO; and the reader has no language, which is decisive for a code whose LIBERO majority floor is 0.469.
+Measured directly from their trained VLA, ~79 % of their label IS recovered at deployment.  For cross-method claims
+use held-out latent-token cross-entropy in bits against the label entropy instead.
+
 F_0 is exactly the deployment information set minus language (the dumps carry no instruction), so P is a lower
 bound on what any observation-conditioned policy can recover.  Reported next to the code's action content
 S = R2(action | z), because the quantity that matters downstream is not either alone but how much of the action
