@@ -24,8 +24,17 @@ import os as _os, json as _json
 import experiments.robot.openvla_utils as _OU                 # their loader hard-codes flash_attention_2, which is not installed
 import experiments.robot.robot_utils as _RU
 def _get_vla_sdpa(cfg):
-    """Their get_vla with attn_implementation='sdpa'.  The checkpoint carries its own configuration/modeling modules
-    (save_pretrained + trust_remote_code), so the class must not be patched -- only the loader."""
+    """Their get_vla with attn_implementation='sdpa'.
+
+    BUG FIXED 2026-09-15 (this cost 181 wasted episodes of job 20730279 and a falsely-reported load test): the
+    checkpoint carries its OWN configuration_prismatic.py / modeling_prismatic.py (written by save_pretrained), so
+    `trust_remote_code=True` builds the model from that dynamic module -- a DIFFERENT class object than the
+    `OpenVLAForActionPrediction` imported from the `prismatic` package above.  Patching the imported class therefore
+    never reached the instance, and every episode threw
+        'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+    and was scored as a failure.  The checkpoint's copy came from openvla-7b and has `predict_action` /
+    `get_action_stats` but not UniVLA's `predict_latent_action`.  Patch `type(vla)` AFTER loading, which is correct
+    whichever class object won, and assert it took."""
     _OU.AutoConfig.register("openvla", _OU.OpenVLAConfig); _OU.AutoImageProcessor.register(_OU.OpenVLAConfig, _OU.PrismaticImageProcessor)
     _OU.AutoProcessor.register(_OU.OpenVLAConfig, _OU.PrismaticProcessor); _OU.AutoModelForVision2Seq.register(_OU.OpenVLAConfig, _OU.OpenVLAForActionPrediction)
     vla = _OU.AutoModelForVision2Seq.from_pretrained(cfg.pretrained_checkpoint, attn_implementation="sdpa", torch_dtype=_torch.bfloat16,
@@ -35,6 +44,8 @@ def _get_vla_sdpa(cfg):
     p_stats = _os.path.join(cfg.pretrained_checkpoint, "dataset_statistics.json")
     assert _os.path.isfile(p_stats), p_stats
     vla.norm_stats = _json.load(open(p_stats))
+    type(vla).predict_latent_action = _predict_latent_action_n          # the class that actually got instantiated
+    assert callable(getattr(vla, "predict_latent_action", None)), type(vla).__mro__
     return vla
 _OU.get_vla = _get_vla_sdpa; _RU.get_vla = _get_vla_sdpa
 import os
