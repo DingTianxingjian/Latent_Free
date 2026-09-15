@@ -47,7 +47,11 @@ Frozen package lists are in `acdc_la/envs/*.requirements.txt` (exact versions th
    cd third_party/UniVLA && VIRTUAL_ENV=../../envs/univla_vla uv pip install -e . && cd ../..
    VIRTUAL_ENV=envs/univla_vla uv pip install "tensorflow_metadata==1.14.0" "protobuf==3.20.3" "wandb==0.16.6" braceexpand webdataset bddl easydict cloudpickle "imageio[ffmpeg]"
    ```
-   The three pins after `-e .` are required: tfds 4.9.3 breaks with protobuf 5, wandb >= 0.17 needs protobuf 5.
+   The pins after `-e .` are required: tfds 4.9.3 breaks with protobuf 5, wandb >= 0.17 needs protobuf 5, and
+   **mujoco must be 2.3.7** -- 3.x trips `assert joint_type in (mjJNT_HINGE, mjJNT_SLIDE)` inside robosuite 1.4.1 as soon
+   as a LIBERO env is built, so every closed-loop evaluation fails.  UniVLA's `openvla_utils.get_vla` also hard-codes
+   `attn_implementation="flash_attention_2"`: either install flash-attn or use our evaluator, which overrides `get_vla`
+   with an SDPA loader (do not mix the two within one results table).
    Run everything with `PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python WANDB_MODE=disabled TOKENIZERS_PARALLELISM=false`.
    Check: `python -c "import prismatic.training; from prismatic.vla.datasets import RLDSDataset; print('ok')"`.
 
