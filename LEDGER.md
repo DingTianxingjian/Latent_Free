@@ -2492,6 +2492,24 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   `tc_cont` (job 20743222, exit 0) and `tc_vq` (job 20743223, exit 0, token acc 0.016 against a 1/256 chance).
 - **Artifacts.** `acdc_la/logs/vlaeval_20740894.out`, `acdc_la/results/vla_eval/`.
 
+### 2026-09-15 — `tc_cont_prior` cancelled by the user shortly after it started; what that decision was based on
+
+- **Action.** Job 20742783 (the code-norm rebuild of the deployment-prior arm) cancelled at ~25 minutes in.
+- **Why its value had fallen since it was queued.**  (a) It differs from `tc_cont` by TWO factors -- the pinned code
+  scale and the prior term -- so a win could not be attributed without a third run (`tc_cont_norm`).  (b) Its whole
+  purpose is to raise how much of the code the deployment state determines, but the benchmark that would show the
+  benefit, LIBERO-spatial at full data, is saturated: matched UniVLA 474/500 = 94.8 %, three tasks at 100 %, and four
+  of the first six tasks identical between the two arms.  (c) It was occupying one of three GPUs against the
+  deadline path.
+- **Measured effect of the cancellation.** The queue estimate for the next dependent job moved from 2026-09-16 18:40
+  to 2026-09-15 19:12.
+- **Kept deliberately.** The second `RESUME=1` legs (20742785, 20742787) hold no resources while pending and are
+  cheap insurance: `tc_cont` is at ~60k of 128k steps with ~25 minutes of walltime left, so it needs both legs.
+  A leg that starts after the tag has already reached 128k returns immediately without retraining.
+- **Still open and more valuable than this arm was.** There is no full-VLA NO-LATENT control.  With both latent arms
+  at 94-95 %, we cannot say whether a plain `openvla-7b` + LoRA + action head reaches the same number, and if it
+  does the entire LIBERO table shows nothing about latent actions at all.  About 10 GPU-hours.
+
 ## Registered next method: intervention first, real pairs second
 
 
