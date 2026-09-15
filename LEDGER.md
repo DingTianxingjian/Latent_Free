@@ -1,6 +1,6 @@
 # Latent-free training: master experiment summary
 
-Last updated: 2026-09-14.
+Last updated: 2026-09-06.
 
 This is the project-level, continuously updated summary for `latent_free/`,
 `claude_survey/`, and `codex_survey/`. Detailed tables and implementation notes remain in
@@ -37,7 +37,7 @@ mining remains an optional expansion subject to a precision–coverage gate, not
 assumed by the new pair-free proposal. A separate future-derived exogenous residual remains
 deferred; any stochastic residual must be controlled when testing donor-code influence.
 
-Detailed current audit: [`latent_free/EXPERIMENT_REVIEW_2026-09-06.md`](EXPERIMENT_REVIEW_2026-09-06.md).
+Detailed current audit: [`latent_free/EXPERIMENT_REVIEW_2026-09-06.md`](latent_free/EXPERIMENT_REVIEW_2026-09-06.md).
 
 ## Experiment ledger
 
@@ -96,7 +96,7 @@ Detailed current audit: [`latent_free/EXPERIMENT_REVIEW_2026-09-06.md`](EXPERIME
   decodability under mean pooling, close to DINOv2's 53%/25%.
 - **Conclusion — confirmed.** Global pooling loses where motion occurred; the effect is
   not specific to DINO or explained by width alone. Opposing local motions can cancel.
-- **Artifacts.** [`latent_free/SUMMARY.md`](SUMMARY.md), especially Exp 4 and
+- **Artifacts.** [`latent_free/SUMMARY.md`](latent_free/SUMMARY.md), especially Exp 4 and
   Exp 6.
 - **Decision.** Never use globally mean-pooled `delta-f` as an information ceiling. Keep
   a spatial effect map until the learned bottleneck.
@@ -1931,6 +1931,163 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
 - Gate: CPU run (per-cell vq arms) still extracting LIBERO DINO features on the login node; GPU twins 20660076 /
   20660077 carry the pq arms as well.
 
+### 2026-09-14 — VLA smoke passed on Anvil and on the user's second server; one bug fixed; code on GitHub
+
+- Bug (found on the second server, confirmed here): `finetune_libero_ctrl.py` assigned `lam.device`, a read-only property of
+  UniVLA's LAM class -> the univla arm crashed at start.  Fixed (commit cf5eb3d on `main`, plus `CTRL_STAGGER_SEC` to stagger
+  7B loads on small-RAM hosts).  Anvil smoke (job 20659989, gpu partition): acdc arm 12 steps + merge in 645 s, univla arm
+  in 685 s, both exit 0; token loss 28 -> 8.7 (acdc, 64-word vocab) and 26 -> 3.7 (univla, 16 words, token acc 0.44 after
+  12 steps -- its peaked codebook again).  Evaluator smoke (1 trial/task) submitted: 20670798 gpu / 20670799 ai.
+- Second server (user's, 2 x Blackwell, 62 GB RAM): repo cloned, envs rebuilt on torch 2.7.1+cu128, mujoco pinned to 2.3.7
+  (the univla_vla env's mujoco 3.13 was incompatible with robosuite 1.4.1 -- latent on Anvil since no eval ran there),
+  `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1` for LIBERO init states; both training arms smoke-pass; closed-loop smoke running.
+  Production there: 2 GPUs, batch 8 x accum 4, ~8-10 h per arm; univla arm first, acdc arm with K64 unless the gate
+  says otherwise.  Anvil's queued production jobs (20661177/8) stay as backup.
+- Code: https://github.com/DingTianxingjian/Latent_Free (`main`, fresh history; local `master` has corrupt old blobs).
+  `REPRODUCE.md` is the guide; `transfer/acdc_la_artifacts.tar` (1.23 GB) carries the checkpoints.
+
+### 2026-09-14 — VQ gate (job 20660076): NO-GO for post-hoc discretisation; every discrete code loses 0.03-0.04 at the oracle and the chain stays at the floor
+
+  **LIBERO-spatial, history-policy recipe (8,000 iters), codebooks fitted on LIBERO train steps; `ours` = continuous code, same run**
+
+  | arm | tokens | words | quant. err | L1 oracle (dequantised) | L1 chain mode | L1 chain expect | code acc (majority) |
+  |---|---|---|---|---|---|---|---|
+  | ours (continuous) | - | - | - | **0.367** | 0.430 | - | latent R2 0.44 |
+  | vq64 | 8 | 64 | 0.524 | 0.408 | 0.434 | 0.430 | 0.403 (0.027) |
+  | vq256 | 8 | 256 | 0.429 | 0.402 | 0.433 | 0.429 | 0.299 (0.007) |
+  | pq4x16 | 32 | 16 | 0.479 | 0.401 | 0.432 | 0.428 | 0.391 (0.080) |
+  | pq2x64 | 16 | 64 | 0.459 | 0.401 | 0.430 | 0.425 | 0.335 (0.025) |
+  | pq4x64 | 32 | 64 | 0.337 | 0.394 | 0.433 | 0.428 | 0.249 (0.023) |
+
+- **Verdict.** Gate rule was chain L1 <= continuous - 0.015 (i.e. <= 0.415): best discrete arm 0.425 (pq2x64, expectation
+  decoding), i.e. -0.005.  **Not passed.**  (i) Quantising the posterior costs 0.03-0.04 at the oracle even at 33 %
+  residual variance (pq4x64): the action-relevant part of the code is spread over dims a small codebook does not keep.
+  (ii) The policy predicts the codes far above chance (25-40 % vs 1-8 % majority) and it does not help: what is
+  predictable in the code is not what carries the action.  (iii) Hence a deployment prior on a POST-HOC code cannot
+  work; if the direction is pursued, the discrete bottleneck must be learned jointly with the tokenizer and the prior
+  (VQ/FSQ inside the model), which is a new pretraining run, not a downstream fix.  No joint pretraining is started
+  before the deadline; the paper reports this gate as the third negative on the posterior-to-policy gap.
+- **Consequence for the VLA comparison.** The acdc arm must feed discrete tokens, and every post-hoc codebook is a
+  handicap relative to UniVLA's end-to-end VQ (their tokens are what their LAM was trained to emit).  Chosen codebook:
+  pq2x64 (16 tokens, best chain, oracle 0.401, code acc 0.335); Anvil job 20661178 (K64) cancelled and resubmitted with
+  pq2x64; the second server should use `--acdc_codebook vq_s1_acdc_1ep_pq2x64.npz` as well.  This caveat goes in the
+  paper next to the table.  Files: `acdc_la/results/libero_vqgate.json`, `logs/vqgate_20660076.out`.
+
+### 2026-09-14 — same-data UniVLA at 2 epochs finished (job 20617444): `claude_survey/ckpt/s2mix_2ep.pt`, 256k x 64, 26.2 h; evaluations submitted
+
+- Their Stage-2 recipe on our capped mixture, 2 x the 1-epoch budget, final loss 0.118 (mse 0.111), 15/16 controllable
+  codes in use, 1/16 uncontrollable (the collapsed branch again).  Submitted: our probes on its codes (`univla_matched_2ep`
+  dump + Stage I/II probes vs s1_acdc_2ep / s1_mean_2ep / s1_acdc_1ep / univla_matched; jobs 20685768 gpu / 20685769 ai)
+  and their eval_mix transport (20685771 gpu / 20685772 ai).  This completes the 1-ep -> 2-ep pair for all three
+  tokenizers on the same data.
+
+### 2026-09-14 — controlled VLA, univla arm trained on Anvil (job 20661177): 15k steps x 64 in 5.4 h; acdc arm (pq2x64) training; evaluation submitted
+
+- `ckpt/vla_runs/univla+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000/`: merged OpenVLA-7B + LoRA, action decoder,
+  dataset statistics.  Training curve (their recipe, our same-data LAM labels): token accuracy 0.72 (step 300) -> 0.82
+  (15k), action L1 (normalised, 12-step chunk) 0.173 -> 0.063; lr x0.1 at 12k.  Evaluation (50 trials x 10 tasks, their
+  evaluator with SDPA attention) submitted: 20711528 gpu / 20711529 ai.
+- acdc arm (`--acdc_codebook vq_s1_acdc_1ep_pq2x64.npz`, 16 tokens of 64 words), job 20675236 on h005: at step 5k token
+  accuracy 0.36 (vs 0.80 for the 4 x 16-word univla tokens), action L1 0.121 vs 0.111 at the same step -- the post-hoc
+  token handicap predicted by the gate shows up as a ~0.01 training-loss gap.  ETA ~4 h + merge.
+
+### 2026-09-14 — same-data UniVLA at 2 epochs on our probes (job 20685769): its second epoch helps (+0.025 net); it reads the temporal PROFILE better than ACDC, and net worse
+
+  **Same 11,456 OXE val clips, corrected R2, per-source episode-disjoint ridge; Stage II N_TC = patch readable from the patch-rendering code**
+
+  | tokenizer | budget | R2 net | seg1 | prof | seq | patch drop | N_TC |
+  |---|---|---|---|---|---|---|---|
+  | s1_acdc_2ep (ours) | 2 ep | **0.321** | **0.259** | 0.084 | 0.228 | 28.7 % | 0.102 |
+  | s1_mean_2ep (pooled) | 2 ep | 0.336 | 0.207 | 0.014 | 0.207 | 36.1 % | 0.106 |
+  | univla_matched_2ep (their recipe, our data) | 2 ep | 0.261 | 0.249 | **0.139** | **0.237** | **18.2 %** | -0.023 |
+  | univla_matched (1 ep) | 1 ep | 0.236 | 0.222 | 0.125 | 0.215 | 22.9 % | -0.027 |
+  | univla_official (released, their full data) | - | 0.288 | 0.281 | 0.152 | 0.259 | 21.2 % | -0.018 |
+
+- **Reading.** (i) Unlike both of ours (flat from 1 to 2 epochs), the same-data UniVLA still improves with budget
+  (+0.025 net, +0.027 seg1, +0.014 prof, +0.022 seq) and closes part of the gap to the released model.  (ii) The
+  honest ordering on the same data: ACDC > UniVLA on net displacement (0.321 vs 0.261) and marginally on seg1
+  (0.259 vs 0.249); UniVLA > ACDC on the temporal profile (0.139 vs 0.084), on seq (0.237 vs 0.228), and on patch
+  robustness (18 % vs 29 % drop; N_TC ~0 from its quantiser).  The paper's Stage-I profile claim therefore holds
+  **against pooling** (0.084 vs 0.014), not against UniVLA; the claim against UniVLA is net displacement and the
+  transport result.  (iii) UniVLA's 2048-d code is 16 quantised 128-d embeddings x 4 patches x (K = 4 pairs); its
+  profile readability comes from per-pair codes, which is the pair-wise structure the 09-12 review already noted.
+  Files: `acdc_la/results/stage1_probes.json`, `stage2_probes.json` (rows univla_matched_2ep), `results/univla_matched_2ep_val.npz`.
+  Their transport eval (job 20685772, their pipeline, 11,353 clips): indep self 0.235, transfer **0.121**, replay 0.012
+  (1 ep: 0.218 / 0.116 / 0.014; ours s3_latp_1ep 0.319 transfer).  The second epoch does not move their transport either.
+
+### 2026-09-14 — controlled VLA, both arms trained on Anvil; evaluations queued
+
+  | arm | tokens | job | wall | final train token acc | final train action L1 | checkpoint |
+  |---|---|---|---|---|---|---|
+  | univla (same-data LAM s2mix_1ep) | 4 x 16 words | 20661177 | 5.4 h | 0.82 | 0.063 | `ckpt/vla_runs/univla+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000` |
+  | acdc (s1_acdc_1ep, pq2x64 post-hoc codebook) | 16 x 64 words | 20675236 | 4.8 h | 0.41 | 0.079 | `ckpt/vla_runs/acdc+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000` |
+
+- Both from openvla-7b, LoRA r32 + trained token embeddings, 15k steps x 64, lr 3.5e-4 (x0.1 at 12k), image aug, their
+  action decoder (MAP over the last n latent-token states) and 12-step L1.  The training-time action loss ends 0.016
+  higher for the acdc arm; the gate predicted a handicap for any post-hoc code (oracle 0.401 vs 0.367 continuous).
+- Evaluations (their `run_libero_eval.py` with SDPA attention, 50 trials x 10 tasks): univla 20711541 gpu / 20711542 ai,
+  acdc 20719072 gpu / 20719073 ai; evaluator smoke 20711539 / 20711540 still queued (two evaluator bugs fixed today:
+  flash-attn forced by their loader, then a dropped `.register` in my wrapper -- commits ae1ac6b, e5adc21).
+
+### 2026-09-14 — the same-data UniVLA baseline is NOT warm-started: 5,120 of 201.8M params inherited at init, none of them the deployed codebook, and all of them moved by training
+
+  Concern (user): `s2mix_1ep` initialises from the RELEASED stage-1 checkpoint (trained on their full data), so the
+  baseline may be pre-trained in disguise.  Measured on the checkpoints (`downstream/vla/check_univla_tokens.py`):
+
+  | stage-2 module | params | inherited from the released stage 1 |
+  |---|---|---|
+  | encoder | 113,959,680 | no |
+  | decoder | 86,211,072 | no |
+  | to_codebook / to_codebook_uncontrol | 98,432 each | no |
+  | `action_latent` (query embedding) | 3,072 of 6,144 | yes, at init only |
+  | `vq` (task-IRRELEVANT codebook, not deployed) | 2,048 | yes, at init only |
+  | **`vq_action` (the DEPLOYED task-centric codebook)** | 2,048 | **does not exist in stage 1** (rala2.py:617 asserts it) |
+
+- **Findings.** (i) `init_from_stage1` copies only keys matching `vq` / `action_latent` (their `genie/model.py:66-71`):
+  5,120 params = 0.0025 % of the 201.8M stage-2 model.  (ii) Those are the uncontrollable branch's codebook and the
+  query embedding, NOT the codebook whose indices become the `<ACT_i>` tokens downstream.  (iii) After our training,
+  even `vq.codebook.weight` differs from the released one by max 2.42 (the VQ library restarts dead codes: the training
+  log prints "Restarting 10 codes"), so nothing in the final checkpoint is inherited (0 of 201,757,184 tensors
+  byte-identical).  (iv) Everything that produces the deployed code -- the 114M encoder, the projections, `vq_action` --
+  is trained from scratch on our capped mixture at our budget.
+- **Conclusion: the controlled comparison is fair on this axis**, and the earlier caveat in this ledger ("the codebook
+  saw their full data, an advantage we gave the baseline") is **RETRACTED** as substantively wrong: the released
+  stage-1 gives the baseline nothing that survives to the deployed tokens.  Both sides do use the same frozen Meta
+  DINOv2 ViT-B/14 (ours plain, theirs with registers), which is symmetric.
+- **The one asymmetry that remains favours US and must be stated:** budget is matched by optimiser steps x batch
+  (128k x 64) but not by frames -- a UniVLA step sees 64 frame PAIRS (128 frames), a step of ours sees 64 five-frame
+  clips (320 frames).  **Verified (job 20720187):** the labeller class (UniVLA's own `ControllableDINOLatentActionModel` loaded with our
+  weights, `dino_encoder` rebuilt from the hub cache, rala2's `lang_proj` unused) reproduces rala2's training-time
+  deployed indices **bit for bit** on the same input, so the univla VLA arm is trained on UniVLA's own task-centric
+  tokens.  Inherited at init: 5,120 params (`action_latent` 3,072 + `vq.codebook.weight` 2,048); after training both
+  differ from the released values (max |diff| 0.20 and 2.42).
+
+### 2026-09-14 — what the VLA token accuracies mean (job 20725946): different floors, 9x different label entropy, and our post-hoc tokens are 87 % augmentation-flippable
+
+  **1,000 LIBERO-spatial windows through each arm's labeller, the same RLDS pipeline and augmentation the VLA arms train on
+  (`downstream/vla/label_stats.py`).  "stability" = agreement between the label of a window and of the SAME window under one
+  further draw of the training augmentation (crop 0.9, brightness 0.2, contrast/saturation 0.8-1.2, hue 0.05).**
+
+  | arm | tokens | words | chance | majority floor | label entropy | codes used | stability |
+  |---|---|---|---|---|---|---|---|
+  | univla (`s2mix_1ep`) | 4 | 16 | 0.062 | **0.469** (per slot .42/.17/.51/.78) | 9.45 of 16 bits | 11/16/10/9 | **0.610** |
+  | acdc (`s1_acdc_1ep` + pq2x64) | 16 | 64 | 0.016 | **0.088** | 85.4 of 96 bits | 57-62 of 64 | **0.126** |
+
+- **The headline 0.82 vs 0.41 is not a comparison.**  Removing the majority floor, (acc - maj)/(1 - maj) = **0.66 (univla)
+  vs 0.35 (ours)**; and their label carries 9.5 bits per sample where ours carries 85.4.  In recovered information the
+  ordering reverses: their VLA leaves ~2 bits of residual (0.35 nats x 4 tokens), ours ~45 bits (1.93 x 16), i.e. ours
+  recovers ~41 bits of label against their ~7.  Their tokens are easy because the codebook is peaked on this domain
+  (one slot is 78 % a single code; 9-11 of 16 codes ever used).
+- **New and mechanistic: our post-hoc tokens are mostly nuisance.**  Re-drawing the training augmentation on the same clip
+  changes 87 % of our tokens but only 39 % of theirs.  The ACDC code is continuous and fine-grained, so k-means cell
+  boundaries are dense (relative quantisation error 0.46 at pq2x64) and a photometric/crop jitter flips the nearest
+  centroid; a 16-bit native codebook cannot represent that much detail and is forced to keep only reconstruction-relevant
+  structure.  This is an independent reason -- separate from the gate's oracle loss -- that post-hoc quantisation of a
+  continuous tokenizer is the wrong VLA interface, and it is direct support for training the discrete bottleneck jointly
+  (`common/tcvq.py`, built and smoke-tested, not yet trained).
+- **Caveat.** The jitter is an ADDITIONAL draw on top of the pipeline's own augmentation, so the perturbation magnitude is
+  comparable to, not identical with, the training one.  Files: `acdc_la/results/vla_label_stats.json`, `logs/labstat_20725946.out`.
+
 ### 2026-09-14 — moved to the workstation; full-VLA pipeline verified end to end on GPU; the Anvil univla-arm smoke had crashed
 
 - **Host.** `~/Projects/latent_free`, 2 x RTX PRO 6000 Blackwell (96 GB), 62 GB RAM shared with other jobs, no Slurm.
@@ -1959,6 +2116,7 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   Pretraining caches: capped `cache/oxe` (1.8 TB) + `cache/bridge_big` (95 GB) on `/data/ti874297/latent_free_cache`
   (symlinked), transfer in progress; `cache/oxe_full` (5.3 TB) not copied.
 
+
 ### 2026-09-14 — 2-GPU DDP on the workstation: NCCL 2.26.2 crashes, 2.31.2 works; production probe 3.1 s/step, 16 GB RSS
 
 - **Failure.** Any NCCL collective between the two Blackwell cards (PCIe, different host bridges, IOMMU on) died with
@@ -1973,6 +2131,9 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   loads, host MemAvailable min 13 GB.  Merge at the end (rank 0 reloads the 7B base) peaked at 35 GB RSS in the smoke.
 - **Next.** Production via `logs_migrate/vla_production.sh` (tmux): univla then acdc (K64 codebook, the 09-13 default;
   the VQ gate has not run), each 15k steps x 64 on 2 GPUs, then 50 trials x 10 tasks LIBERO-spatial eval per arm.
+
+## Registered next method: intervention first, real pairs second
+
 
 ## Registered next method: intervention first, real pairs second
 
@@ -2034,11 +2195,11 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   moving-patch condition are evaluated from the same clean-trained probe.
 - **Conclusion — planned.** This is a one-seed screening experiment, not a transport or
   broad embodied-data conclusion.
-- **Artifacts.** [`latent_free/phase1/bridge_photo_extract.py`](phase1/bridge_photo_extract.py),
+- **Artifacts.** [`latent_free/phase1/bridge_photo_extract.py`](latent_free/phase1/bridge_photo_extract.py),
   [`claude_survey/intervention_ssl.py`](claude_survey/intervention_ssl.py),
   [`claude_survey/run_intervention_ssl_multi.sh`](claude_survey/run_intervention_ssl_multi.sh),
   [`claude_survey/results/photo_feature_gate.json`](claude_survey/results/photo_feature_gate.json),
-  [`latent_free/logs/lf_photo_20284956.out`](logs/lf_photo_20284956.out), with
+  [`latent_free/logs/lf_photo_20284956.out`](latent_free/logs/lf_photo_20284956.out), with
   training logs under `claude_survey/logs/cs_intssl_<job>.out` after completion.
 - **Decision.** Promote an arm only if it beats `photo_xrec` rather than merely baseline,
   preserves clean action information, and improves held-out nuisance robustness. A winner
@@ -2084,7 +2245,7 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   appearance while preserving the transition difference direction. This does not establish
   V-JEPA feature sensitivity or learned-latent invariance.
 - **Artifacts.** [`claude_survey/results/photo_pixel_gate.json`](claude_survey/results/photo_pixel_gate.json),
-  [`latent_free/phase1/photo_pixel_gate.py`](phase1/photo_pixel_gate.py).
+  [`latent_free/phase1/photo_pixel_gate.py`](latent_free/phase1/photo_pixel_gate.py).
 - **Decision.** Continue to the frozen-feature gate and matched SSL training; do not change
   augmentation strength before seeing the V-JEPA response.
 
@@ -2238,7 +2399,7 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   screening measurements; near-zero absolute VICReg action readout remains negative.
 - **Artifacts.** [`claude_survey/irla.py`](claude_survey/irla.py),
   [`claude_survey/intervention_ssl.py`](claude_survey/intervention_ssl.py),
-  [`latent_free/probes_torch.py`](probes_torch.py),
+  [`latent_free/probes_torch.py`](latent_free/probes_torch.py),
   [`claude_survey/results/photo_feature_gate_nulls.json`](claude_survey/results/photo_feature_gate_nulls.json).
 - **Decision.** Tune only on inner clean training episodes and freeze alpha and weights for
   every nuisance condition. Do not infer InfoNCE > VICReg from different nuisances/budgets.
@@ -2337,7 +2498,7 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
 - **Artifacts.** [`codex_survey/results/`](codex_survey/results/),
   [`codex_survey/experiment.py`](codex_survey/experiment.py),
   [`codex_survey/logs/`](codex_survey/logs/), recomputed table in
-  [`latent_free/EXPERIMENT_REVIEW_2026-09-06.md`](EXPERIMENT_REVIEW_2026-09-06.md).
+  [`latent_free/EXPERIMENT_REVIEW_2026-09-06.md`](latent_free/EXPERIMENT_REVIEW_2026-09-06.md).
 - **Decision.** Test the hybrid under matched total width, report absolute clean/patch
   performance and net/profile separately, and do not call the compressed basis lossless.
 
@@ -2412,7 +2573,7 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   transport or identifiability. Structured pooling preserves selected evidence; augmentation
   targets known nuisances; algebra imposes local geometry; swap/prior/cycle require semantic
   validation beyond their own training losses.
-- **Artifacts.** [`latent_free/EXPERIMENT_REVIEW_2026-09-06.md`](EXPERIMENT_REVIEW_2026-09-06.md),
+- **Artifacts.** [`latent_free/EXPERIMENT_REVIEW_2026-09-06.md`](latent_free/EXPERIMENT_REVIEW_2026-09-06.md),
   [ALAM primary source](https://arxiv.org/abs/2605.10819),
   [cross-exogenous reconstruction assumptions](https://arxiv.org/html/2605.20223v1#S4.SS4).
 - **Decision.** Define duration/basis-aware algebra before implementation; first preserve
@@ -2500,7 +2661,7 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   swap loss has no such target and avoids that particular wrong-label failure. It still needs
   compatible destination support and an independently verified relation between donor semantics
   and generated effects. Lack of an identifiability guarantee does not imply infeasibility.
-- **Artifacts.** [`latent_free/EXPERIMENT_REVIEW_2026-09-06.md`](EXPERIMENT_REVIEW_2026-09-06.md),
+- **Artifacts.** [`latent_free/EXPERIMENT_REVIEW_2026-09-06.md`](latent_free/EXPERIMENT_REVIEW_2026-09-06.md),
   [`claude_survey/results/rala2_eval_v.csv`](claude_survey/results/rala2_eval_v.csv),
   [`claude_survey/logs/cs_s2_vae_19999916.out`](claude_survey/logs/cs_s2_vae_19999916.out),
   [`claude_survey/logs/cs_s2_vae_olaf_19999917.out`](claude_survey/logs/cs_s2_vae_olaf_19999917.out),
@@ -2565,12 +2726,12 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Conclusion — planned.** Adopt full-mixture UniVLA-based training as the user's target,
   while keeping the older reduced-mixture acquisition record historical. Full coverage and
   interface integration are unverified; neither is reported as completed.
-- **Artifacts.** [`latent_free/phase1/oxe/oxe_fetch.py`](phase1/oxe/oxe_fetch.py),
-  [`latent_free/phase1/oxe/oxe_convert.py`](phase1/oxe/oxe_convert.py),
-  [`latent_free/third_party/UniVLA/prismatic/vla/datasets/rlds/oxe/mixtures.py`](third_party/UniVLA/prismatic/vla/datasets/rlds/oxe/mixtures.py),
-  [`latent_free/third_party/UniVLA/prismatic/conf/vla.py`](third_party/UniVLA/prismatic/conf/vla.py),
-  [`latent_free/third_party/UniVLA/vla-scripts/train.py`](third_party/UniVLA/vla-scripts/train.py),
-  [`latent_free/third_party/UniVLA/README.md`](third_party/UniVLA/README.md).
+- **Artifacts.** [`latent_free/phase1/oxe/oxe_fetch.py`](latent_free/phase1/oxe/oxe_fetch.py),
+  [`latent_free/phase1/oxe/oxe_convert.py`](latent_free/phase1/oxe/oxe_convert.py),
+  [`latent_free/third_party/UniVLA/prismatic/vla/datasets/rlds/oxe/mixtures.py`](latent_free/third_party/UniVLA/prismatic/vla/datasets/rlds/oxe/mixtures.py),
+  [`latent_free/third_party/UniVLA/prismatic/conf/vla.py`](latent_free/third_party/UniVLA/prismatic/conf/vla.py),
+  [`latent_free/third_party/UniVLA/vla-scripts/train.py`](latent_free/third_party/UniVLA/vla-scripts/train.py),
+  [`latent_free/third_party/UniVLA/README.md`](latent_free/third_party/UniVLA/README.md).
 - **Decision.** Reuse UniVLA's vision/VLM backbone and data conventions where compatible,
   replace/extend latent representation and training objectives as explicitly registered,
   and recommend a continuous prediction head for the continuous version. Preserve original
@@ -2610,12 +2771,12 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   current script/cache combination is reduced-mixture pilot infrastructure. Full end-to-end
   readiness has no defensible ETA yet, although public-source transfer alone is hours-scale
   if the historical rate holds after a correctly scoped active download starts.
-- **Artifacts.** [`latent_free/UNIVLA_DATASET_AUDIT_2026-09-06.md`](UNIVLA_DATASET_AUDIT_2026-09-06.md),
+- **Artifacts.** [`latent_free/UNIVLA_DATASET_AUDIT_2026-09-06.md`](latent_free/UNIVLA_DATASET_AUDIT_2026-09-06.md),
   [`claude_survey/results/oxe_mix_sizes.json`](claude_survey/results/oxe_mix_sizes.json),
-  [`latent_free/logs/oxe_fetch_small.out`](logs/oxe_fetch_small.out),
-  [`latent_free/logs/oxe_fetch_big.out`](logs/oxe_fetch_big.out),
-  [`latent_free/phase1/oxe/oxe_convert.py`](phase1/oxe/oxe_convert.py),
-  [`UCSD metadata`](cache/oxe/ucsd_kitchen_dataset_converted_externally_to_rlds/meta.json).
+  [`latent_free/logs/oxe_fetch_small.out`](latent_free/logs/oxe_fetch_small.out),
+  [`latent_free/logs/oxe_fetch_big.out`](latent_free/logs/oxe_fetch_big.out),
+  [`latent_free/phase1/oxe/oxe_convert.py`](latent_free/phase1/oxe/oxe_convert.py),
+  [`UCSD metadata`](latent_free/cache/oxe/ucsd_kitchen_dataset_converted_externally_to_rlds/meta.json).
 - **Decision.** Confirm the active acquisition host/log and full manifest, include omitted
   sources, resolve Bridge and curated Ego4D, and benchmark representative conversion/feature
   stages separately. Do not restart another worker's download or modify its scripts during
@@ -2638,10 +2799,10 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Conclusion — retracted.** Retract the earlier numerical sampling shares and the
   negligible-coverage justification based on them. Preserve historical omission decisions
   as history, but do not use those percentages to justify the user's full-mixture plan.
-- **Artifacts.** [`mixture definitions`](third_party/UniVLA/prismatic/vla/datasets/rlds/oxe/mixtures.py),
-  [`RLDS wrapper`](third_party/UniVLA/prismatic/vla/datasets/datasets.py),
-  [`interleaved sampler`](third_party/UniVLA/prismatic/vla/datasets/rlds/dataset.py),
-  [`dataset audit`](UNIVLA_DATASET_AUDIT_2026-09-06.md).
+- **Artifacts.** [`mixture definitions`](latent_free/third_party/UniVLA/prismatic/vla/datasets/rlds/oxe/mixtures.py),
+  [`RLDS wrapper`](latent_free/third_party/UniVLA/prismatic/vla/datasets/datasets.py),
+  [`interleaved sampler`](latent_free/third_party/UniVLA/prismatic/vla/datasets/rlds/dataset.py),
+  [`dataset audit`](latent_free/UNIVLA_DATASET_AUDIT_2026-09-06.md).
 - **Decision.** Save source statistics, normalized requested probabilities and observed
   batch/window frequencies; use matched actual exposure across controls. The downloader's
   old docstring remains unmodified and its sampling-share statements should not be trusted.
@@ -2668,10 +2829,10 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   multi-frame loader before scale-up; keep the action-free video objective distinct from
   recorded-action diagnostics and target-robot motor supervision. These are prerequisites
   for an interpretable test, not claims that the new method is already successful.
-- **Artifacts.** [`dataset audit and proposed contract`](UNIVLA_DATASET_AUDIT_2026-09-06.md),
-  [`trajectory chunking`](third_party/UniVLA/prismatic/vla/datasets/rlds/traj_transforms.py),
-  [`conversion`](phase1/oxe/oxe_convert.py),
-  [`conversion job wrapper`](phase1/oxe/run_oxe_convert.sh).
+- **Artifacts.** [`dataset audit and proposed contract`](latent_free/UNIVLA_DATASET_AUDIT_2026-09-06.md),
+  [`trajectory chunking`](latent_free/third_party/UniVLA/prismatic/vla/datasets/rlds/traj_transforms.py),
+  [`conversion`](latent_free/phase1/oxe/oxe_convert.py),
+  [`conversion job wrapper`](latent_free/phase1/oxe/run_oxe_convert.sh).
 - **Decision.** Preserve intermediate observations, real horizon and valid masks, original
   episode/video IDs and time-varying language. Split/group before window extraction; fit
   statistics on train only. Initially restrict swap by compatible embodiment/camera/horizon
