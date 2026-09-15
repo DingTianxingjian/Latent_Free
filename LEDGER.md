@@ -2191,7 +2191,8 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   | R2(action \| F_0) | 0.142 | 0.142 | 0.139 | 0.139 | 0.139 | 0.139 | 0.137 |
   | code dims | 256 | 128 | 2048 | 2048 | 256 | 128 | 192 |
 
-- **Result.** (1) P is near zero for *every* latent action model measured here, ours and theirs.  (2) The predictable
+- **Result.** (1) P is near zero for every latent measured *by this reader* -- but see the retraction below: for
+  UniVLA this reader is the wrong instrument and the conclusion does not hold.  (2) The predictable
   action content of any code (usable, 0.010-0.041) is **below what the same ridge already gets from the image alone**
   (0.139-0.142).  (3) Ours dominates matched UniVLA on all three columns (P 0.045 vs 0.016, S 0.324 vs 0.261,
   usable 0.020 vs 0.012), so the information argument for the tokenizer holds.  (4) Within our own family the
@@ -2201,7 +2202,7 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   is only predictable within a source scores zero.  UniVLA's negative P is the expected sign for a 2048-d target read
   from held-out sources, not a claim that their code is anti-predictable.  `F0Q` is quadrant-pooled DINOv2, not the
   7B backbone's state, and carries no instruction: absolute levels are lower bounds, only the ordering is claimed.
-- **Conclusion.** This is the first direct confirmation of the diagnosis the whole project rests on, and it relocates
+- **Conclusion — PARTLY RETRACTED 2026-09-15, see the entry below.**  This relocates
   the binding constraint.  The lever is **not** S — we already beat UniVLA on action content — it is **P**, and
   nothing in the pipeline optimises P.  It also predicts the closed-loop result we could not explain: if the
   predictable action content of the latent is smaller than what the image already gives the policy, a latent-conditioned
@@ -2216,6 +2217,52 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   `lam_prior * || z - p(z | F_0, language) ||^2` (weight 0.1), which is the only term in the codebase that prices P
   directly.  Keep `tc_cont` unchanged as its control, so the prior's effect is a clean one-factor comparison rather
   than a confound with the architecture change.  Do not touch the two already-queued jobs.
+
+### 2026-09-15 — RETRACTION: the predictability probe does not show that UniVLA's latent is unrecoverable at deployment
+
+- **What was claimed and is now withdrawn.**  From `P = R2(z | F_0) = -0.164` for matched UniVLA I concluded that
+  "all latent action models, ours and theirs, produce codes that are near-unrecoverable at deployment".  That
+  conclusion is wrong, and a measurement already in this ledger contradicts it.  The within-family comparison among
+  our own identically-trained arms (ACDC 0.045, pooled 0.087, PCRR 0.034) is unaffected and stands.
+- **The contradicting measurement (already on disk, not a new run).**  Each trained VLA's latent-token cross-entropy
+  is exactly "how well the deployment information set determines the label", in the units the policy optimises:
+
+  | arm | tokens | nats/token (step 15,000) | residual | label entropy (LIBERO) | recovered | aug-stable |
+  |---|---|---|---|---|---|---|
+  | univla | 4 | 0.349 | 2.0 bits | 9.45 bits | **7.4 bits = 79 %** | 0.610 |
+  | acdc (pq2x64) | 16 | 1.933 | 44.6 bits | 85.4 bits | **40.8 bits = 48 %** | 0.126 |
+
+  Their label is not unrecoverable at deployment; it is *mostly* recoverable.  (Training-set loss at the end of
+  fine-tuning, not held out -- both numbers are optimistic, and by an unknown and possibly different amount.)
+- **Why the probe said otherwise -- four ways it is the wrong instrument for the cross-method column.**
+  (1) *Wrong target space.*  UniVLA deploys 4 indices into a 16-entry codebook, 9.45 bits of actual entropy on this
+  domain.  I ridge-regressed the 2048-d concatenated codebook embedding; R2 in that space is not the quantity a
+  classifier optimises, and a near-miss in embedding space and a wrong index are not the same event.
+  (2) *Wrong domain.*  The probe is leave-one-SOURCE-out on OXE, i.e. cross-embodiment extrapolation.  A negative R2
+  there means "worse than the training sources' mean", which is a statement about source shift, not about deployment.
+  Their deployment is LIBERO, in-domain, after LoRA fine-tuning on LIBERO demonstrations.
+  (3) *Wrong reader.*  Ridge on 16 quadrant-pooled DINOv2 vectors **with no language**.  Language is decisive for
+  their code specifically: its majority floor is 0.469 and one slot is a single code 78 % of the time, so much of
+  their label is "which task/phase is this", which the instruction states outright.  Their actual reader is a 7B VLM.
+  (4) *The reference row inherits the same weakness.*  `R2(action | F_0) = 0.14` is that same weak reader, so
+  "usable < 0.14" is a statement about the probe, not about what a VLA can extract.
+- **What the two measurements say together, which is the real result.**  The two methods sit at opposite corners,
+  and neither is dominant: UniVLA's code carries the least action information of anything measured (S = 0.236, vs
+  our 0.324) but ~79 % of it is recoverable at deployment; ours carries the most and ~48 % is recoverable.  The
+  ordering in raw recovered bits favours us (41 vs 7), but 87 % of our tokens flip under one further draw of the
+  training augmentation against 39 % of theirs, so most of our recovered bits are nuisance we injected ourselves.
+  The quantity that decides the downstream result is therefore neither P nor S nor recovered bits alone but
+  **recovered AND augmentation-stable task-relevant bits**, which nothing in this repo has yet measured.
+- **A separate reason not to reason from "UniVLA succeeds".**  Their published LIBERO numbers come from a pipeline
+  whose VLA-pretraining stage we deliberately skipped (both arms start from `openvla-7b`).  In our own controlled
+  setup no arm beats the no-latent control (univla 0.22, ours 0.19, no-latent 0.18, pooled 0.17, all inside noise),
+  so this ledger has no internal evidence that *any* latent helps, theirs included.
+- **Decision.**  (a) Keep `common/predictability.py` for within-family comparisons only and say so in its docstring.
+  (b) Build the right instrument: held-out latent-token cross-entropy on LIBERO for each trained VLA, in bits, next
+  to the label entropy and restricted to augmentation-stable windows.  Both VLA checkpoints exist, so this is a
+  forward pass, not a training run.  (c) Nothing about the queued jobs changes: `tc_cont_prior` is still worth its
+  slot, because the within-family result it targets (capacity buys action content and loses predictability) is the
+  part that survived, and because the stability column is an independent argument for a native discrete bottleneck.
 
 ## Registered next method: intervention first, real pairs second
 
