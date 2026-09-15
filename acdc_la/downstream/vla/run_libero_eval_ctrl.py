@@ -410,10 +410,10 @@ def eval_libero(cfg: GenerateConfig) -> None:
                 )
 
             # Log current results
-            print(f"Success: {done}")
+            print(f"Success: {done} steps: {t}")          # steps: the metric that still separates arms at ceiling
             print(f"# episodes completed so far: {total_episodes}")
             print(f"# successes: {total_successes} ({total_successes / total_episodes * 100:.1f}%)")
-            log_file.write(f"Success: {done}\n")
+            log_file.write(f"Success: {done} steps: {t}\n")
             log_file.write(f"# episodes completed so far: {total_episodes}\n")
             log_file.write(f"# successes: {total_successes} ({total_successes / total_episodes * 100:.1f}%)\n")
             log_file.flush()
