@@ -2510,6 +2510,30 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   at 94-95 %, we cannot say whether a plain `openvla-7b` + LoRA + action head reaches the same number, and if it
   does the entire LIBERO table shows nothing about latent actions at all.  About 10 GPU-hours.
 
+### 2026-09-15 — the full-data LIBERO comparison is a TIE, and the tie is the benchmarking result
+
+- **Both arms, 500 episodes each, their evaluator (per-step query + temporal ensemble), identical VLA recipe.**
+
+  | | univla (20740894) | acdc pq2x64 (20740897) |
+  |---|---|---|
+  | total | **474 / 500 = 94.8 %** | **472 / 500 = 94.4 %** |
+
+  Per task (univla, acdc, diff): 0.90/0.90 **+0.00** | 0.98/0.98 **+0.00** | 0.96/0.98 +0.02 | 1.00/0.94 -0.06 |
+  0.86/0.86 **+0.00** | 0.96/0.96 **+0.00** | 1.00/0.98 -0.02 | 0.96/0.92 -0.04 | 1.00/0.98 -0.02 | 0.86/0.94 +0.08
+- **Two episodes out of five hundred separate them, and four of ten tasks are exactly equal.**  Three tasks are at
+  1.00 for UniVLA.  The two tokenizers differ by everything a tokenizer can differ by -- 4x16 vs 16x64 codes, 9.4 vs
+  83.2 bits of label entropy, 0.579 vs 0.117 per-token augmentation stability, 5.4 vs 30.6 bits recovered at
+  deployment -- and the benchmark returns the same number.
+- **This is a result about the benchmark, not about the methods.**  Full-data LIBERO-spatial success rate is not a
+  measurement of the latent action model.  The paper states it as such, and it is what licenses changing the
+  measurement rather than the change looking like a response to losing.
+- **It also sets up the prediction the method section is tested on.**  If the extra recoverable, nuisance-invariant
+  information is real, it has to pay where information is scarce.  Hence the data-efficiency arm at 43 of 410
+  demonstrations, which is now the main chain: `tc_cont` -> gate -> VLA@10 % -> 500-episode evaluation, with the
+  matched UniVLA@10 % baseline already queued (20744452).  The full-data `tc_cont` run is retained as a tail
+  (20746342/3) to add its own row to the tie.
+- **Artifacts.** `acdc_la/logs/vlaeval_20740894.out`, `vlaeval_20740897.out`.
+
 ## Registered next method: intervention first, real pairs second
 
 
