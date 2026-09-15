@@ -26,7 +26,7 @@ from prismatic.models.backbones.llm.prompting import PurePromptBuilder
 from .datasets_ctrl import RLDSBatchTransformCtrl
 from .finetune_libero_ctrl import build_labeller, Cfg
 
-JIT = T.Compose([T.RandomResizedCrop(128, scale=(0.9, 0.9), ratio=(1.0, 1.0)), T.ColorJitter(0.2, (0.8, 1.2), (0.8, 1.2), 0.05)])
+JIT = T.Compose([T.RandomResizedCrop(224, scale=(0.9, 0.9), ratio=(1.0, 1.0)), T.ColorJitter(0.2, (0.8, 1.2), (0.8, 1.2), 0.05)])   # the pipeline delivers 224x224
 
 
 class Collect(RLDSBatchTransformCtrl):
