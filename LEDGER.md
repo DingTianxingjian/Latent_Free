@@ -2371,6 +2371,39 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   first if spatial saturates: report steps-to-success and partial progress rather than only the success rate, or
   fine-tune on fewer demonstrations so the task is not saturated.  Decide from the 500-episode numbers, not before.
 
+### 2026-09-15 — bits recovered at deployment: the cross-method number that replaces the retracted probe
+
+- **Instrument.** : the reader IS each trained VLA, so the units are the ones it
+  optimises.  residual = latent-position cross-entropy in bits/sample, H = empirical label entropy on the same
+  windows, recovered = H - residual.  600 LIBERO-spatial windows through the same RLDS pipeline and augmentation
+  the arms train on;  is the RLDS validation split, which the LoRA fine-tune (train=True) never saw.
+
+  | arm | code | split | H | residual | recovered | frac |
+  |---|---|---|---|---|---|---|
+  | univla | 4 x 16 | **val** | 9.52 | 3.83 | **5.70** | 0.598 |
+  | univla | 4 x 16 | train | 9.33 | 2.42 | 6.91 | 0.740 |
+  | acdc (pq2x64) | 16 x 64 | **val** | 83.13 | 53.22 | **29.91** | 0.360 |
+  | acdc (pq2x64) | 16 x 64 | train | 84.56 | 47.48 | 37.08 | 0.438 |
+
+- **Result.** Held out, our arm recovers **5.2x more bits** of its own label (29.9 vs 5.7) while recovering a smaller
+  FRACTION of it (0.36 vs 0.60).  The two arms sit where the earlier diagnosis put them: high-rate and partly
+  recoverable versus low-rate and mostly recoverable.
+- **The in-sample optimism is now measured, not assumed.** The retraction quoted 79 % / 48 % from end-of-training
+  loss; under one instrument the train-split figures are 0.740 / 0.438 and the held-out ones 0.598 / 0.360.  The
+  train->val drop is LARGER for UniVLA (-0.142) than for us (-0.078).
+- **Instrument defect found and fixed.** The "all tokens agree under one more augmentation draw" stability
+  definition returned **0 of 600** for the 16-token arm, so its stable row vanished and no comparison was possible.
+  That is the definition degenerating with token count, not a property of the code: at the measured per-token rates
+  (0.610 vs 0.126) all-token agreement is 0.61^4 = 0.14 and 0.126^16 = 1e-14.  Replaced by PER-POSITION stability,
+  which sums per-position entropies and cross-entropies over the windows where that position is unchanged.  Both
+  rates are now printed together, since 0.163 and 0.610 for the same checkpoint are one measurement under two
+  definitions and had been quoted interchangeably.  Rerun at n = 1500 for the consistent table.
+- **What it does not show.** Recovered bits are not usefulness: they may encode nuisance, and our per-token
+  stability is 0.126 against their 0.610.  Whether the information converts is what the 500-episode closed-loop
+  evaluations (20740894, 20740897) decide.
+- **Artifacts.** , per-window arrays ,
+  log .
+
 ## Registered next method: intervention first, real pairs second
 
 
