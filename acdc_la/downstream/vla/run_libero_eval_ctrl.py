@@ -20,11 +20,23 @@ def _predict_latent_action_n(self, input_ids=None, unnorm_key=None, **kwargs):
     mask = (ids > 32000)[:, 1:]
     return last[:, 256:][:, -n:], last[:, :256], ids[:, 1:][:, mask[0]][:, -n:]
 _OVLA.predict_latent_action = _predict_latent_action_n
-import experiments.robot.openvla_utils as _OU                   # their loader forces flash_attention_2; training used standard attention
-class _AutoModelSDPA(_OU.AutoModelForVision2Seq):            # keeps .register(); only the attention implementation changes
-    @classmethod
-    def from_pretrained(cls, *a, **k): k["attn_implementation"] = "sdpa"; return super().from_pretrained(*a, **k)
-_OU.AutoModelForVision2Seq = _AutoModelSDPA
+import os as _os, json as _json
+import experiments.robot.openvla_utils as _OU                 # their loader hard-codes flash_attention_2, which is not installed
+import experiments.robot.robot_utils as _RU
+def _get_vla_sdpa(cfg):
+    """Their get_vla with attn_implementation='sdpa'.  The checkpoint carries its own configuration/modeling modules
+    (save_pretrained + trust_remote_code), so the class must not be patched -- only the loader."""
+    _OU.AutoConfig.register("openvla", _OU.OpenVLAConfig); _OU.AutoImageProcessor.register(_OU.OpenVLAConfig, _OU.PrismaticImageProcessor)
+    _OU.AutoProcessor.register(_OU.OpenVLAConfig, _OU.PrismaticProcessor); _OU.AutoModelForVision2Seq.register(_OU.OpenVLAConfig, _OU.OpenVLAForActionPrediction)
+    vla = _OU.AutoModelForVision2Seq.from_pretrained(cfg.pretrained_checkpoint, attn_implementation="sdpa", torch_dtype=_torch.bfloat16,
+                                                     load_in_8bit=cfg.load_in_8bit, load_in_4bit=cfg.load_in_4bit,
+                                                     low_cpu_mem_usage=True, trust_remote_code=True)
+    if not cfg.load_in_8bit and not cfg.load_in_4bit: vla = vla.to(_OU.DEVICE)
+    p_stats = _os.path.join(cfg.pretrained_checkpoint, "dataset_statistics.json")
+    assert _os.path.isfile(p_stats), p_stats
+    vla.norm_stats = _json.load(open(p_stats))
+    return vla
+_OU.get_vla = _get_vla_sdpa; _RU.get_vla = _get_vla_sdpa
 import os
 import sys
 from dataclasses import dataclass
