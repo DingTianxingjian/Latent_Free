@@ -2436,6 +2436,39 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   8 bits per token.  Dead-code restart runs every 5,000 steps; if usage does not recover, the native 16x256 arm is
   not delivering the bitrate it was given.
 
+### 2026-09-15 — FINAL bits table (n = 1500, per-position stability): ours recovers 7.5x more nuisance-invariant bits
+
+Supersedes the n = 600 table above, which used the degenerate all-token stability definition.
+
+| arm | split | subset | n | residual | H | recovered | frac |
+|---|---|---|---|---|---|---|---|
+| univla | **val** | all | 1500 | 4.04 | 9.44 | 5.40 | 0.572 |
+| univla | **val** | **stable positions** | 920 | 2.29 | 6.77 | **4.47** | 0.661 |
+| univla | train | all | 1500 | 2.36 | 9.38 | 7.02 | 0.749 |
+| univla | train | stable positions | 935 | 1.28 | 6.81 | 5.53 | 0.812 |
+| acdc | **val** | all | 1500 | 52.64 | 83.20 | 30.57 | 0.367 |
+| acdc | **val** | **stable positions** | 133 | 39.37 | 73.04 | **33.66** | 0.461 |
+| acdc | train | all | 1500 | 47.54 | 85.06 | 37.53 | 0.441 |
+| acdc | train | stable positions | 145 | 33.83 | 76.70 | 42.87 | 0.559 |
+
+Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  All-token: 0.140 / 0.141; 0.000 / 0.000.
+
+- **Result, held out.**  Over all positions ours recovers **5.7x** more bits of its own label (30.6 vs 5.4); over
+  positions whose code is invariant to one further augmentation draw, **7.5x** (33.7 vs 4.5).  It does so while
+  recovering a smaller FRACTION (0.37 vs 0.57), and while being 5x less nuisance-stable per token (0.117 vs 0.579).
+- **The estimator bias runs AGAINST us, so the ratio is conservative.**  The stable subset is 133 of 1500 windows per
+  position for our 16 x 64 code against 920 of 1500 for their 4 x 16 one.  The plug-in entropy estimate is biased low
+  by about (K-1)/(2N ln2) per position: ~0.34 bits x 16 = 5.5 bits for us, ~0.012 x 4 = 0.05 bits for them.  H low
+  means recovered and frac low, so our 33.66 and 0.461 are lower bounds and theirs are essentially unbiased.
+- **Generalisation.**  train -> val recovered bits: univla 7.02 -> 5.40 (-23 %), acdc 37.53 -> 30.57 (-19 %); on
+  stable positions -19 % and -21 %.  Comparable, with no advantage to either.
+- **Scope, and it matters.**  This is the POST-HOC pq2x64 arm on the old quadrant tokenizer -- the arm the
+  2026-09-15 scheduling reset deprioritised.  It says the information route carries more nuisance-invariant
+  signal to a policy; it does not say the main model wins.  The main line is `tc_cont`, and the verdict is the
+  500-episode closed-loop (20740894, 20740897), not this table.
+- **Artifacts.** `acdc_la/results/token_bits.json`, arrays `token_bits_<arm>_<suite>_<split>.npz`, log
+  `acdc_la/logs/bits_20741108.out`.
+
 ## Registered next method: intervention first, real pairs second
 
 
