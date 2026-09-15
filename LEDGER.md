@@ -2292,6 +2292,40 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
 - **Decision.**  Re-ran the load test (job 20739385) with the new failure rule and hung BOTH full evaluations behind
   it with `afterok` (20739386 univla, 20739387 acdc), so neither can start unless zero episodes raise.
 
+### 2026-09-15 — LATP v2 built; and a same-day self-correction about what its recovery loss measures
+
+- **Built.** `stage3_transport/train_v2.py`: EMA target encoder, a same-source cross-episode buffer of target
+  latents, `L_recover` on a self-chosen intervention, MMD realism, and Relational Transport Consistency (RTC), which
+  asks that the DIFFERENCE between two interventions realise in a context-stable direction in the fixed [net, AC1]
+  descriptor.  Built on TCVQ, and the checkpoint stays a plain TCVQ so every downstream tool reads it unchanged.
+  Smoke asserts the EMA lag (4.7e-4), that `L_recover` reaches the online encoder (grad 4.06e3), and that RTC's
+  gradient into the encoder is exactly 0 (its donors are stop-grad, so a positive RTC result localises to T).
+- **First reading, which was wrong, and the correction.**  Running the full objective on PURE RANDOM tensors --
+  where by construction no action semantics exist -- `rec_cos` went 0.55 -> 0.93 in six steps.  I read this as
+  "E and T built a channel together" and changed the default so that T receives no recovery gradient.  The
+  follow-up smoke ran both routings: **detached 0.977 vs attached 0.980, and the frozen-operator probe read 0.976
+  in both.**  Co-adaptation is therefore NOT the mechanism and the default change did not address anything; it has
+  been reverted to the specified routing.
+- **What is actually going on.**  `z -> T(f0, z)` is injective and E simply learns to invert it.  Inverting a
+  decoder is generic, carries no semantics, and in a CONTINUOUS code it is free.  This is the substantive difference
+  from CycleMimic's discrete version, where recovering an index means landing in the right cell of a small shared
+  codebook that cannot absorb arbitrary information.
+- **Scope of the claim.**  On random data nothing pins T: `L_self` has a noise target and MMD compares to noise, so
+  the run degenerates to a z -> Y -> z autoencoder.  This does NOT show that a real run degenerates, where `L_self`
+  and MMD pin T to a genuine world model.  It shows that **`rec_cos` near 1 is not evidence of anything**.
+- **Consequences for how a real run is read.**  (a) `rec_frozen` is kept and IS meaningful in a real run, where T_0
+  is the trained Phase-1 operator -- it then asks whether E can read z out of a genuine world model's output; the
+  smoke cannot exercise it because there T_0 is the random initialisation and T has not drifted.  (b) `rec_noise` is
+  blind in both routings and is kept only as a cheap line.  (c) The real guard is OUTSIDE this loss: run with
+  `--eval-every` so `curve_eval` reports the ONLINE encoder's action / net / profile R2 and transfer cosine during
+  training.  v2 works if transfer rises while the action probes hold; E is collapsing into T's inverse if they fall.
+- **Also passed today.**  The deployment-prior term end to end (`smoke_prior`, job 20738375, exit 0): the loss is
+  active (`prior` 4.44, `prior_r2` -3.44 at step 6 as expected from an untrained prior net), gradient reaches both
+  sides, and halving the code RAISES the normalised loss 6.17 -> 16.26 where a plain MSE would have quartered it,
+  so the collapse direction is priced rather than rewarded.
+- **Artifacts.** `acdc_la/stage3_transport/train_v2.py`, `scripts/run_latp2_smoke.sh`, logs `latp2smoke_20739115.out`,
+  `latp2smoke_20739838.out`, `tcsmoke_20738375.out`.
+
 ## Registered next method: intervention first, real pairs second
 
 

@@ -20,15 +20,23 @@ Gradient routing.  E: L_self + L_recover.  T: L_self + L_MMD + L_RTC (+ L_recove
 Target encoder: EMA only, no gradient.  RTC touches T alone -- its latents come from the stop-grad buffer -- so a
 positive RTC result localises to the operator, as intended.
 
-WATERMARK -- measured, not hypothetical.  L_recover is also minimised by T encoding z_s into Y in any way E can read,
-with no action semantics.  The plumbing smoke of 2026-09-15 ran the full objective on PURE RANDOM tensors, where by
-construction there is nothing semantic to recover: rec_cos went 0.55 -> 0.93 in six steps.  The objective can be
-completely satisfied by a channel E and T build together, and it forms immediately.  Two consequences:
-  * T is cut out of L_recover BY DEFAULT (--recover-grad-t restores the original routing as an ablation), so the
-    channel has no gradient with which to form;
-  * `rec_frozen` re-encodes a transition made by the FROZEN Phase-1 operator, which never saw the recovery gradient.
-    Semantics transfer to it, a co-adapted channel does not.  rec_frozen, not rec_cos, is the number to read.
-    (`rec_noise` is kept but is known to be blind: on the random-data smoke it matched rec_cos to four decimals.)
+WHAT L_recover ACTUALLY MEASURES, and why rec_cos is not evidence (smoke of 2026-09-15, twice).
+Run the full objective on PURE RANDOM tensors, where by construction no action semantics exist: rec_cos reaches 0.98.
+The first reading was "E and T built a channel together", and the fix was to cut T out of L_recover -- but with T
+detached recovery is still 0.977, and the frozen-operator probe reads 0.976 in BOTH routings.  So the mechanism is
+not co-adaptation: **z -> T(f0, z) is an injective map and E simply learns to invert it**.  Inverting a decoder is
+generic and carries no semantics, and in a continuous code it is free.  (This is the substantive difference from
+CycleMimic's discrete version: recovering an index out of a 16-entry codebook requires landing in the right cell of
+a small shared codebook, which cannot absorb arbitrary information.)
+  * On RANDOM data nothing pins T -- L_self has a noise target and MMD compares to noise -- so the run degenerates
+    to a z -> Y -> z autoencoder.  On real data T is pinned by L_self and MMD, so this smoke does NOT show that a
+    real run degenerates.  It shows that **rec_cos near 1 is not evidence of anything** and needs an outside control.
+  * rec_frozen is kept and IS meaningful in a real run, where T_0 is the trained Phase-1 operator: it then asks
+    whether E can read z out of a genuine world model's output.  The smoke cannot exercise it, because there T_0 is
+    the random initialisation and T has not drifted from it.  (rec_noise is blind in both routings; kept as a line.)
+  * The real guard is outside this loss: the encoder's own probes.  Run with --eval-every so curve_eval reports
+    action / net / profile R2 and the transfer cosine of the ONLINE encoder while it trains.  If v2 is working, the
+    transfer cosine rises while the action probes hold; if E is collapsing into T's inverse, the action probes fall.
 
 RTC DEGENERACY.  L_RTC = 0 for any T whose effect descriptor is additively separable, Psi(T(s,z)) = h(s) + g(z),
 because the difference r cancels h(s).  Its global minimum therefore includes operators that under-use the
@@ -38,7 +46,7 @@ the RTC term is being satisfied by ignoring the state and the run is not evidenc
     python -m acdc_la.stage3_transport.train_v2 --tag latp2 --init-from tc_cont --steps 30000 --batch 64
     python -m acdc_la.stage3_transport.train_v2 --tag latp2_norel --init-from tc_cont --lam-rel 0     # ablation
     python -m acdc_la.stage3_transport.train_v2 --tag latp2_frozen --init-from tc_cont --freeze-encoder  # = Stage III
-    python -m acdc_la.stage3_transport.train_v2 --tag latp2_gradt --init-from tc_cont --recover-grad-t      # channel ablation
+    python -m acdc_la.stage3_transport.train_v2 --tag latp2_det --init-from tc_cont --recover-detach        # routing ablation
 """
 import argparse, copy
 import torch
@@ -144,7 +152,7 @@ def step(model, feat, b, a, ctx, train=True):
     zs, ok = _donors(ctx, si, ge, model.n_tokens, model.d, dev)
     if ok.any():
         Y = model.decode(b["f0"], b["c"], zs)                              # donor code on THIS row's state
-        Yr = Y if a.recover_grad_t else Y.detach()          # default: T gets no recovery gradient (no channel to build)
+        Yr = Y.detach() if a.recover_detach else Y          # default: the specified routing, T included
         zh = _code(model, b["f0"], Yr)
         zt_s, zh_s = _std(zs, ctx["zmu"], ctx["zvar"]), _std(zh, ctx["zmu"], ctx["zvar"])
         cos = F.cosine_similarity(zh_s.flatten(1), zt_s.flatten(1), dim=1)
@@ -196,13 +204,11 @@ def main():
     ap.add_argument("--buffer", type=int, default=16, help="donor buffer depth, in batches of TARGET latents")
     ap.add_argument("--rtc-groups", type=int, default=16, help="(context, context, donor, donor) groups per step; costs 4x decodes")
     ap.add_argument("--psi-dim", type=int, default=512)
-    ap.add_argument("--probe-noise", type=float, default=0.1, help="noise level of the watermark probe, relative to the transition rms")
-    ap.add_argument("--recover-grad-t", action="store_true",
-                    help="let L_recover also update T (the originally specified routing).  DEFAULT IS OFF, on evidence: in "
-                         "the plumbing smoke on PURE RANDOM tensors -- where no action semantics exist to recover -- "
-                         "rec_cos reached 0.93 within six steps and the noise probe did not see it.  The objective can "
-                         "therefore be fully satisfied by a channel E and T build together.  With this off, T receives "
-                         "only L_self + MMD + RTC and the channel cannot form; compare the two arms with rec_frozen.")
+    ap.add_argument("--probe-noise", type=float, default=0.1, help="noise level of the (known-blind) rec_noise probe, relative to the transition rms")
+    ap.add_argument("--recover-detach", action="store_true",
+                    help="cut T out of L_recover, leaving it training E only.  An ablation, not the default: the smoke "
+                         "showed detaching does NOT reduce recovery on semantics-free data (0.977 vs 0.980), because "
+                         "the mechanism is E inverting an injective decoder rather than T co-adapting with it.")
     a = ap.parse_args()
     assert a.init_from or a.eval_only, "LATP v2 starts from a trained tokenizer (--init-from)"
     run(a, step, ramp_keys=("lam_recover", "lam_real", "lam_rel"), stage="LATP2")
