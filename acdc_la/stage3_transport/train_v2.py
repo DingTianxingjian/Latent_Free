@@ -6,12 +6,16 @@ can reach the policy.  v2 makes the encoder trainable and gives it supervision t
 provide: the latent identity of a SELF-CHOSEN intervention, which is synthetic supervision that needs no
 counterfactual ground truth (the CycleMimic principle).
 
-    L = L_self  +  lam_recover * L_recover  +  lam_real * L_MMD  +  lam_rel * L_RTC
+    L = L_self  +  lam_effect * L_effect  +  lam_real * L_MMD  +  lam_rel * L_RTC        (lam_recover = 0)
 
   L_self     real clip:      z_i = E(F_i0, dF_i),  || T(F_i0, z_i) - dF_i ||^2          keeps E and T on real data
-  L_recover  intervention:   z_s ~ buffer of EMA-TARGET latents (same source, other episode),
-                             Y = T(F_j0, z_s),  z^ = E(F_j0, Y),   1 - cos(z~^, sg z~) + l1 * SmoothL1
-  L_MMD      realism:        MMD({Y}, {dF_real}) -- without it T can watermark z_s into Y (see WATERMARK below)
+  L_effect   ANCHORED cycle: for a same-source, other-episode row i,  Y = T(F_j0, E(x_i)),
+                             1 - cos( Psi(Y), Psi(dF_i) )   with Psi the FIXED [net, AC1] descriptor whitened by
+                             real-data statistics.  The target is a REAL observed transition, so neither network can
+                             move it, and the gradient reaches the ONLINE encoder through E(x_i).
+  L_recover  code cycle, OFF: the original z_s -> T -> E -> z_s.  Its target is the code, so E and T need only agree
+                             with each other; measured at 0.98 on data with no semantics.  Logged, not optimised.
+  L_MMD      realism:        MMD({Y}, {dF_real})
   L_RTC      relational:     with Psi(Y) = whitened random projection of [sum_k Y_k, sum_k b_1(k) Y_k],
                              r_j^ab = Psi(T(s_j,z_a)) - Psi(T(s_j,z_b)),   1 - cos(r_j^ab, r_k^ab)
                              "the relation between two interventions realises in a context-stable direction"
