@@ -2352,6 +2352,25 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   UniVLA, the load-test read, and this), so the standing rule is now explicit: **a cross-method number is not
   reportable unless both sides pass through the same reader on the same object.**
 
+### 2026-09-15 — the 1-trial load test scored 10/10 on BOTH arms; what that does and does not mean
+
+- **Numbers.**  With the evaluator fixed, `libero_spatial`, 1 trial/task, 10 tasks: univla 10/10, acdc 10/10.
+- **It refutes one thing.**  Skipping UniVLA's VLA-pretraining stage and going straight from `openvla-7b` + LoRA is
+  not broken: both arms drive the robot.  The earlier impression that "every arm sits in the noise" came from the
+  MLP toy harness, not from this pipeline.
+- **It does not compare the arms.**  Ten episodes have essentially no resolution, and my stated prediction (that the
+  acdc arm would fall clearly behind, from its 12.6 % augmentation stability and 0.41 token accuracy over a 0.088
+  floor) is neither confirmed nor refuted by it.
+- **The risk it exposes.**  If the 500-episode runs also land near ceiling for both arms, `libero_spatial` cannot
+  separate the methods and the headline comparison is dead on arrival.
+- **Prepared, not scheduled.**  Downloaded the other three suites (`libero_10` 3.5 GB, `libero_object` 2.7 GB,
+  `libero_goal` 1.8 GB) on the login node -- no GPU, no queue position, no change to any scheduled job.
+- **Honest cost of actually using them.**  Both VLA arms were LoRA-fine-tuned on `libero_spatial` only, so running
+  them on another suite is zero-shot transfer, not a like-for-like comparison: a real suite swap means re-training
+  both arms (~5.5 h each) plus two evaluations (~3 h each), about 17 GPU-hours.  Cheaper alternatives to consider
+  first if spatial saturates: report steps-to-success and partial progress rather than only the success rate, or
+  fine-tune on fewer demonstrations so the task is not saturated.  Decide from the 500-episode numbers, not before.
+
 ## Registered next method: intervention first, real pairs second
 
 

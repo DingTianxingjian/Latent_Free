@@ -14,6 +14,7 @@ and imports `data.py` from it).
 | checkpoints | `acdc_la/ckpt/*.pt`, `claude_survey/ckpt/s2mix_1ep.pt` | `transfer/acdc_la_artifacts.tar` on Anvil (see §2) |
 | LIBERO demos (hdf5, 5.9 GB) | `data/LIBERO/libero_spatial/*.hdf5` (10 files) | LIBERO's `libero/scripts/download_libero_datasets.py --datasets libero_spatial` (or copy from Anvil) |
 | LIBERO RLDS for the VLA (1.8 GB) | `data/libero_rlds/libero_spatial_no_noops/1.0.0` | `huggingface_hub.snapshot_download("openvla/modified_libero_rlds", repo_type="dataset", allow_patterns=["libero_spatial_no_noops/**"], local_dir="data/libero_rlds")` |
+| LIBERO RLDS, the other three suites (8.0 GB) | `data/libero_rlds/{libero_10,libero_goal,libero_object}_no_noops` | same call per suite, with `HF_HUB_DISABLE_XET=1` (the repo now serves through Xet and the plain client raises `ValueError: ... install hf_xet`) |
 | OpenVLA-7B base (15 GB) | `cache/vla/openvla-7b` | `snapshot_download("openvla/openvla-7b", local_dir="cache/vla/openvla-7b")` |
 | DINOv2 weights | `cache/torch/hub/` | auto-downloaded by `torch.hub` on first use (`facebookresearch/dinov2`, `dinov2_vitb14` for us, `dinov2_vitb14_reg` for their LAM); copy the folder if the compute nodes are offline |
 | UniVLA released LAM (only for the reference row) | `cache/univla/lam-stage-{1,2}.ckpt` | UniVLA README links (HF `qwbu/univla-latent-action-model`) |
