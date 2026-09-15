@@ -18,17 +18,22 @@ from ..common.tcvq import TCVQ
 
 def build(a, dev):
     return TCVQ(a.T - 1, a.tc, a.n_tokens, a.codebook, a.latent_dim, a.width, a.enc_layers,
-                a.heads, a.layers).to(dev), None                                   # dstats: estimated by run()
+                a.heads, a.layers, bottleneck=a.bottleneck).to(dev), None          # dstats: estimated by run()
 
 
 def step(model, feat, b, a, ctx, train=True):
     z_q, z, x, idx = model.quantize(b["f0"], b["dF"])
     rec = model.decode(b["f0"], b["c"], z_q)
-    out = dict(rec=F.mse_loss(rec, b["dF"]), codebook=F.mse_loss(z, x.detach()), commit=F.mse_loss(x, z.detach()))
-    loss = out["rec"] + out["codebook"] + a.lam_commit * out["commit"]
-    with torch.no_grad():
-        out["codes"] = torch.tensor(float(len(torch.unique(idx))))                   # codebook usage in the batch
-        out["perplex"] = torch.exp(-(lambda p: (p[p > 0] * p[p > 0].log()).sum())(torch.bincount(idx.flatten(), minlength=model.codebook_size).float() / idx.numel()))
+    out = dict(rec=F.mse_loss(rec, b["dF"]))
+    loss = out["rec"]
+    if model.vq is not None:
+        out["codebook"], out["commit"] = F.mse_loss(z, x.detach()), F.mse_loss(x, z.detach())
+        loss = loss + out["codebook"] + a.lam_commit * out["commit"]
+        with torch.no_grad():
+            out["codes"] = torch.tensor(float(len(torch.unique(idx))))               # codebook usage in the batch
+            out["perplex"] = torch.exp(-(lambda p: (p[p > 0] * p[p > 0].log()).sum())(torch.bincount(idx.flatten(), minlength=model.codebook_size).float() / idx.numel()))
+    else:
+        with torch.no_grad(): out["z_rms"] = x.pow(2).mean().sqrt()
     out["loss"] = loss
     return loss, out
 
@@ -42,10 +47,12 @@ def main():
     ap.add_argument("--n-tokens", type=int, default=4, help="policy tokens per clip (UniVLA: 4)")
     ap.add_argument("--codebook", type=int, default=16, help="codebook entries (UniVLA: 16)")
     ap.add_argument("--latent-dim", type=int, default=128, help="code dimension (UniVLA: 128)")
+    ap.add_argument("--bottleneck", default="vq", choices=["vq", "continuous"],
+                    help="continuous = no quantiser and no rate cap: the strongest form of the representation")
     ap.add_argument("--lam-commit", type=float, default=0.25)
     ap.add_argument("--restart-every", type=int, default=5000, help="dead-code restart period (UniVLA restarts per epoch)")
     a = ap.parse_args()
-    run(a, step, stage="TC", build=build, on_step=lambda m, s: (m.vq.random_restart(), m.vq.reset_usage()) if a.restart_every and (s + 1) % a.restart_every == 0 else None)
+    run(a, step, stage="TC", build=build, on_step=lambda m, s: (m.vq.random_restart(), m.vq.reset_usage()) if m.vq is not None and a.restart_every and (s + 1) % a.restart_every == 0 else None)
 
 
 if __name__ == "__main__":

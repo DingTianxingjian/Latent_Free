@@ -37,9 +37,10 @@ class TCVQ(nn.Module):
     swap_u_zero = True                      # no second channel: the dump's swap path must not feed one
 
     def __init__(self, K, tc="endpointdyn", n_tokens=4, codebook=16, latent_dim=128, width=768, enc_layers=6,
-                 heads=12, dec_layers=4, grid=16):
+                 heads=12, dec_layers=4, grid=16, bottleneck="vq"):
         super().__init__()
-        assert tc in ARMS, tc
+        assert tc in ARMS, tc; assert bottleneck in ("vq", "continuous"), bottleneck
+        self.bottleneck = bottleneck
         self.K, self.tc, self.n_tokens, self.codebook_size, self.latent_dim, self.grid = K, tc, n_tokens, codebook, latent_dim, grid
         self.kinds = ARMS[tc]
         self.inp = nn.ModuleDict({k: nn.Sequential(nn.LayerNorm(DINO_DIM), nn.Linear(DINO_DIM, width)) for k in self.kinds})
@@ -49,13 +50,13 @@ class TCVQ(nn.Module):
         enc = nn.TransformerEncoderLayer(width, heads, 4 * width, dropout=0.0, batch_first=True, norm_first=True)
         self.enc = nn.TransformerEncoder(enc, enc_layers)
         self.to_code = nn.Sequential(nn.LayerNorm(width), nn.Linear(width, latent_dim))
-        self.vq = VectorQuantizer(codebook, latent_dim)
+        self.vq = VectorQuantizer(codebook, latent_dim) if bottleneck == "vq" else None
         self.dec = LAM(K, n_cells=n_tokens, d=latent_dim, d_u=8, layers=dec_layers)    # decoder only; its E/U are unused
         self.n_cells, self.d, self.d_u = n_tokens, latent_dim, 8                       # train_loop / dump compatibility
         self.register_buffer("b1", Fz.dct_basis(K, 2)[1], persistent=False)            # orthonormal AC1 over the K segments
         self.ckpt_meta = dict(kind="tcvq", tcvq=dict(tc=tc, n_tokens=n_tokens, codebook=codebook, latent_dim=latent_dim,
                                                      width=width, enc_layers=enc_layers, heads=heads,
-                                                     dec_layers=dec_layers, grid=grid, K=K))
+                                                     dec_layers=dec_layers, grid=grid, K=K, bottleneck=bottleneck))
 
     def evidence(self, f0, dF):
         """f0 (B,16,768) first-frame g4, dF (B,K,16,768) scale-normalised segment deltas -> the token set of this arm."""
@@ -72,8 +73,11 @@ class TCVQ(nn.Module):
         return self.to_code(self.enc(x)[:, :self.n_tokens])
 
     def quantize(self, f0, dF):
-        """-> (z_q straight-through, z codebook embeddings, x pre-quantisation, indices (B, n_tokens))"""
-        return self.vq(self.pre_quant(f0, dF))
+        """vq: (z_q straight-through, z codebook embeddings, x pre-quantisation, indices (B, n_tokens)).
+        continuous: the code itself in all three slots and an empty index tensor -- no quantiser, no rate cap."""
+        x = self.pre_quant(f0, dF)
+        if self.vq is None: return x, x, x, torch.zeros(x.shape[0], 0, dtype=torch.long, device=x.device)
+        return self.vq(x)
 
     def _b(self, b, which):
         f0 = b["f0_patch" if which == "patch" else "f0"]; dF = b["dF_patch" if which == "patch" else "dF"]
