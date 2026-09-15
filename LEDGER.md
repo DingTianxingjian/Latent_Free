@@ -2326,6 +2326,32 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
 - **Artifacts.** `acdc_la/stage3_transport/train_v2.py`, `scripts/run_latp2_smoke.sh`, logs `latp2smoke_20739115.out`,
   `latp2smoke_20739838.out`, `tcsmoke_20738375.out`.
 
+### 2026-09-15 — WITHDRAWN as not comparable: "our transport transfer 0.319 vs same-data UniVLA 0.121"
+
+- **Status.** The cross-method half of this claim is withdrawn.  It was already marked provisional ("different
+  reader implementations"); checking whether it could be repaired from disk shows it cannot, and the reason is
+  structural rather than a matter of re-running a script.
+- **What survives, unchanged.**  The INTERNAL comparison, which is measured with one reader on one dump format:
+  LATP lifts independent transfer R2 0.244 -> 0.319 and transfer cosine 0.484 -> 0.524 over the decoder-only
+  reconstruction control.  Every number in it comes from `stage3_transport/probes.py` with the same per-source ridge
+  fitted only on real frozen dF -> net xyz.  This is the LATP result the paper should carry.
+- **Why it cannot be repaired from the existing dumps.**  `univla_matched_val.npz` and `univla_matched_2ep_val.npz`
+  carry only `DF`, `Z`, `NET`, `F0Q` -- there is no `DSW` / `ASW_NET`, i.e. no swap path was ever dumped for their
+  model.  Verified by listing the archives.
+- **Why re-dumping is not a small job either.**  Our transfer probe reads `G(DSW)` with G a ridge from the real
+  segment tensor dF (K x 16 x 768) to net xyz.  Their LAM decoder does not produce that object: it predicts a single
+  future frame at patch level from (frame 0, z), not K segment deltas.  Feeding its output to G is not a matter of
+  reshaping; the two decoders predict different things.
+- **The one honest repair, if it is wanted.**  Define transport transfer on the ENDPOINT only, which both decoders
+  do produce: fit G_end from the real endpoint displacement F_T - F_0 to net xyz, and evaluate
+  `G_end(decoder output under a deranged donor code - F_0)` for both.  That is one metric, one reader, both sides,
+  and it costs a shim exposing their LAM through our dump interface plus one GPU dump pass.  Deliberately NOT queued
+  now: it is a Phase-2 comparison and the deadline path is the main model.
+- **Decision.**  Until that exists, the paper states the LATP gain against our own controls only and makes no
+  cross-method transport claim.  This is the third instrument-mismatch correction today (predictability probe vs
+  UniVLA, the load-test read, and this), so the standing rule is now explicit: **a cross-method number is not
+  reportable unless both sides pass through the same reader on the same object.**
+
 ## Registered next method: intervention first, real pairs second
 
 
