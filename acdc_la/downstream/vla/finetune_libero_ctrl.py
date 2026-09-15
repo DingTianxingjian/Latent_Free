@@ -110,6 +110,7 @@ class Cfg:
     vla_path: str = os.path.join(LF, "cache", "vla", "openvla-7b")
     lam_path: str = os.path.join(LF, "claude_survey", "ckpt", "s2mix_1ep.pt")      # univla arm: their Stage-2 recipe on our data
     acdc_tag: str = "s1_acdc_1ep"; acdc_codebook: str = "vq_s1_acdc_1ep_K64.npz"    # acdc arm
+    tc_tag: str = "tc_cont"                                # tc_cont / tc_vq arms: the structured tokenizer checkpoint
     data_root_dir: Path = Path(os.path.join(LF, "data", "libero_rlds")); dataset_name: str = "libero_spatial_no_noops"
     run_root_dir: Path = Path(os.path.join(LF, "acdc_la", "ckpt", "vla_runs")); run_id_note: Optional[str] = None
     batch_size: int = 8; grad_accumulation_steps: int = 2; max_steps: int = 15000; save_steps: int = 5000; learning_rate: float = 3.5e-4

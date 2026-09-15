@@ -15,7 +15,9 @@ for R in ${RUNS:?set RUNS}; do
   D=/anvil/scratch/x-tding2/latent_free/acdc_la/ckpt/vla_runs/$R
   MOD=acdc_la.downstream.vla.run_libero_eval_ctrl; grep -q '"latent": "acdc_cont"' $D/ctrl_meta.json && MOD=acdc_la.downstream.vla.run_libero_eval_cont
   echo "== $R via $MOD"
-  echo n | timeout 900 $PY -m $MOD --pretrained_checkpoint $D --task_suite_name libero_spatial --num_trials_per_task 1 2>&1 | grep --line-buffered -vE "xFormers|warnings.warn|UserWarning|tensorflow/|I0000|E0000|W0000|oneDNN|TF-TRT|cuda_|AtomicFunction|NoneType|Exception ignored|^Traceback|atomic_function|robosuite WARNING|macros|Gym has|gymnasium|migration" | tail -6
-  echo "LOADTEST $R exit ${PIPESTATUS[1]}"
+  RAW=/anvil/scratch/x-tding2/latent_free/acdc_la/logs/loadtest_raw_${SLURM_JOB_ID}_${R:0:6}.txt
+  echo n | timeout 900 $PY -m $MOD --pretrained_checkpoint $D --task_suite_name libero_spatial --num_trials_per_task 1 > $RAW 2>&1
+  echo "LOADTEST $R exit $?  (full output: $RAW)"
+  grep -vE "xFormers|warnings.warn|UserWarning|tensorflow/|I0000|E0000|W0000|oneDNN|TF-TRT|cuda_|AtomicFunction|NoneType|Exception ignored|atomic_function|robosuite WARNING|macros|Gym has|gymnasium|migration|^\s*$" $RAW | tail -30
 done
 echo "LOADTEST DONE $(date)"
