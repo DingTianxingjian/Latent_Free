@@ -70,6 +70,13 @@ def steps_of(idx):
 @torch.no_grad()
 def our_latents(model, dstats, G, T_, dev, bs=512):
     """Clip code of the T=K*S+1 window starting at every step (K=1 tokenizers: per-segment codes concatenated)."""
+    if hasattr(model, "quantize"):                    # common/tcvq.py: the encoder consumes the state and patch-level deltas
+        Z = []
+        for i in range(0, len(T_), bs):
+            t = torch.from_numpy(T_[i:i + bs]); rows = t[:, None] + torch.arange(0, K * S + 1, S)[None]
+            g4 = G[rows].to(dev).float(); dF = (g4[:, 1:] - g4[:, :-1]) / dstats
+            Z.append(model.quantize(g4[:, 0], dF)[0].flatten(1).cpu())     # the code the decoder/VLA receives
+        return torch.cat(Z).numpy()
     Z = []; basis = Fz.dct_basis(model.K, model.n_cells // 4, dev); one = Fz.dct_basis(1, 1, dev)
     for i in range(0, len(T_), bs):
         t = torch.from_numpy(T_[i:i + bs]); rows = t[:, None] + torch.arange(0, K * S + 1, S)[None]
