@@ -2151,6 +2151,26 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
 - **Decision (user, 2026-09-14).** Cancel both running legs and all five dependent legs; keep the checkpoints; give the
   fairshare to the continuous-latent decisive run and to the two closed-loop evaluations, which are the deadline path.
 
+### 2026-09-15 — scheduling reset (user): everything is now ranked by "does it produce a main model that beats matched UniVLA"
+
+- **Cancelled as strictly superseded:** the old-tokenizer continuous arm (`acdc_cont`, 2- and 4-GPU race), the old
+  ACDC-PQ 500-rollout evaluation, the no-latent smoke, all further 10-epoch pretraining, Portable Core v2, further
+  nuisance arms, AC2/AC3 sweeps and post-hoc codebook sweeps.  None of them can change the final model: whatever the
+  old quadrant+MLP tokenizer shows, it will not be the main model now that a stronger structured one is training.
+- **Kept (P0):** `tc_cont` and `tc_vq256` tokenizers (128k x 64 each), and the matched-UniVLA full closed-loop
+  evaluation (job 20730279) as the external baseline the paper must beat.
+- **Gate before any VLA run (P1, `scripts/run_tc_gate.sh`):** OXE probes from the training dump + LIBERO oracle action
+  L1 for both tokenizers.  `tc_cont` proceeds if oracle L1 < 0.344 (the old ACDC) and the temporal probes do not
+  regress; `tc_vq256` proceeds only if its NATIVE quantised oracle is close to the continuous one (post-hoc pq2x64
+  was 0.401).  Only the winner gets the 8-11 h VLA run; both only if both are strong.
+- **Deferred until the main model wins (P2):** the endpoint vs endpoint+dynamics ablation on the winning architecture
+  (the causal test for A_1, currently confounded with the spatial and encoder upgrades), LATP retrained on the winning
+  tokenizer (the paper cannot present NetDyn and LATP from different checkpoints as one method), and functional
+  equivariance only if LATP again lifts transfer without lifting control.
+- **The five comparisons the final paper needs, and no more:** (A) UniVLA vs full ours, closed-loop; (B) endpoint vs
+  endpoint+dynamics; (C) continuous vs native VQ interface; (D) reconstruction decoder vs LATP on the winning
+  tokenizer; (E) LATP vs LATP+equivariance, only if D lifts transfer but not control.
+
 ## Registered next method: intervention first, real pairs second
 
 
