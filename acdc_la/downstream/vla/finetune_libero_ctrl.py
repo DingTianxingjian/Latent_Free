@@ -121,6 +121,10 @@ class Cfg:
 def build_labeller(cfg, device_id):
     if cfg.latent == "none":
         return None, 0, 0                                                 # no labeller: the arm never sees a latent
+    if cfg.latent in ("tc_cont", "tc_vq"):
+        from .tcvq_tokens import TCVQLatentTokenizer
+        t = TCVQLatentTokenizer(cfg.tc_tag, dev=f"cuda:{device_id}" if isinstance(device_id, int) else device_id)
+        return t, t.n_tokens, t.codebook_size
     if cfg.latent == "acdc_cont":
         from .acdc_tokens import ACDCLatentTokenizer
         t = ACDCLatentTokenizer(cfg.acdc_tag, cfg.acdc_codebook, dev=f"cuda:{device_id}" if isinstance(device_id, int) else device_id)
@@ -142,7 +146,7 @@ def build_labeller(cfg, device_id):
 
 @draccus.wrap()
 def finetune(cfg: Cfg) -> None:
-    assert torch.cuda.is_available(); assert cfg.latent in ("univla", "acdc", "acdc_cont", "none")
+    assert torch.cuda.is_available(); assert cfg.latent in ("univla", "acdc", "acdc_cont", "none", "tc_cont", "tc_vq")
     state = PartialState(); torch.cuda.set_device(device_id := state.local_process_index); torch.cuda.empty_cache()
     exp_id = f"{cfg.latent}+{cfg.dataset_name}+b{cfg.batch_size * cfg.grad_accumulation_steps}x{state.num_processes}+lr{cfg.learning_rate}+r{cfg.lora_rank}+s{cfg.max_steps}" + (f"--{cfg.run_id_note}" if cfg.run_id_note else "")
     run_dir = cfg.run_root_dir / exp_id; adapter_dir = cfg.run_root_dir / "adapters" / exp_id; os.makedirs(run_dir, exist_ok=True); os.makedirs(adapter_dir, exist_ok=True)
@@ -155,7 +159,7 @@ def finetune(cfg: Cfg) -> None:
     vla = AutoModelForVision2Seq.from_pretrained(cfg.vla_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True)
 
     labeller, n_tokens, codebook_size = build_labeller(cfg, device_id)
-    cont = cfg.latent in ("acdc_cont", "none"); dz = getattr(labeller, "dz", 0) if cfg.latent == "acdc_cont" else 0
+    cont = cfg.latent in ("acdc_cont", "none", "tc_cont"); dz = getattr(labeller, "dz", 0) if cfg.latent in ("acdc_cont", "tc_cont") else 0
     if not cont:
         # the latent vocabulary: <ACT_0..K-1> appended after <PAD> (32000) -> ids 32001..; embeddings + lm_head rows are trained
         assert len(processor.tokenizer) == LATENT_TOKEN_BASE + 1, len(processor.tokenizer)
