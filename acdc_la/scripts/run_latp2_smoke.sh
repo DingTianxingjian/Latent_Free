@@ -18,14 +18,25 @@ from acdc_la.stage3_transport import train_v2 as V
 
 dev = "cuda"; K, P, D, B = 4, 16, 768, 12
 m = TCVQ(K, "endpointdyn", 4, 16, 64, 768, 6, 12, 4, bottleneck="continuous").to(dev)
-a = argparse.Namespace(lam_recover=1.0, lam_real=1.0, lam_rel=0.5, recover_l1=1.0, tau=0.9, buffer=4,
-                       rtc_groups=4, psi_dim=512, probe_noise=0.1, recover_detach=False)
+a = argparse.Namespace(lam_recover=1.0, lam_real=1.0, lam_rel=0.5, recover_l1=1.0, tau=0.9, buffer=4, recover_grad_t=True,
+                       rtc_groups=4, psi_dim=512, probe_noise=0.1)
 ctx = dict(dev=dev, proj=jl_projection(K * P * D, 512, 0, dev))
 def batch(seed):
     g = torch.Generator(device="cpu").manual_seed(seed)
     return dict(f0=torch.randn(B, P, D, device=dev), dF=torch.randn(B, K, P, D, device=dev),
                 c=torch.randn(B, m.prior_lang[0].normalized_shape[0], device=dev),
                 si=torch.randint(0, 3, (B,), generator=g), ge=torch.arange(B) + 100 * seed)
+# The channel test: PURE RANDOM tensors carry no action semantics, so anything L_recover achieves here is a channel
+# E and T built together.  Run both routings and compare rec_cos (can be a channel) with rec_frozen (cannot: the
+# frozen Phase-1 operator never received the recovery gradient).
+for grad_t in (True, False):
+    mm = copy.deepcopy(m); cc = dict(dev=dev, proj=ctx["proj"]); aa = copy.deepcopy(a); aa.recover_grad_t = grad_t
+    oo = torch.optim.AdamW([p for p in mm.parameters() if p.requires_grad], lr=1e-4)
+    for s in range(12):
+        l, o = V.step(mm, None, batch(s), aa, cc); oo.zero_grad(); l.backward(); oo.step()
+    print(f"[channel] recover_grad_t={grad_t}: rec_cos={float(o['rec_cos']):.4f} rec_frozen={float(o['rec_frozen']):.4f} "
+          f"rec_noise={float(o['rec_noise']):.4f} on RANDOM data (any recovery here is a channel, not semantics)")
+
 opt = torch.optim.AdamW([p for p in m.parameters() if p.requires_grad], lr=1e-4)
 for s in range(6):
     loss, out = V.step(m, None, batch(s), a, ctx)
