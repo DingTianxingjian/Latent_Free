@@ -16,7 +16,8 @@ case "$STAGE" in
   1) MOD=stage1_preserve.train; INITF="";;
   2) MOD=stage2_disentangle.train; INITF="--init-from $INIT";;
   3) MOD=stage3_transport.train; INITF="--init-from $INIT";;
-  *) echo "STAGE must be 1|2|3"; exit 2;;
+  tc) MOD=stage2_tc.train; INITF="";;                       # native-VQ structured tokenizer at UniVLA's token budget
+  *) echo "STAGE must be 1|2|3|tc"; exit 2;;
 esac
 run $MOD --tag $TAG --steps $STEPS --batch $BATCH --seed $SEED --workers 14 --warmup 4000 $INITF ${EXTRA:-} $RES
 echo "LONG $TAG exit $? $(date)"
