@@ -26,6 +26,15 @@ def step(model, feat, b, a, ctx, train=True):
     rec = model.decode(b["f0"], b["c"], z_q)
     out = dict(rec=F.mse_loss(rec, b["dF"]))
     loss = out["rec"]
+    if a.lam_prior > 0:                       # price the posterior for content the deployment set cannot determine
+        zp = model.prior_code(b["f0"], b["c"])
+        # SCALE-INVARIANT: a plain ||x - zp||^2 is minimised by shrinking the code and letting the decoder scale back
+        # up, i.e. the penalty would buy predictability with collapse.  Dividing by the code's own batch variance --
+        # WITHOUT detaching it, so the quotient's gradient carries the anti-collapse term -- makes the loss exactly
+        # the unexplained fraction 1 - R2(z | F_0, language), the quantity measured in common/predictability.py.
+        out["prior"] = F.mse_loss(x, zp) / x.var(0).mean().clamp_min(1e-6)
+        loss = loss + a.lam_prior * out["prior"]
+        with torch.no_grad(): out["prior_r2"] = 1 - out["prior"]
     if model.vq is not None:
         out["codebook"], out["commit"] = F.mse_loss(z, x.detach()), F.mse_loss(x, z.detach())
         loss = loss + out["codebook"] + a.lam_commit * out["commit"]
@@ -47,6 +56,10 @@ def main():
     ap.add_argument("--n-tokens", type=int, default=4, help="policy tokens per clip (UniVLA: 4)")
     ap.add_argument("--codebook", type=int, default=16, help="codebook entries (UniVLA: 16)")
     ap.add_argument("--latent-dim", type=int, default=128, help="code dimension (UniVLA: 128)")
+    ap.add_argument("--lam-prior", type=float, default=0.0,
+                    help="weight of the deployment-prior term (1 - R2(z | F_0, language)): >0 makes the code pay for "
+                         "being unpredictable from what the policy sees at deployment.  Measured 2026-09-15: that R2 is "
+                         "0.045 for our tokenizer and 0.016 for matched UniVLA, and nothing else in the loss touches it.")
     ap.add_argument("--bottleneck", default="vq", choices=["vq", "continuous"],
                     help="continuous = no quantiser and no rate cap: the strongest form of the representation")
     ap.add_argument("--lam-commit", type=float, default=0.25)
