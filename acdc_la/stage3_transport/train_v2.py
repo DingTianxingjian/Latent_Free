@@ -87,6 +87,14 @@ def _std(z, mu, var):
     return (z - mu) / (var.sqrt() + 1e-5)
 
 
+def _erank(x):
+    """Effective rank: exp of the entropy of the normalised singular value spectrum of the centred code matrix.
+    d means every direction is used equally; 1 means the code has collapsed to a line."""
+    s = torch.linalg.svdvals(x - x.mean(0))
+    p = s / s.sum().clamp_min(1e-9)
+    return torch.exp(-(p * (p + 1e-12).log()).sum())
+
+
 def _code(model, f0, dF):
     return model.quantize(f0, dF)[0]
 
@@ -174,6 +182,15 @@ def step(model, feat, b, a, ctx, train=True):
             z0 = _std(_code(model, b["f0"], Y0), ctx["zmu"], ctx["zvar"])
             out["rec_frozen"] = F.cosine_similarity(z0.flatten(1), zt_s.flatten(1), dim=1)[ok].mean()
         out["donor_frac"] = ok.float().mean()
+        with torch.no_grad():
+            # COLLAPSE vs RECOVERY.  rec_cos alone cannot tell them apart: if E collapses, the EMA teacher collapses
+            # with it, every buffer latent looks like every other, and the cosine is ~1 for free.  Comparing against a
+            # MISMATCHED donor separates the two in one line -- under collapse the two cosines coincide.
+            pi = torch.randperm(B, device=dev)
+            out["rec_shuffle"] = F.cosine_similarity(zh_s.flatten(1), zt_s[pi].flatten(1), dim=1)[ok].mean()
+            out["rec_margin"] = out["rec_cos"] - out["rec_shuffle"]          # <= ~0 means collapsed, not recovering
+            out["z_erank"] = _erank(z.detach().flatten(1))                   # of the ONLINE code on real clips
+            out["zt_erank"] = _erank(zt.flatten(1))                          # of the EMA target's code
 
     # ---- L_RTC: the relation between two interventions realises in a context-stable direction ----------
     G = _rtc_groups(ctx, si, ge, a.rtc_groups) if a.lam_rel > 0 else []
@@ -192,6 +209,11 @@ def step(model, feat, b, a, ctx, train=True):
         loss = loss + a.lam_rel * out["rtc"]
         with torch.no_grad():                                              # DEGENERACY probe: is T still using the state?
             out["ctx_sens"] = ((pja - pka).norm(dim=1) / pja.norm(dim=1).clamp_min(1e-6)).mean()
+    # ---- anti-collapse (VICReg variance hinge), off by default --------------------------------------
+    if a.lam_var > 0:
+        zn = z.flatten(0, 1); zn = zn * (zn.shape[-1] ** 0.5) / zn.norm(dim=-1, keepdim=True).clamp_min(1e-6)
+        out["var_hinge"] = F.relu(1.0 - zn.std(0)).mean()      # per-dim std of the scale-pinned code, target 1
+        loss = loss + a.lam_var * out["var_hinge"]
     out["loss"] = loss
     return loss, out
 
@@ -204,6 +226,10 @@ def main():
     ap.add_argument("--buffer", type=int, default=16, help="donor buffer depth, in batches of TARGET latents")
     ap.add_argument("--rtc-groups", type=int, default=16, help="(context, context, donor, donor) groups per step; costs 4x decodes")
     ap.add_argument("--psi-dim", type=int, default=512)
+    ap.add_argument("--lam-var", type=float, default=0.0,
+                    help="VICReg variance hinge on the scale-pinned code: the fix if rec_margin collapses towards 0. "
+                         "Off by default -- L_self should hold the code up on real data, and the diagnostics say "
+                         "whether it does, so this is a response to a measurement, not a precaution.")
     ap.add_argument("--probe-noise", type=float, default=0.1, help="noise level of the (known-blind) rec_noise probe, relative to the transition rms")
     ap.add_argument("--recover-detach", action="store_true",
                     help="cut T out of L_recover, leaving it training E only.  An ablation, not the default: the smoke "

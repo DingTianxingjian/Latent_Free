@@ -19,7 +19,7 @@ from acdc_la.stage3_transport import train_v2 as V
 dev = "cuda"; K, P, D, B = 4, 16, 768, 12
 m = TCVQ(K, "endpointdyn", 4, 16, 64, 768, 6, 12, 4, bottleneck="continuous").to(dev)
 a = argparse.Namespace(lam_recover=1.0, lam_real=1.0, lam_rel=0.5, recover_l1=1.0, tau=0.9, buffer=4, recover_detach=False,
-                       rtc_groups=4, psi_dim=512, probe_noise=0.1)
+                       rtc_groups=4, psi_dim=512, probe_noise=0.1, lam_var=0.0)
 ctx = dict(dev=dev, proj=jl_projection(K * P * D, 512, 0, dev))
 def batch(seed):
     g = torch.Generator(device="cpu").manual_seed(seed)
@@ -34,8 +34,10 @@ for det in (False, True):
     oo = torch.optim.AdamW([p for p in mm.parameters() if p.requires_grad], lr=1e-4)
     for s in range(12):
         l, o = V.step(mm, None, batch(s), aa, cc); oo.zero_grad(); l.backward(); oo.step()
-    print(f"[channel] recover_detach={det}: rec_cos={float(o['rec_cos']):.4f} rec_frozen={float(o['rec_frozen']):.4f} "
-          f"rec_noise={float(o['rec_noise']):.4f} on RANDOM data (any recovery here is a channel, not semantics)")
+    print(f"[channel] recover_detach={det}: rec_cos={float(o['rec_cos']):.4f} rec_shuffle={float(o['rec_shuffle']):.4f} "
+          f"MARGIN={float(o['rec_margin']):.4f} rec_frozen={float(o['rec_frozen']):.4f} "
+          f"z_erank={float(o['z_erank']):.2f}/{m.d} zt_erank={float(o['zt_erank']):.2f} "
+          f"-- margin<=0 means COLLAPSE, not recovery")
 
 opt = torch.optim.AdamW([p for p in m.parameters() if p.requires_grad], lr=1e-4)
 for s in range(6):
