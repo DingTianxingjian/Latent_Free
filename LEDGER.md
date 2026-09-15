@@ -2264,6 +2264,34 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   slot, because the within-family result it targets (capacity buys action content and loses predictability) is the
   part that survived, and because the stability column is an independent argument for a native discrete bottleneck.
 
+### 2026-09-15 — RETRACTION: "the VLA load test passed" — it never passed, and the first closed-loop evaluation scored 181 crashes as failures
+
+- **What was claimed and is withdrawn.**  On 2026-09-15 I recorded that the load test passed ("10 episodes, 0/10
+  success at 1 trial/task") and released the full closed-loop evaluations on that basis.  Both load-test raw logs
+  (`loadtest_raw_20729085_univla.txt`, `..._acdc+l.txt`) contain **10 of 10** episodes ending in
+  `Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'`.
+  The matched-UniVLA evaluation (job 20730279) then ran 181 episodes, every one of them the same exception scored as
+  a failed rollout, before it was cancelled.  **There is no valid full-VLA closed-loop number in this ledger.**
+  (The toy closed-loop figures -- univla 0.22 / ours 0.19 / no-latent 0.18 / pooled 0.17 -- come from the MLP-recipe
+  harness, not this evaluator, and are unaffected.)
+- **Cause.**  The merged checkpoints carry their own `configuration_prismatic.py` / `modeling_prismatic.py`, written
+  by `save_pretrained`.  With `trust_remote_code=True` transformers builds the model from that dynamic module, which
+  is a *different class object* from the `OpenVLAForActionPrediction` imported from the `prismatic` package at the
+  top of `run_libero_eval_ctrl.py` and patched there with `predict_latent_action`.  The patch never reached the
+  instance.  The checkpoint's copy descends from `openvla-7b`: it has `predict_action` and `get_action_stats`, but
+  `predict_latent_action` is UniVLA's addition and is absent.  This is the third instance of the same class of bug
+  in this evaluator (after `_AutoModelSDPA` subclassing and the `get_vla` function replacement).
+- **Why the gate did not catch it, which is the part that matters.**  A total crash and a genuine zero produce the
+  *same* headline: "0/10 success".  The gate reported the headline and I read the headline.  The exception text was
+  in the summary I was shown and I did not act on it.
+- **Fix.**  (a) `type(vla).predict_latent_action = ...` after loading -- correct whichever class object won -- plus
+  an assertion that it took.  (b) `run_vla_loadtest.sh` now counts `Caught exception` in the raw output and exits
+  non-zero if it is not 0, so a crashing evaluator can no longer be reported as a low success rate.
+- **Cost.**  ~1 GPU-hour of the load test plus ~1.5 GPU-hours of job 20730279, and a day of believing the pipeline
+  was verified end to end.
+- **Decision.**  Re-ran the load test (job 20739385) with the new failure rule and hung BOTH full evaluations behind
+  it with `afterok` (20739386 univla, 20739387 acdc), so neither can start unless zero episodes raise.
+
 ## Registered next method: intervention first, real pairs second
 
 
