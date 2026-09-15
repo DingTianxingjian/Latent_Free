@@ -91,6 +91,27 @@ def _std(z, mu, var):
     return (z - mu) / (var.sqrt() + 1e-5)
 
 
+def _jitter(frames, g=None):
+    """The VLA pipeline's own nuisance family (crop 0.9, brightness/contrast/saturation), ONE draw shared by every
+    frame of a clip so the perturbation is temporally coherent -- the same protocol label_stats.py measures
+    augmentation stability under.  Pure torch, so it runs on the GPU batch without a torchvision round trip."""
+    B, T, C, H, W = frames.shape
+    x = frames.reshape(B * T, C, H, W)
+    r = torch.rand(B, 4, device=frames.device)
+    s = 0.9 ** 0.5                                                   # RandomResizedCrop(scale=0.9, ratio=1)
+    h = int(H * s); top = (r[:, 0] * (H - h)).long(); left = (r[:, 1] * (W - h)).long()
+    idx = torch.arange(h, device=frames.device)
+    rows = (top[:, None] + idx)[:, None].expand(B, T, h).reshape(B * T, h)
+    cols = (left[:, None] + idx)[:, None].expand(B, T, h).reshape(B * T, h)
+    x = x.gather(2, rows[:, None, :, None].expand(B * T, C, h, W)).gather(3, cols[:, None, None, :].expand(B * T, C, h, h))
+    x = torch.nn.functional.interpolate(x, size=(H, W), mode="bilinear", align_corners=False)
+    b_ = (0.8 + 0.4 * r[:, 2]).repeat_interleave(T)[:, None, None, None]          # brightness
+    c_ = (0.8 + 0.4 * r[:, 3]).repeat_interleave(T)[:, None, None, None]          # contrast
+    x = (x * b_).clamp(0, 1)
+    x = ((x - x.mean((1, 2, 3), keepdim=True)) * c_ + x.mean((1, 2, 3), keepdim=True)).clamp(0, 1)
+    return x.view(B, T, C, H, W)
+
+
 def _erank(x):
     """Effective rank: exp of the entropy of the normalised singular value spectrum of the centred code matrix.
     d means every direction is used equally; 1 means the code has collapsed to a line."""
@@ -240,6 +261,21 @@ def step(model, feat, b, a, ctx, train=True):
         loss = loss + a.lam_rel * out["rtc"]
         with torch.no_grad():                                              # DEGENERACY probe: is T still using the state?
             out["ctx_sens"] = ((pja - pka).norm(dim=1) / pja.norm(dim=1).clamp_min(1e-6)).mean()
+    # ---- L_inv: the code must not move under the nuisance family the VLA's own pipeline applies ------
+    # Measured weakness this targets directly: 87 % of our LIBERO tokens flip under one further draw of the training
+    # augmentation, against 39 % of UniVLA's.  A small codebook gets that invariance for free by being unable to
+    # represent the detail; a continuous code has to be asked for it.  Target is the EMA teacher on the clean view,
+    # so this is the SPR/BYOL form, and z_erank says whether it is being satisfied by collapse.
+    if a.lam_inv > 0:
+        with torch.no_grad():
+            g4a = feat.g4_of(_jitter(b["frames"]))
+            f0a, dFa = g4a[:, 0], Fz.dF_from_g4(g4a, feat.dstats)
+        za = _code(model, f0a, dFa)                                    # online encoder, WITH gradient
+        out["inv_cos"] = F.cosine_similarity(_std(za, ctx["zmu"], ctx["zvar"]).flatten(1),
+                                             _std(zt, ctx["zmu"], ctx["zvar"]).flatten(1), dim=1).mean()
+        out["inv"] = 1 - out["inv_cos"]
+        loss = loss + a.lam_inv * out["inv"]
+
     # ---- anti-collapse (VICReg variance hinge), off by default --------------------------------------
     if a.lam_var > 0:
         zn = z.flatten(0, 1); zn = zn * (zn.shape[-1] ** 0.5) / zn.norm(dim=-1, keepdim=True).clamp_min(1e-6)
@@ -264,6 +300,10 @@ def main():
     ap.add_argument("--buffer", type=int, default=16, help="donor buffer depth, in batches of TARGET latents")
     ap.add_argument("--rtc-groups", type=int, default=16, help="(context, context, donor, donor) groups per step; costs 4x decodes")
     ap.add_argument("--psi-dim", type=int, default=512)
+    ap.add_argument("--lam-inv", type=float, default=0.0,
+                    help="nuisance invariance of the code under the VLA pipeline's own augmentation family.  This is "
+                         "what a small codebook buys by accident (their per-token stability 0.579 vs our 0.117); a "
+                         "continuous code has to be asked for it.  Costs one extra DINO forward per step.")
     ap.add_argument("--lam-var", type=float, default=0.0,
                     help="VICReg variance hinge on the scale-pinned code: the fix if rec_margin collapses towards 0. "
                          "Off by default -- L_self should hold the code up on real data, and the diagnostics say "
