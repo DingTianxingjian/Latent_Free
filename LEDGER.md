@@ -2404,6 +2404,38 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
 - **Artifacts.** `acdc_la/results/token_bits.json`, per-window arrays `token_bits_<arm>_<suite>_<split>.npz`,
   log `acdc_la/logs/bits_20739661.out`.
 
+### 2026-09-15 — FAILED and killed at 18k steps: the variance-normalised deployment prior is gamed by inflating the code
+
+- **Test.** `tc_cont_prior` = `tc_cont` plus `lam_prior * ||z - p(z|F_0, language)||^2 / var(z)`, the only term in the
+  codebase that prices the measured bottleneck P = R2(z | deployment state) directly.
+- **Result, at 18,200 of 128,000 steps (job 20738376).**
+
+  | | tc_cont (no prior) | tc_cont_prior |
+  |---|---|---|
+  | z_rms trajectory | 1.64 -> 3.61, flattening | **1.37 -> 7.81 -> 10.98 -> 13.79, still climbing** |
+  | prior_r2 | - | **0.974** |
+  | rec | **1.73** | 1.89 |
+
+- **Reading.** A prior R2 of 0.97 is not predictability appearing: the same quantity measured honestly on a trained
+  tokenizer is 0.045, and no 18k-step run makes the deployment state determine 97 % of a code.  The denominator was
+  being inflated.  Dividing by `var(z)` closes the shrink exploit (which a plain MSE has, and which I fixed earlier
+  today) and OPENS an inflate exploit: add a large component the prior can copy, the denominator grows, the numerator
+  does not.  Reconstruction getting worse than the no-prior control is the corroborating signature -- code capacity
+  spent on the decoy.  This is a design error in my formulation, not an implementation bug.
+- **Fix.** `--code-norm` pins the per-token code RMS to sqrt(d), closing BOTH directions, and the prior term reverts
+  to a plain MSE.  A decoy component must then be paid for out of a fixed norm budget that reconstruction needs.
+  `--lam-prior` now asserts `--code-norm`.  Resubmitted as job 20742783.
+- **Confound to declare.** The new prior arm differs from `tc_cont` by TWO factors (code normalisation and the prior
+  term).  The clean control would be `tc_cont_norm` (normalisation only).  NOT scheduled: three concurrent jobs
+  already saturate the shared OXE cache.  Run it only if the prior arm wins.
+- **Throughput, measured.** 0.46 s/step with three jobs streaming the same cache (0.16 s/step with one), so 128k
+  steps needs 16.3 h against an 8 h walltime and every leg is cut near 49 %.  The budget cannot be shortened without
+  breaking the match to UniVLA's 128k x 64, so two `RESUME=1` legs are chained per tokenizer behind `afterany`
+  (tc_cont 20742784 -> 20742785, tc_vq256 20742786 -> 20742787).
+- **Watch on tc_vq256.** At step 20,000 only 99 of 256 codes are in use (perplexity 63), i.e. ~6.6 of the requested
+  8 bits per token.  Dead-code restart runs every 5,000 steps; if usage does not recover, the native 16x256 arm is
+  not delivering the bitrate it was given.
+
 ## Registered next method: intervention first, real pairs second
 
 
