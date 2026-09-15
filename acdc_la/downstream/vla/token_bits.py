@@ -67,13 +67,35 @@ def collate(rows, pad_id):
     return ids, lab, att, torch.stack([r["pixel_values"] for r in rows])
 
 
+def _H(col, Kc):
+    p = np.bincount(col, minlength=Kc) / max(1, len(col))
+    return float(-(p[p > 0] * np.log2(p[p > 0])).sum())
+
+
 def bits_table(nats_per_tok, idx, n_tokens, Kc):
     """nats_per_tok: (N, n_tokens) cross-entropy; idx: (N, n_tokens) labels.  Everything in bits per SAMPLE."""
     resid = float(nats_per_tok.sum(1).mean() / math.log(2))
-    H = float(sum(-(lambda p: (p[p > 0] * np.log2(p[p > 0])).sum())(np.bincount(idx[:, j], minlength=Kc) / len(idx))
-                  for j in range(n_tokens)))
+    H = float(sum(_H(idx[:, j], Kc) for j in range(n_tokens)))
     return dict(n=len(idx), residual_bits=resid, label_entropy_bits=H, recovered_bits=H - resid,
                 recovered_frac=(H - resid) / H if H > 0 else float("nan"), max_bits=n_tokens * math.log2(Kc))
+
+
+def bits_stable_positions(nats_per_tok, idx, stab, n_tokens, Kc, min_n=30):
+    """PER-POSITION stability, which is the only definition that survives a different token count.
+
+    Requiring ALL tokens to agree is degenerate as n_tokens grows: at the measured per-token rates it selects 16 %
+    of windows for a 4-token code and 0 of 600 for a 16-token one.  Here each POSITION is restricted to the windows
+    where that position's code is unchanged under one further augmentation draw, and the per-position entropies and
+    cross-entropies are summed exactly as in bits_table.  This is "how much of a nuisance-invariant label does the
+    policy recover", comparable across arms."""
+    H = resid = 0.0; used = 0; ns = []
+    for j in range(n_tokens):
+        m = stab[:, j]
+        if m.sum() < min_n: continue
+        H += _H(idx[m, j], Kc); resid += float(nats_per_tok[m, j].mean() / math.log(2)); used += 1; ns.append(int(m.sum()))
+    if not used: return None
+    return dict(positions=used, n_median=int(np.median(ns)), residual_bits=resid, label_entropy_bits=H,
+                recovered_bits=H - resid, recovered_frac=(H - resid) / H if H > 0 else float("nan"))
 
 
 def main():
@@ -122,23 +144,30 @@ def main():
                 assert int(sel.sum()) == n_tokens, (int(sel.sum()), n_tokens)
                 CE.append(torch.nn.functional.cross_entropy(lg[i][sel], gt[i][sel], reduction="none").numpy())
                 IDX.append(rows[i]["latent_action_idx"].numpy().astype(int).reshape(-1))
-                STA.append(bool((rows[i]["idx1"] == rows[i]["idx2"]).all()))
+                STA.append((rows[i]["idx1"].numpy() == rows[i]["idx2"].numpy()))
             rows = []
             if (k + 1) % 100 < a.batch: print(f"[bits] {k+1}/{a.n} ({time.time()-t0:.0f}s)", flush=True)
         if k + 1 >= a.n: break
-    CE, IDX, STA = np.stack(CE), np.stack(IDX), np.array(STA)
+    CE, IDX, STA = np.stack(CE), np.stack(IDX), np.stack(STA)          # STA is now (N, n_tokens), per POSITION
+    np.savez_compressed(os.path.join(RESULTS, f"{a.out}_{arm}_{a.dataset}_{a.split}.npz"), CE=CE, IDX=IDX, STA=STA)
+    allstab = STA.all(1)
 
     R = dict(run=a.run, arm=arm, dataset=a.dataset, split=a.split, n_tokens=n_tokens, codebook=Kc,
-             stable_frac=float(STA.mean()), all=bits_table(CE, IDX, n_tokens, Kc))
-    if STA.sum() >= 50: R["stable"] = bits_table(CE[STA], IDX[STA], n_tokens, Kc)
-    if (~STA).sum() >= 50: R["unstable"] = bits_table(CE[~STA], IDX[~STA], n_tokens, Kc)
+             stable_per_token=float(STA.mean()),          # the label_stats definition: mean per-position agreement
+             stable_all_tokens=float(allstab.mean()),     # every position agrees; degenerate as n_tokens grows
+             all=bits_table(CE, IDX, n_tokens, Kc))
+    sp = bits_stable_positions(CE, IDX, STA, n_tokens, Kc)
+    if sp: R["stable_positions"] = sp
+    if allstab.sum() >= 50: R["stable"] = bits_table(CE[allstab], IDX[allstab], n_tokens, Kc)
+    if (~allstab).sum() >= 50: R["unstable"] = bits_table(CE[~allstab], IDX[~allstab], n_tokens, Kc)
     p = os.path.join(RESULTS, f"{a.out}.json"); allr = json.load(open(p)) if os.path.exists(p) else {}
     allr[f"{a.run}@{a.dataset}.{a.split}"] = R; json.dump(allr, open(p, "w"), indent=1)
-    print(f"[bits] stable window fraction {R['stable_frac']:.3f}")
-    print("%-10s %6s %14s %14s %14s %10s" % ("subset", "n", "residual bits", "label H bits", "recovered", "frac"))
-    for k in ("all", "stable", "unstable"):
+    print(f"[bits] stability: per-token {R['stable_per_token']:.3f}  all-tokens {R['stable_all_tokens']:.3f}")
+    print("%-16s %6s %14s %14s %14s %10s" % ("subset", "n", "residual bits", "label H bits", "recovered", "frac"))
+    for k in ("all", "stable_positions", "stable", "unstable"):
         if k in R:
-            r = R[k]; print("%-10s %6d %14.2f %14.2f %14.2f %10.3f" % (k, r["n"], r["residual_bits"], r["label_entropy_bits"], r["recovered_bits"], r["recovered_frac"]))
+            r = R[k]; print("%-16s %6d %14.2f %14.2f %14.2f %10.3f" % (k, r.get("n", r.get("n_median", 0)), r["residual_bits"],
+                                                                      r["label_entropy_bits"], r["recovered_bits"], r["recovered_frac"]))
     print("[bits-done]", flush=True)
 
 
