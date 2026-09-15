@@ -2132,6 +2132,25 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
 - **Next.** Production via `logs_migrate/vla_production.sh` (tmux): univla then acdc (K64 codebook, the 09-13 default;
   the VQ gate has not run), each 15k steps x 64 on 2 GPUs, then 50 trials x 10 tasks LIBERO-spatial eval per arm.
 
+### 2026-09-14 — 10-epoch chains stopped at 7.4 / 6.0 epochs (user decision): the profile gap is flat from 30 % of budget, and the queue was needed for the decisive downstream run
+
+  **In-training proxy curve (200 clips/source, same reader at every point); `rec` = validation reconstruction, `prof` = R2 of the
+  temporal profile from the code.  Checkpoints kept and resumable: `ckpt/s1_acdc_10ep.pt` (step 955,000), `ckpt/s1_mean_10ep.pt` (775,000).**
+
+  | budget | 10 % | 20 % | 30 % | 40 % | 50 % | 60 % | 70 % |
+  |---|---|---|---|---|---|---|---|
+  | ACDC rec | 1.460 | 1.452 | 1.427 | 1.421 | 1.417 | 1.414 | 1.412 |
+  | ACDC prof | -0.019 | -0.031 | 0.030 | 0.029 | 0.032 | 0.032 | 0.031 |
+  | pooled rec | 1.589 | 1.581 | 1.557 | 1.552 | 1.550 | 1.549 | - |
+  | pooled prof | -0.040 | -0.044 | -0.003 | -0.008 | -0.003 | -0.003 | - |
+
+- **Reading.** From 30 % of the 10-epoch budget (3 epochs) onward the profile gap is +0.034 and does not move out to 7.4 epochs,
+  while the pooled tokenizer never reads the profile at all at any budget.  Reconstruction still creeps down (1.427 -> 1.412)
+  without changing what the code carries.  This is the long-budget verification the paper needs on this axis; the full 10
+  epochs would add nothing.  (Curve probes use 200 clips/source and are not comparable to the 400-clip dump numbers.)
+- **Decision (user, 2026-09-14).** Cancel both running legs and all five dependent legs; keep the checkpoints; give the
+  fairshare to the continuous-latent decisive run and to the two closed-loop evaluations, which are the deadline path.
+
 ## Registered next method: intervention first, real pairs second
 
 
