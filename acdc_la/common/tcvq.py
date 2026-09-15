@@ -37,10 +37,10 @@ class TCVQ(nn.Module):
     swap_u_zero = True                      # no second channel: the dump's swap path must not feed one
 
     def __init__(self, K, tc="endpointdyn", n_tokens=4, codebook=16, latent_dim=128, width=768, enc_layers=6,
-                 heads=12, dec_layers=4, grid=16, bottleneck="vq"):
+                 heads=12, dec_layers=4, grid=16, bottleneck="vq", code_norm=False):
         super().__init__()
         assert tc in ARMS, tc; assert bottleneck in ("vq", "continuous"), bottleneck
-        self.bottleneck = bottleneck
+        self.bottleneck, self.code_norm = bottleneck, code_norm
         self.K, self.tc, self.n_tokens, self.codebook_size, self.latent_dim, self.grid = K, tc, n_tokens, codebook, latent_dim, grid
         self.kinds = ARMS[tc]
         self.inp = nn.ModuleDict({k: nn.Sequential(nn.LayerNorm(DINO_DIM), nn.Linear(DINO_DIM, width)) for k in self.kinds})
@@ -64,7 +64,8 @@ class TCVQ(nn.Module):
         self.register_buffer("b1", Fz.dct_basis(K, 2)[1], persistent=False)            # orthonormal AC1 over the K segments
         self.ckpt_meta = dict(kind="tcvq", tcvq=dict(tc=tc, n_tokens=n_tokens, codebook=codebook, latent_dim=latent_dim,
                                                      width=width, enc_layers=enc_layers, heads=heads,
-                                                     dec_layers=dec_layers, grid=grid, K=K, bottleneck=bottleneck))
+                                                     dec_layers=dec_layers, grid=grid, K=K, bottleneck=bottleneck,
+                                                     code_norm=code_norm))
 
     def evidence(self, f0, dF):
         """f0 (B,16,768) first-frame g4, dF (B,K,16,768) scale-normalised segment deltas -> the token set of this arm."""
@@ -78,7 +79,14 @@ class TCVQ(nn.Module):
         ev = self.evidence(f0, dF); B = f0.shape[0]
         toks = [self.inp[k](ev[k]) + self.pos_emb[None] + self.type_emb[i][None, None] for i, k in enumerate(self.kinds)]
         x = torch.cat([self.query[None].expand(B, -1, -1)] + toks, 1)
-        return self.to_code(self.enc(x)[:, :self.n_tokens])
+        x = self.to_code(self.enc(x)[:, :self.n_tokens])
+        # FIXED-SCALE CODE (2026-09-15).  With a free scale the deployment-prior term ||z - p||^2 / var(z) is gamed by
+        # INFLATING z with a large predictable component: the denominator grows, the numerator does not, and the run
+        # buys a prior R2 of 0.97 while reconstruction gets worse (tc_cont_prior, job 20738376: z_rms 1.4 -> 13.8 in
+        # 18k steps, rec 1.89 against tc_cont's 1.73, killed).  Pinning the per-token RMS removes BOTH failure
+        # directions at once -- shrinking and inflating -- so a plain MSE prior is then well posed, and a decoy
+        # component has to be paid for out of a fixed norm budget that reconstruction needs.
+        return x * (self.d ** 0.5) / x.norm(dim=-1, keepdim=True).clamp_min(1e-6) if self.code_norm else x
 
     def prior_code(self, f0, c):
         """p(z | F_0, language): the deployment information set only -- no future frames."""
