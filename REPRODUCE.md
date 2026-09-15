@@ -89,7 +89,12 @@ $PY -m torch.distributed.run --standalone --nproc-per-node 4 -m acdc_la.downstre
 # evaluation (1 GPU, 50 trials x 10 tasks ~ 2-3 h per arm; needs envs/LIBERO on PYTHONPATH and MUJOCO_GL=egl)
 PYTHONPATH=$PYTHONPATH:envs/LIBERO MUJOCO_GL=egl PYOPENGL_PLATFORM=egl $PY -m acdc_la.downstream.vla.run_libero_eval_ctrl --pretrained_checkpoint acdc_la/ckpt/vla_runs/<exp_id> --task_suite_name libero_spatial --num_trials_per_task 50 --local_log_dir acdc_la/results/vla_eval
 ```
-Slurm wrappers: `acdc_la/scripts/run_vla_smoke.sh`, `run_vla_ctrl.sh` (`LATENT=univla|acdc CODEBOOK=...`), `run_vla_eval.sh` (`RUN=<exp_id>`).
+Slurm wrappers: `acdc_la/scripts/run_vla_smoke.sh`, `run_vla_ctrl.sh` (`LATENT=univla|acdc|acdc_cont CODEBOOK=...`),
+`run_vla_eval.sh` (`RUN=<exp_id>`; it reads ctrl_meta.json and routes the continuous arm to `run_libero_eval_cont.py`).
+Their evaluator queries the VLA every environment step and temporally ensembles the overlapping chunks; it is not
+open-loop chunk execution.  Third arm `acdc_cont` has no latent vocabulary: the VLM's hidden state regresses the
+un-quantised 256-d ACDC code and the action head is conditioned on it, isolating whether post-hoc quantisation or
+the latent's intrinsic predictability is the bottleneck.
 Knobs: `--acdc_codebook` picks the token interface (K16/K64/K256 = 8 tokens; pq2x64 = 16; pq4x16 / pq4x64 = 32; pq8x16 = 64).
 Their action decoder reads the last `n_tokens` latent states; the prompt carries the history tokens with p = 0.5 as in their code.
 

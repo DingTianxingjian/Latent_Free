@@ -14,7 +14,9 @@ The toy heads (MLP, 4-frame transformer) put every latent and no latent inside o
   "History action".  Loss = next-token CE on the 4 latent tokens + stop token.
 * Action head: `ActionDecoder` = MAP block over the hidden states of the last 4 latent tokens + a MAP block over the
   visual tokens -> MLP -> 12 x 7 actions, L1.  Trained jointly.
-* Eval: `experiments/robot/libero/run_libero_eval.py`, 50 episodes x 10 tasks, executes the 12-step chunk.
+* Eval: `experiments/robot/libero/run_libero_eval.py`, 50 episodes x 10 tasks.  NOT open-loop chunk execution: the VLA is
+  queried EVERY environment step and the overlapping 12-step chunks are combined by an exponential temporal ensemble
+  (`ActionDecoder.forward`, balancing factor 0.1), then un-normalised with the dataset's q01/q99.
 
 ## The controlled version (both arms identical except the token labels)
 * Base VLM: `openvla/openvla-7b` for BOTH arms (public, robot-conditioned, the code base is OpenVLA's).  Starting from
