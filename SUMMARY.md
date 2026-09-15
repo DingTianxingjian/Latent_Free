@@ -1,6 +1,6 @@
 # Do visual feature differences encode actions?
 
-> Project-wide live experiment ledger: [`../SUMMARY.md`](../SUMMARY.md). This file retains
+> Project-wide live experiment ledger: [`LEDGER.md`](LEDGER.md). This file retains
 > the detailed frozen-feature experiments; newer transport, pooling-matrix, DC/AC1, and
 > intervention decisions are summarized in the project-level ledger.
 

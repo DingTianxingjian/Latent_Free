@@ -114,7 +114,7 @@ code), `l1 mode` / `l1 expect` (policy-predicted), `code_acc` vs majority.  Gate
 `acdc_la/results/*_val.npz` are the validation dumps (not in git, 350 MB each; on Anvil).  `python -m acdc_la.stage1_preserve.probes --code-only s1_acdc_1ep s1_mean_1ep`, `stage2_disentangle.probes`, `stage3_transport.probes` read them.
 Re-pretraining needs the OXE caches (`phase1/oxe/oxe_convert.py`, 29 sources, 5,000 episodes each) and `acdc_la/scripts/run_long.sh` (12 h legs, 128k steps x 64 per epoch).
 
-## 4. Results so far (2026-09-13; details and per-task rows in the ledger `SUMMARY.md`)
+## 4. Results so far (2026-09-13; details and per-task rows in the ledger `LEDGER.md`)
 * Stage I (OXE val, corrected R2): ACDC 0.324 net / 0.264 seg1 / 0.085 prof vs pooled 0.336 / 0.210 / 0.017 vs same-data UniVLA 0.236 / 0.222 / 0.125; identical at 2 epochs.
 * LATP transfer R2 0.319 (decoder-only 0.244); same-data UniVLA 0.116 (their reader).
 * LIBERO-spatial offline: oracle L1 ours 0.344 < pooled 0.368 < UniVLA 0.377; after latent prediction all 0.42-0.43; no-latent 0.434.
