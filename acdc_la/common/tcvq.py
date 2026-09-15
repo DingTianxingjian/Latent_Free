@@ -30,23 +30,34 @@ from . import features as Fz
 sys.path.insert(0, UNIVLA_ROOT)
 from latent_action_model.genie.modules.blocks import VectorQuantizer      # noqa: E402  matched bottleneck
 
-ARMS = {"endpoint": ("S", "N"), "endpointdyn": ("S", "N", "A"), "dyn": ("S", "A"), "netonly": ("N",)}
+ARMS = {"netdyn": ("N", "A"),                     # THE CLEAN ACDC UPGRADE: transition evidence only, no state
+        "endpoint": ("S", "N"), "endpointdyn": ("S", "N", "A"), "dyn": ("S", "A"), "netonly": ("N",)}
 
 
 class TCVQ(nn.Module):
     swap_u_zero = True                      # no second channel: the dump's swap path must not feed one
 
     def __init__(self, K, tc="endpointdyn", n_tokens=4, codebook=16, latent_dim=128, width=768, enc_layers=6,
-                 heads=12, dec_layers=4, grid=16, bottleneck="vq", code_norm=False):
+                 heads=12, dec_layers=4, grid=16, bottleneck="vq", code_norm=False, struct_q=False):
         super().__init__()
         assert tc in ARMS, tc; assert bottleneck in ("vq", "continuous"), bottleneck
-        self.bottleneck, self.code_norm = bottleneck, code_norm
+        self.bottleneck, self.code_norm, self.struct_q = bottleneck, code_norm, struct_q
         self.K, self.tc, self.n_tokens, self.codebook_size, self.latent_dim, self.grid = K, tc, n_tokens, codebook, latent_dim, grid
         self.kinds = ARMS[tc]
         self.inp = nn.ModuleDict({k: nn.Sequential(nn.LayerNorm(DINO_DIM), nn.Linear(DINO_DIM, width)) for k in self.kinds})
         self.type_emb = nn.Parameter(torch.randn(len(self.kinds), width) * 0.02)
         self.pos_emb = nn.Parameter(torch.randn(grid, width) * 0.02)
         self.query = nn.Parameter(torch.randn(n_tokens, width) * 0.02)
+        # STRUCTURED SLOTS (2026-09-15).  The old ACDC latent was 4 quadrants x {Net, AC1} = 8 cells, each cell tied
+        # to one evidence type.  Free queries drop that factorisation, which confounds "less pooling + relational
+        # encoder" with "different latent topology".  With struct_q the queries are partitioned by evidence type --
+        # n_tokens/len(kinds) queries per type -- so the ONLY changes from the old tokenizer are the spatial
+        # resolution of the evidence and the relational encoder that consumes it.
+        if struct_q:
+            assert n_tokens % len(self.kinds) == 0, (n_tokens, self.kinds)
+            self.register_buffer("q_type", torch.arange(n_tokens) // (n_tokens // len(self.kinds)), persistent=False)
+        else:
+            self.q_type = None
         enc = nn.TransformerEncoderLayer(width, heads, 4 * width, dropout=0.0, batch_first=True, norm_first=True)
         self.enc = nn.TransformerEncoder(enc, enc_layers)
         self.to_code = nn.Sequential(nn.LayerNorm(width), nn.Linear(width, latent_dim))
@@ -65,7 +76,7 @@ class TCVQ(nn.Module):
         self.ckpt_meta = dict(kind="tcvq", tcvq=dict(tc=tc, n_tokens=n_tokens, codebook=codebook, latent_dim=latent_dim,
                                                      width=width, enc_layers=enc_layers, heads=heads,
                                                      dec_layers=dec_layers, grid=grid, K=K, bottleneck=bottleneck,
-                                                     code_norm=code_norm))
+                                                     code_norm=code_norm, struct_q=struct_q))
 
     def evidence(self, f0, dF):
         """f0 (B,16,768) first-frame g4, dF (B,K,16,768) scale-normalised segment deltas -> the token set of this arm."""
@@ -78,7 +89,8 @@ class TCVQ(nn.Module):
     def pre_quant(self, f0, dF):
         ev = self.evidence(f0, dF); B = f0.shape[0]
         toks = [self.inp[k](ev[k]) + self.pos_emb[None] + self.type_emb[i][None, None] for i, k in enumerate(self.kinds)]
-        x = torch.cat([self.query[None].expand(B, -1, -1)] + toks, 1)
+        q = self.query + (self.type_emb[self.q_type] if self.q_type is not None else 0)
+        x = torch.cat([q[None].expand(B, -1, -1)] + toks, 1)
         x = self.to_code(self.enc(x)[:, :self.n_tokens])
         # FIXED-SCALE CODE (2026-09-15).  With a free scale the deployment-prior term ||z - p||^2 / var(z) is gamed by
         # INFLATING z with a large predictable component: the denominator grows, the numerator does not, and the run

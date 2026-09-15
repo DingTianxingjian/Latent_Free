@@ -18,7 +18,8 @@ from ..common.tcvq import TCVQ
 
 def build(a, dev):
     return TCVQ(a.T - 1, a.tc, a.n_tokens, a.codebook, a.latent_dim, a.width, a.enc_layers,
-                a.heads, a.layers, bottleneck=a.bottleneck, code_norm=a.code_norm).to(dev), None          # dstats: estimated by run()
+                a.heads, a.layers, bottleneck=a.bottleneck, code_norm=a.code_norm,
+                struct_q=a.struct_queries).to(dev), None          # dstats: estimated by run()
 
 
 def step(model, feat, b, a, ctx, train=True):
@@ -52,7 +53,11 @@ def step(model, feat, b, a, ctx, train=True):
 
 def main():
     ap = common_args(argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter))
-    ap.add_argument("--tc", default="endpointdyn", choices=["endpoint", "endpointdyn", "dyn", "netonly"],
+    ap.add_argument("--struct-queries", action="store_true",
+                    help="partition the latent queries by evidence type (n_tokens/len(kinds) per type), reproducing "
+                         "the old ACDC's structured bottleneck so that only the evidence resolution and the encoder "
+                         "change.  Without it, free queries are a THIRD simultaneous change and confound the result.")
+    ap.add_argument("--tc", default="endpointdyn", choices=["netdyn", "endpoint", "endpointdyn", "dyn", "netonly"],
                     help="what the encoder sees: endpoint = [F_0, F_T-F_0] (UniVLA's evidence), endpointdyn = + AC1")
     ap.add_argument("--width", type=int, default=768); ap.add_argument("--enc-layers", type=int, default=6)
     ap.add_argument("--heads", type=int, default=12)
