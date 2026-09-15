@@ -2171,6 +2171,52 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   endpoint+dynamics; (C) continuous vs native VQ interface; (D) reconstruction decoder vs LATP on the winning
   tokenizer; (E) LATP vs LATP+equivariance, only if D lifts transfer but not control.
 
+### 2026-09-15 — direct measurement: how much of each latent the deployment state can determine (P)
+
+- **Test.** Every diagnostic so far inferred the posterior-to-policy gap *through a trained policy* (oracle L1 0.344
+  vs chain L1 0.42).  This measures the underlying quantity directly and without any VLA:
+  `P = R2(z | F_0)`, leave-one-source-out ridge from the first-frame quadrant features to the code, episode-disjoint,
+  clip-weighted over sources; reported beside the code's action content `S = R2(net displacement | z)` and the
+  reference `R2(net displacement | F_0)` under the identical reader.  `usable = max(0,P) * max(0,S)` is an ordering
+  heuristic, not an identity.
+- **Setup.** `acdc_la/common/predictability.py` on the existing OXE validation dumps (11,456 clips, 29 sources).
+  `F_0` is the deployment information set minus language, so P is a *lower bound* on what an observation-conditioned
+  policy could recover; the same bound applies to every arm, so the comparison is fair even though the level is not.
+
+  | metric | ACDC 1ep | pooled 1ep | UniVLA matched 1ep | UniVLA matched 2ep | ACDC 2ep | pooled 2ep | PCRR core |
+  |---|---|---|---|---|---|---|---|
+  | P = R2(z \| F_0) | 0.045 | **0.087** | -0.164 | 0.016 | 0.045 | 0.088 | 0.034 |
+  | S = R2(action \| z) | 0.324 | 0.336 | 0.236 | 0.261 | 0.321 | 0.336 | 0.261 |
+  | usable = P x S | 0.020 | **0.041** | 0.010 | 0.012 | 0.020 | 0.039 | 0.015 |
+  | R2(action \| F_0) | 0.142 | 0.142 | 0.139 | 0.139 | 0.139 | 0.139 | 0.137 |
+  | code dims | 256 | 128 | 2048 | 2048 | 256 | 128 | 192 |
+
+- **Result.** (1) P is near zero for *every* latent action model measured here, ours and theirs.  (2) The predictable
+  action content of any code (usable, 0.010-0.041) is **below what the same ridge already gets from the image alone**
+  (0.139-0.142).  (3) Ours dominates matched UniVLA on all three columns (P 0.045 vs 0.016, S 0.324 vs 0.261,
+  usable 0.020 vs 0.012), so the information argument for the tokenizer holds.  (4) Within our own family the
+  *most compressed* variant is the most usable: mean-pooled 128-d has 2x our P and 2x our usable while matching S.
+  (5) A second epoch changes nothing (0.045/0.020 both epochs).
+- **Control.** One reader implementation for all three regressions and all arms; leave-one-source-out, so a code that
+  is only predictable within a source scores zero.  UniVLA's negative P is the expected sign for a 2048-d target read
+  from held-out sources, not a claim that their code is anti-predictable.  `F0Q` is quadrant-pooled DINOv2, not the
+  7B backbone's state, and carries no instruction: absolute levels are lower bounds, only the ordering is claimed.
+- **Conclusion.** This is the first direct confirmation of the diagnosis the whole project rests on, and it relocates
+  the binding constraint.  The lever is **not** S — we already beat UniVLA on action content — it is **P**, and
+  nothing in the pipeline optimises P.  It also predicts the closed-loop result we could not explain: if the
+  predictable action content of the latent is smaller than what the image already gives the policy, a latent-conditioned
+  VLA cannot separate from the no-latent control, which is exactly what we measured (0.19 vs 0.18, inside noise).
+- **Risk this creates for the queued work.** `tc_cont` raises encoder capacity (patch-level transformer, no quadrant
+  pooling, 256-d continuous).  Row (4) says capacity moves P the *wrong* way.  A tokenizer that wins the oracle gate
+  and loses P would repeat the closed-loop null result, so the gate in `run_tc_gate.sh` is extended: report P, S and
+  usable for each candidate alongside the oracle L1, and prefer the arm that raises usable even at equal oracle L1.
+- **Artifacts.** [`probe`](latent_free/acdc_la/common/predictability.py),
+  [`results`](latent_free/acdc_la/results/predictability.json), log `acdc_la/logs/predictability.out`.
+- **Decision.** Add a third P0 tokenizer, `tc_cont_prior`: identical to `tc_cont` plus the deployment-prior term
+  `lam_prior * || z - p(z | F_0, language) ||^2` (weight 0.1), which is the only term in the codebase that prices P
+  directly.  Keep `tc_cont` unchanged as its control, so the prior's effect is a clean one-factor comparison rather
+  than a confound with the architecture change.  Do not touch the two already-queued jobs.
+
 ## Registered next method: intervention first, real pairs second
 
 
