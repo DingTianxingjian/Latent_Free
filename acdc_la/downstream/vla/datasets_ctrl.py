@@ -29,6 +29,7 @@ class RLDSBatchTransformCtrl:
     predict_stop_token: bool = True
 
     def tokens(self, imgs, ro):
+        if self.latent == "none": return torch.zeros(1)
         if self.latent == "acdc_cont":
             stride = self.window_size // (self.labeller.T - 1)
             return self.labeller.encode_continuous([imgs[ro + k * stride] for k in range(self.labeller.T)])
@@ -45,7 +46,7 @@ class RLDSBatchTransformCtrl:
         pixel_values = self.image_transform(Image.fromarray(imgs[ro]))
         with torch.no_grad():
             idx = self.tokens(imgs, ro); hist = self.tokens(imgs, 0) if ro > 0 else None
-        if self.latent == "acdc_cont":
+        if self.latent in ("acdc_cont", "none"):
             # no latent vocabulary: the prompt is the bare instruction and the whole label is ignored; the VLM's hidden
             # state feeds a regression head instead of the LM head (the history trick has no discrete token to carry)
             pb = self.prompt_builder_fn("openvla")
