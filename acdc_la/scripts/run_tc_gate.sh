@@ -16,7 +16,10 @@ cd /anvil/scratch/x-tding2/latent_free
 source /anvil/scratch/x-tding2/latent_free/acdc_la/scripts/common.sh
 TAGS=${TAGS:-"tc_cont tc_vq256"}
 run stage1_preserve.probes --code-only $TAGS s1_acdc_1ep s1_mean_1ep
-run common.predictability $TAGS s1_acdc_1ep s1_mean_1ep univla_matched   # P, S and usable -- the binding constraint
+run common.predictability $TAGS s1_acdc_1ep s1_mean_1ep   # P, S, usable -- WITHIN-FAMILY only (retraction 2026-09-15):
+                                                         # univla is deliberately absent, its deployed code is 4 indices,
+                                                         # not this 2048-d embedding, and the cross-method number lives in
+                                                         # downstream/vla/token_bits.py instead.
 export PYTHONPATH=/anvil/scratch/x-tding2/latent_free:/anvil/scratch/x-tding2/envs/LIBERO
 /anvil/scratch/x-tding2/envs/libero/bin/python -u -m acdc_la.downstream.libero_offline --tags $TAGS s1_acdc_1ep --steps 2000 --no-decoder --out tc_gate 2>&1 | grep --line-buffered -vE "xFormers|warnings.warn|Using cache|UserWarning|Gym has|gymnasium|migration"
 echo "TC GATE DONE $(date)"
