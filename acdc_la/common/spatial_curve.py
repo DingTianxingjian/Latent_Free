@@ -108,6 +108,13 @@ def main():
             row["patch_drop_pct"] = 100 * (1 - row["r2_net_patch"] / row["r2_net"]) if row["r2_net"] > 0.02 else float("nan")
             rows[names[s_]] = row
         res[f"g{g}"] = R.aggregate(rows); res[f"g{g}"]["raw_dims"] = int(raw); res[f"g{g}"]["n_clips"] = int(len(A))
+        # The reported drop is the RATIO OF THE AGGREGATED MEANS, identical to stage1_preserve/probes.py::on_code, so
+        # this column is comparable with the tokenizer tables.  The first run averaged per-source ratios instead; a
+        # per-source ratio divides by a clean r2 that can sit just above the 0.02 floor, which made it range from -5 %
+        # to +407 % across sources and reported 66.5 % where the ratio of means is 93.0 %.
+        rc, rp = res[f"g{g}"]["r2_net"], res[f"g{g}"]["r2_net_patch"]
+        res[f"g{g}"]["patch_drop_pct_mean_of_ratios"] = res[f"g{g}"].pop("patch_drop_pct", float("nan"))
+        res[f"g{g}"]["patch_drop_pct"] = float(100 * (1 - rp / rc)) if rc > 0.02 else float("nan")
         r = res[f"g{g}"]
         print(f"[spatial] {g}x{g} = {g*g} cells (raw {raw}d -> {Xr.shape[1]}d, {len(A)} clips): net {r['r2_net']:.3f} "
               f"seg1 {r['r2_seg1']:.3f} prof {r['r2_prof']:.3f} seq {r['r2_seq']:.3f} patch_drop {r['patch_drop_pct']:.1f}%", flush=True)

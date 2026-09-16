@@ -2640,12 +2640,13 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   | r2_prof | 0.065 | 0.070 | **0.073** | 0.062 |
   | r2_seq | 0.233 | 0.245 | **0.254** | 0.233 |
   | r2_net under distractor | **0.023** | 0.140 | **0.201** | 0.190 |
-  | **patch_drop** | **66.5 %** | 53.9 % | **43.7 %** | 47.6 % |
+  | **patch_drop** (ratio of means; CORRECTED, see below) | **93.0 %** | 59.0 % | **44.0 %** | 45.7 % |
 
 - **Result.** Patch-level evidence reads the LEAST action of the four on net displacement and is catastrophically
   nuisance-sensitive: under the distractor its net readout collapses from 0.325 to 0.023.  Nuisance sensitivity falls
-  monotonically from 256 to 16 cells (66.5 -> 53.9 -> 43.7 %) and rises slightly again at 4.  The 4x4 grid we use is
-  best or tied-best on net, profile, sequence and robustness.  The shared pooling is not a demonstrated liability in
+  monotonically from 256 to 16 cells (93.0 -> 59.0 -> 44.0 %) and is then FLAT at 4 cells (45.7 %, +1.7 points, and
+  the clean net readout differs by 0.008).  The evidence is the large step down to 4x4, NOT a sweet spot: there is no
+  meaningful degradation at 2x2 to make the curve U-shaped.  The shared pooling is not a demonstrated liability in
   this measurement; it behaves like a spatial low-pass that removes more nuisance than action.
 - **The same trade the paper makes about latent capacity, one level down.**  More spatial detail raises what the
   evidence could encode and admits background texture and distractor motion with it.  256 > 16 is not a given, and
@@ -2662,6 +2663,30 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   unexamined shortcut.
 - **Artifacts.** `acdc_la/results/spatial_curve.json`, `acdc_la/logs/spatial_20758828.out`.  The first attempt
   (job 20750817) held all four resolutions in memory and was OOM-killed.
+
+### 2026-09-16 — CORRECTION to the spatial curve entry: its patch_drop column was a different statistic
+
+- **What was wrong.** `common/spatial_curve.py` computed the drop per source and averaged those ratios, over only the
+  sources whose clean r2 exceeded 0.02 (24 of 29 at 16x16).  Every tokenizer table in this ledger computes it from the
+  aggregated means, `1 - mean(r2_net_patch) / mean(r2_net)` (`stage1_preserve/probes.py::on_code`).  So the curve's
+  drop column was not comparable with the tokenizer drop columns (17.9 / 19.7 / 22.4 / 28.9 %), against the rule set
+  on 2026-09-15 that a comparison needs one instrument.  Noticed because 0.325 -> 0.023 is a 93 % drop, not 66.5 %.
+- **Why the per-source form is also a bad statistic here.** A per-source ratio divides by a clean r2 that can sit just
+  above the 0.02 floor.  Across sources it ranged -11.4 % .. +309.6 % at 16x16 and -4.6 % .. +406.8 % at 8x8.
+- **Recomputed from the stored aggregated means (no rerun needed; both inputs were already in the json).**
+
+  | | 16x16 | 8x8 | 4x4 | 2x2 |
+  |---|---|---|---|---|
+  | reported first (mean of per-source ratios) | 66.5 % | 53.9 % | 43.7 % | 47.6 % |
+  | **corrected (ratio of means, as in the tokenizer tables)** | **93.0 %** | **59.0 %** | **44.0 %** | **45.7 %** |
+
+- **What changes in the reading.** (1) The main result STRENGTHENS: patch-level evidence loses 93 % of its net readout
+  to the distractor, against 44 % for the 4x4 grid.  (2) The "U-shaped sweet spot at 4x4" reading WEAKENS: the rise
+  to 2x2 is 1.7 points, not 3.9, and the clean readout differs by 0.008.  The defensible statement is "robustness
+  improves monotonically down to 4x4 and is flat below it", not "4x4 is an optimum".
+- **Label.** I had also called the column "accuracy lost to the distractor" in conversation.  It is a relative R2 drop.
+- **Fix.** The script now reports the ratio of means as `patch_drop_pct` and keeps the old statistic, renamed
+  `patch_drop_pct_mean_of_ratios`; `results/spatial_curve.json` was rewritten the same way.
 
 ## Registered next method: intervention first, real pairs second
 
