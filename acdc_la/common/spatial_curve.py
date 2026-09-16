@@ -51,9 +51,9 @@ def evidence(dF, b1):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--n-clips", type=int, default=20000); ap.add_argument("--grids", type=int, nargs="+", default=[16, 8, 4, 2])
+    ap.add_argument("--n-clips", type=int, default=12000); ap.add_argument("--grids", type=int, nargs="+", default=[16, 8, 4, 2])
     ap.add_argument("--pca", type=int, default=256, help="common dimension for every resolution before the ridge")
-    ap.add_argument("--batch", type=int, default=64); ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--batch", type=int, default=48); ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--val-per-source", type=int, default=400); ap.add_argument("--T", type=int, default=5)
     ap.add_argument("--stride", type=int, default=4); ap.add_argument("--out", default="spatial_curve")
     ap.add_argument("--sources", nargs="*", default=None); ap.add_argument("--seed", type=int, default=0)
@@ -67,49 +67,52 @@ def main():
     dino = Fz.load_dino(dev); K = a.T - 1
     b1 = Fz.dct_basis(K, 2, dev)[1]
     distractor = Distractor(dev)
-    store = {g: [] for g in a.grids}; store_p = {g: [] for g in a.grids}
-    ACT, GE, SI = [], [], []; t0 = time.time(); n = 0
-    for batch in dl_val:
-        clip, ge, lrow, act, lv, si = batch
-        frames = clip_to_frames(clip, dev)
-        B, T = frames.shape[:2]
-        with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16, enabled=dev == "cuda"):
-            for key, fr in (("clean", frames), ("patch", distractor.render(frames, ge))):
-                p = dino.forward_features((fr.reshape(B * T, *fr.shape[2:]) - Fz.IMNET_MEAN.to(dev)) / Fz.IMNET_STD.to(dev))
-                p = p["x_norm_patchtokens"].float()                                    # (B*T,256,768)
-                for g in a.grids:
-                    cells = pool_grid(p, g).view(B, T, g * g, DINO_DIM)
-                    dF = cells[:, 1:] - cells[:, :-1]
-                    (store if key == "clean" else store_p)[g].append(evidence(dF, b1).cpu().numpy().astype(np.float32))
-        ACT.append(act[:, :, :3].numpy()); GE.append(ge.numpy()); SI.append(si.numpy()); n += B
-        if n % (20 * a.batch) < a.batch: print(f"[spatial] {n}/{a.n_clips} clips ({time.time()-t0:.0f}s)", flush=True)
-        if n >= a.n_clips: break
+    names = [str(x) for x in srcs]
 
-    A = np.concatenate(ACT).astype(np.float64); GE = np.concatenate(GE); SI = np.concatenate(SI)
-    names = [str(s) for s in srcs]
-    tgt = dict(net=A.sum(1), seg1=A[:, 0], seq=A.reshape(len(A), -1), prof=(A - A.mean(1, keepdims=True)).reshape(len(A), -1))
-    print(f"[spatial] {len(A)} clips, {len(np.unique(SI))} sources, targets {[f'{k}{v.shape}' for k, v in tgt.items()]}", flush=True)
+    # ONE RESOLUTION AT A TIME.  Holding all four OOMs (job 20750817, exit 137): the 16x16 evidence alone is
+    # 2 x 256 x 768 floats per clip, twice over for the distractor view, and concatenation doubles the peak.
+    # Re-running DINO per resolution costs about a minute each, which is nothing next to the memory.
+    def sweep(g):
+        X, Xp, ACT, GE, SI = [], [], [], [], []; t0 = time.time(); n = 0
+        for batch in dl_val:
+            clip, ge, lrow, act, lv, si = batch
+            frames = clip_to_frames(clip, dev); B, T = frames.shape[:2]
+            with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16, enabled=dev == "cuda"):
+                for key, fr in (("clean", frames), ("patch", distractor.render(frames, ge))):
+                    x = (fr.reshape(B * T, *fr.shape[2:]) - Fz.IMNET_MEAN.to(dev)) / Fz.IMNET_STD.to(dev)
+                    cells = pool_grid(dino.forward_features(x)["x_norm_patchtokens"].float(), g).view(B, T, g * g, DINO_DIM)
+                    dF = cells[:, 1:] - cells[:, :-1]
+                    (X if key == "clean" else Xp).append(evidence(dF, b1).cpu().numpy().astype(np.float16))
+            ACT.append(act[:, :, :3].numpy()); GE.append(ge.numpy()); SI.append(si.numpy()); n += B
+            if n % (40 * a.batch) < a.batch: print(f"[spatial] g={g} {n}/{a.n_clips} ({time.time()-t0:.0f}s)", flush=True)
+            if n >= a.n_clips: break
+        return np.concatenate(X), np.concatenate(Xp), np.concatenate(ACT), np.concatenate(GE), np.concatenate(SI)
 
     from ..stage1_preserve.probes import pca_reduce
     res = {}
     for g in a.grids:
-        X = np.concatenate(store[g]); Xp = np.concatenate(store_p[g])
+        X, Xp, ACTn, GE, SI = sweep(g)
+        A = ACTn.astype(np.float64)
+        tgt = dict(net=A.sum(1), seg1=A[:, 0], seq=A.reshape(len(A), -1),
+                   prof=(A - A.mean(1, keepdims=True)).reshape(len(A), -1))
         raw = X.shape[1]
-        Xr = pca_reduce(X, a.pca) if raw > a.pca else X                     # same dimension for every resolution
-        Xpr = pca_reduce(Xp, a.pca) if raw > a.pca else Xp
+        Xr = pca_reduce(X.astype(np.float32), a.pca) if raw > a.pca else X.astype(np.float32)
+        Xpr = pca_reduce(Xp.astype(np.float32), a.pca) if raw > a.pca else Xp.astype(np.float32)
+        del X, Xp
         rows = {}
-        for s, tr, te in R.source_splits(GE, SI):
+        for s_, tr, te in R.source_splits(GE, SI):
             row = dict(n_test=int(te.sum()), cells=g * g, dims=int(Xr.shape[1]))
             for k, y in tgt.items():
                 G, _ = R.fit_reader(Xr, y, GE, tr); row[f"r2_{k}"] = R.r2(y[te], G(Xr[te]))
             Gp, _ = R.fit_reader(Xpr, tgt["net"], GE, tr); row["r2_net_patch"] = R.r2(tgt["net"][te], Gp(Xpr[te]))
             row["patch_drop_pct"] = 100 * (1 - row["r2_net_patch"] / row["r2_net"]) if row["r2_net"] > 0.02 else float("nan")
-            rows[names[s]] = row
-        res[f"g{g}"] = R.aggregate(rows); res[f"g{g}"]["raw_dims"] = int(raw)
-        print(f"[spatial] {g}x{g} = {g*g} cells (raw {raw}d -> {Xr.shape[1]}d): "
-              f"net {res[f'g{g}']['r2_net']:.3f} seg1 {res[f'g{g}']['r2_seg1']:.3f} prof {res[f'g{g}']['r2_prof']:.3f} "
-              f"seq {res[f'g{g}']['r2_seq']:.3f} patch_drop {res[f'g{g}']['patch_drop_pct']:.1f}%", flush=True)
+            rows[names[s_]] = row
+        res[f"g{g}"] = R.aggregate(rows); res[f"g{g}"]["raw_dims"] = int(raw); res[f"g{g}"]["n_clips"] = int(len(A))
+        r = res[f"g{g}"]
+        print(f"[spatial] {g}x{g} = {g*g} cells (raw {raw}d -> {Xr.shape[1]}d, {len(A)} clips): net {r['r2_net']:.3f} "
+              f"seg1 {r['r2_seg1']:.3f} prof {r['r2_prof']:.3f} seq {r['r2_seq']:.3f} patch_drop {r['patch_drop_pct']:.1f}%", flush=True)
         json.dump(res, open(os.path.join(RESULTS, f"{a.out}.json"), "w"), indent=1)
+        del Xr, Xpr
     R.table(res, COLS, [f"g{g}" for g in a.grids])
     print("[spatial-done]", flush=True)
 
