@@ -2622,6 +2622,47 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   in-budget test with headroom.
 - **Artifacts.** `acdc_la/logs/long_20754166.out`, `acdc_la/logs/probe_control.out`, `acdc_la/logs/tcgate_20747389.out`.
 
+### 2026-09-16 — spatial resolution curve: patch-level evidence is the WORST, and the most nuisance-sensitive by far
+
+- **Question.** Every tokenizer here reads a 4x4 DINO grid made by a fixed 4x4 mean pool of the 16x16 patch grid,
+  while UniVLA's LAM reads the patch grid.  How much task information does that shared pooling destroy?  The pooling is
+  linear, so it commutes with the temporal decomposition (N~ = P(N), A1~ = P(A1)) and cannot touch the Net/A1
+  argument, and it cannot confound tc_cont against the old ACDC (both read the same cache).  What it can remove is
+  spatial frequency -- and possibly nuisance.
+- **Setup (job 20758828, `common/spatial_curve.py`).** 11,472 OXE validation clips, 29 sources.  DINO patch tokens
+  extracted once per resolution and pooled to g x g; the same [N, A1] evidence the tokenizer is given; every resolution
+  PCA'd to 256 dims; leave-one-source-out ridge; repeated under the moving-patch distractor.  No tokenizer, no training.
+
+  | | 16x16 = 256 cells | 8x8 = 64 | **4x4 = 16 (ours)** | 2x2 = 4 (old ACDC) |
+  |---|---|---|---|---|
+  | r2_net | **0.325** | 0.342 | **0.358** | 0.350 |
+  | r2_seg1 | 0.269 | **0.283** | 0.258 | 0.276 |
+  | r2_prof | 0.065 | 0.070 | **0.073** | 0.062 |
+  | r2_seq | 0.233 | 0.245 | **0.254** | 0.233 |
+  | r2_net under distractor | **0.023** | 0.140 | **0.201** | 0.190 |
+  | **patch_drop** | **66.5 %** | 53.9 % | **43.7 %** | 47.6 % |
+
+- **Result.** Patch-level evidence reads the LEAST action of the four on net displacement and is catastrophically
+  nuisance-sensitive: under the distractor its net readout collapses from 0.325 to 0.023.  Nuisance sensitivity falls
+  monotonically from 256 to 16 cells (66.5 -> 53.9 -> 43.7 %) and rises slightly again at 4.  The 4x4 grid we use is
+  best or tied-best on net, profile, sequence and robustness.  The shared pooling is not a demonstrated liability in
+  this measurement; it behaves like a spatial low-pass that removes more nuisance than action.
+- **The same trade the paper makes about latent capacity, one level down.**  More spatial detail raises what the
+  evidence could encode and admits background texture and distractor motion with it.  256 > 16 is not a given, and
+  for a linearly read action it is false here.
+- **Caveats, and the first is serious.**  (1) PCA to 256 dims compresses the 16x16 evidence 1,536:1 and the 4x4
+  evidence 96:1, so the clean-readout columns partly measure what survives PCA; a nonlinear encoder over all 256
+  patches could extract more.  The patch_drop column is less exposed, because it compares clean and distractor
+  readouts WITHIN one resolution through the same PCA.  (2) A linear ridge, not a transformer.  (3) One nuisance
+  family (a moving natural-video patch).  So the claim is "patch-level evidence is much more nuisance-sensitive and
+  no better for a linear action readout", not "patch level is worse for a learned tokenizer".
+- **Consequence for the paper.**  The limitation stays in, stated as agreed ("all variants operate on a shared 4x4
+  DINO grid ... our spatial ablations evaluate 2x2 vs 4x4 aggregation, not patch-level modelling"), and this curve
+  goes next to it as evidence that the choice sits at the robust end of a measured trade-off rather than being an
+  unexamined shortcut.
+- **Artifacts.** `acdc_la/results/spatial_curve.json`, `acdc_la/logs/spatial_20758828.out`.  The first attempt
+  (job 20750817) held all four resolutions in memory and was OOM-killed.
+
 ## Registered next method: intervention first, real pairs second
 
 
