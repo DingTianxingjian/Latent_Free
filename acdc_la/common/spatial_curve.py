@@ -17,7 +17,7 @@ patch grid once, pool it to g x g for g in {16, 8, 4, 2}, build the SAME evidenc
     N_p = sum_k dF_{k,p}        A_p = sum_k b_1(k) dF_{k,p}
 
 reduce every resolution to a common PCA dimension so the ridge is not comparing dimensionalities, and read the action
-off it with the repo's standard leave-one-source-out ridge.  Repeat with the moving-patch distractor for the nuisance
+off it with the repo's standard per-source episode-disjoint ridge.  Repeat with the moving-patch distractor for the nuisance
 column.  The output is a spatial-resolution curve directly comparable to the latent-capacity results.
 
     python -m acdc_la.common.spatial_curve --n-clips 20000 --grids 16 8 4 2

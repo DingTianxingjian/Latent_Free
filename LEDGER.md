@@ -2175,7 +2175,7 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
 
 - **Test.** Every diagnostic so far inferred the posterior-to-policy gap *through a trained policy* (oracle L1 0.344
   vs chain L1 0.42).  This measures the underlying quantity directly and without any VLA:
-  `P = R2(z | F_0)`, leave-one-source-out ridge from the first-frame quadrant features to the code, episode-disjoint,
+  `P = R2(z | F_0)`, ridge from the first-frame quadrant features to the code on a per-source episode-disjoint split,
   clip-weighted over sources; reported beside the code's action content `S = R2(net displacement | z)` and the
   reference `R2(net displacement | F_0)` under the identical reader.  `usable = max(0,P) * max(0,S)` is an ordering
   heuristic, not an identity.
@@ -2198,9 +2198,10 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   usable 0.020 vs 0.012), so the information argument for the tokenizer holds.  (4) Within our own family the
   *most compressed* variant is the most usable: mean-pooled 128-d has 2x our P and 2x our usable while matching S.
   (5) A second epoch changes nothing (0.045/0.020 both epochs).
-- **Control.** One reader implementation for all three regressions and all arms; leave-one-source-out, so a code that
-  is only predictable within a source scores zero.  UniVLA's negative P is the expected sign for a 2048-d target read
-  from held-out sources, not a claim that their code is anti-predictable.  `F0Q` is quadrant-pooled DINOv2, not the
+- **Control.** One reader implementation for all three regressions and all arms, on a per-source episode-disjoint split
+  (CORRECTED 2026-09-16: this line originally said leave-one-source-out, which the code never did).  UniVLA's negative
+  P comes from a 2048-d target fitted on ~270 clips per source, not from source shift; not a claim that their code is
+  anti-predictable.  `F0Q` is quadrant-pooled DINOv2, not the
   7B backbone's state, and carries no instruction: absolute levels are lower bounds, only the ordering is claimed.
 - **Conclusion — PARTLY RETRACTED 2026-09-15, see the entry below.**  This relocates
   the binding constraint.  The lever is **not** S — we already beat UniVLA on action content — it is **P**, and
@@ -2238,9 +2239,10 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   (1) *Wrong target space.*  UniVLA deploys 4 indices into a 16-entry codebook, 9.45 bits of actual entropy on this
   domain.  I ridge-regressed the 2048-d concatenated codebook embedding; R2 in that space is not the quantity a
   classifier optimises, and a near-miss in embedding space and a wrong index are not the same event.
-  (2) *Wrong domain.*  The probe is leave-one-SOURCE-out on OXE, i.e. cross-embodiment extrapolation.  A negative R2
-  there means "worse than the training sources' mean", which is a statement about source shift, not about deployment.
-  Their deployment is LIBERO, in-domain, after LoRA fine-tuning on LIBERO demonstrations.
+  (2) ~~*Wrong domain: leave-one-source-out, i.e. cross-embodiment extrapolation.*~~  **WITHDRAWN 2026-09-16: the split
+  is per-source and episode-disjoint, never leave-one-source-out, so this reason was false.**  What remains true is only
+  that the probe is on OXE while their deployment is LIBERO after LoRA fine-tuning.  The retraction's conclusion still
+  stands on reasons (1), (3) and (4).
   (3) *Wrong reader.*  Ridge on 16 quadrant-pooled DINOv2 vectors **with no language**.  Language is decisive for
   their code specifically: its majority floor is 0.469 and one slot is a single code 78 % of the time, so much of
   their label is "which task/phase is this", which the instruction states outright.  Their actual reader is a 7B VLM.
@@ -2539,7 +2541,7 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Setup.** `latp2_anchor` = `stage3_transport/train_v2.py --init-from tc_cont --lam-effect 1 --lam-recover 0
   --lam-rel 0.5`, 15,000 steps, batch 64.  The anchored cycle: an ONLINE code realised on another row's state must
   carry that donor's REAL effect descriptor Psi = [N, A1], fixed and whitened from real data.
-- **Encoder probes (OXE val, the same leave-one-source-out ridge as every other row in this ledger).**
+- **Encoder probes (OXE val, the same per-source episode-disjoint ridge as every other row in this ledger).**
 
   | | dims | r2_net | seg1 | prof | seq | patch_drop |
   |---|---|---|---|---|---|---|
@@ -2631,7 +2633,7 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   spatial frequency -- and possibly nuisance.
 - **Setup (job 20758828, `common/spatial_curve.py`).** 11,472 OXE validation clips, 29 sources.  DINO patch tokens
   extracted once per resolution and pooled to g x g; the same [N, A1] evidence the tokenizer is given; every resolution
-  PCA'd to 256 dims; leave-one-source-out ridge; repeated under the moving-patch distractor.  No tokenizer, no training.
+  PCA'd to 256 dims; per-source episode-disjoint ridge; repeated under the moving-patch distractor.  No tokenizer, no training.
 
   | | 16x16 = 256 cells | 8x8 = 64 | **4x4 = 16 (ours)** | 2x2 = 4 (old ACDC) |
   |---|---|---|---|---|
@@ -2687,6 +2689,42 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Label.** I had also called the column "accuracy lost to the distractor" in conversation.  It is a relative R2 drop.
 - **Fix.** The script now reports the ratio of means as `patch_drop_pct` and keeps the old statistic, renamed
   `patch_drop_pct_mean_of_ratios`; `results/spatial_curve.json` was rewritten the same way.
+
+### 2026-09-16 — two corrections: the probe split was never leave-one-source-out; and 10 % data is NOT saturated
+
+**Correction 1 — every OXE R2 in this ledger is a per-source, episode-disjoint probe.**
+- `common/readers.py::source_splits` loops over sources and, WITHIN each source, puts 1/3 of its episodes in test
+  (RandomState(1)) and 2/3 in train.  A separate ridge is fit per source; results are clip-weighted over sources with
+  >= 80 test clips.  I described it as "leave-one-source-out" in the predictability, retraction, LATP and spatial
+  entries and in conversation.  It never was.  Fixed in place in those entries and in two docstrings.
+- **Scope of every probe claim, stated correctly:** generalisation to UNSEEN EPISODES of SEEN sources -- not to
+  unseen embodiments.  An easier test than the one I kept describing.
+- **One retraction reason was false and is withdrawn.**  The 2026-09-15 retraction of "UniVLA's latent is
+  unrecoverable" gave four reasons; reason (2), "leave-one-source-out = cross-embodiment extrapolation", is false.  The
+  retraction's conclusion still stands on reasons (1) embedding space vs indices, (3) no language, (4) weak reader.
+- **Full protocol, for the paper.**  Data: OXE validation episodes (fixed per-source `is_val` flag, never seen by any
+  tokenizer), stratified to 200 anchor/partner pairs = 400 clips per source, 29 sources, ~11.5k clips.  Target: xyz of
+  the per-segment action (summed per-step deltas for delta sources, pose difference for absolute-pose sources; rotation
+  and gripper not probed) -> net = sum over the 4 segments (3-d), seg1 (3-d), seq (12-d), prof = seq minus its clip mean
+  (12-d).  Reader: features standardised and clipped at +-10 sd, ridge alpha in {1e-1..1e4} chosen on an inner 1/5
+  episode split.  R2: 1 - SSE/SST per target dim on test rows, averaged over dims that vary.  ~267 train clips per
+  source against 256-d features, so the ridge penalty is doing real work.
+
+**Correction 2 — the UniVLA 10 %-data run is NOT saturated; my extrapolation from two tasks was wrong.**
+- Job 20759214, `univla` fine-tuned on `train[:10%]` = 43 demonstrations, 500 episodes:
+  **421 / 500 = 84.2 %**, against 474 / 500 = 94.8 % on 410 demonstrations.
+
+  | task | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+  |---|---|---|---|---|---|---|---|---|---|---|
+  | 410 demos | 0.90 | 0.98 | 0.96 | 1.00 | 0.86 | 0.96 | 1.00 | 0.96 | 1.00 | 0.86 |
+  | **43 demos** | 0.92 | 0.98 | 0.96 | **0.78** | **0.66** | 0.98 | 0.96 | 0.90 | 0.88 | **0.40** |
+
+- I had called 10 % "also saturated" from the first two tasks (0.92, 0.98), which are two of the easiest, and
+  recommended cancelling our arm on that basis.  The hard tasks fall a long way: task 10 0.86 -> 0.40, task 5
+  0.86 -> 0.66, task 4 1.00 -> 0.78.  **This is the headroom the data-efficiency comparison needed.**
+- **Consequence.** The queued `tc_cont@10%` VLA run (20754114) and its evaluation (20754115) are now the most valuable
+  jobs in the queue, not a long shot.  They stay.  Its labeller now reads `z_stats_tc_cont.npz` (written today; the run
+  would otherwise have trained on unstandardised targets).  Steps-to-success is logged for both arms.
 
 ## Registered next method: intervention first, real pairs second
 

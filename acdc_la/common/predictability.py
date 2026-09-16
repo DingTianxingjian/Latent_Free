@@ -7,7 +7,7 @@ through a trained policy.  This measures it directly and cheaply from an existin
 
 SCOPE (retraction 2026-09-15): this is a WITHIN-FAMILY instrument only -- valid for comparing arms that share a code
 space, a training domain and a reader.  It is NOT valid against UniVLA: their deployed code is 4 indices into a
-16-entry codebook, not the 2048-d embedding this regresses; the split here is leave-one-SOURCE-out on OXE, not their
+16-entry codebook, not the 2048-d embedding this regresses; the split here is per-source episode-disjoint on OXE, not their
 in-domain LIBERO; and the reader has no language, which is decisive for a code whose LIBERO majority floor is 0.469.
 Measured directly from their trained VLA, ~79 % of their label IS recovered at deployment.  For cross-method claims
 use held-out latent-token cross-entropy in bits against the label entropy instead.
