@@ -2581,6 +2581,47 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   class as the `tc_tag` and knob-accepted-and-ignored failures earlier in this project.
 - **Artifacts.** `acdc_la/logs/long_20746301.out`, `acdc_la/logs/probe_latp2.out`.
 
+### 2026-09-16 — LATP v2 CONFIRMED: the encoder gain is the objective, not the extra training
+
+- **The control.** `tc_cont_plus15k` (job 20754166): the same `tc_cont` checkpoint, the same 15,000 steps, the same
+  fresh cosine schedule, plain reconstruction objective.  Probed identically.
+
+  | | objective | r2_net | seg1 | prof | seq | patch_drop |
+  |---|---|---|---|---|---|---|
+  | `tc_cont` | (starting point, 65k of 128k) | 0.265 | 0.232 | 0.091 | 0.192 | 22.4 % |
+  | **`tc_cont_plus15k`** | **plain reconstruction, +15k** | **0.268** | 0.240 | 0.091 | 0.193 | **22.6 %** |
+  | `latp2_anchor` | anchored transport | 0.300 | 0.267 | 0.085 | 0.216 | 19.7 % |
+  | **`latp2_inv`** | anchored + nuisance invariance | **0.329** | **0.283** | **0.091** | **0.236** | **17.9 %** |
+
+- **Attribution.** 15,000 more steps of reconstruction buys **+0.003** on r2_net and **nothing** on nuisance
+  robustness (22.4 -> 22.6 %, slightly worse).  The transport objective buys **+0.035**, and with the invariance
+  term **+0.064** -- twenty-one times the control -- while nuisance drop improves by 4.5 points.  The gain is the
+  objective.
+- **`latp2_inv` beats the FULL-budget old tokenizer on every metric, from a half-budget starting point.**
+
+  | | `s1_acdc_1ep` (128k steps) | `latp2_inv` (from a 65k checkpoint) |
+  |---|---|---|
+  | r2_net / seg1 / prof / seq | 0.324 / 0.264 / 0.085 / 0.224 | **0.329 / 0.283 / 0.091 / 0.236** |
+  | patch_drop | 28.9 % | **17.9 %** |
+  | LIBERO latent_r2 (deployment predictability) | 0.50 | **0.730** |
+  | LIBERO latent_acc above its majority floor | 0.469 | **0.621** |
+
+- **Why this closes the v2 argument.**  Stage III froze the tokenizer and the VLA labeller calls only the encoder, so
+  v1's gains could not reach a policy by construction.  v2 makes the encoder trainable; the anchored cycle blocks the
+  vacuous solution that the code-space cycle admits (0.98 on semantics-free tensors); the encoder improves; and the
+  control says it is the objective.  Every instrumented failure mode is negative on the anchor arm (`effect_margin`
+  0.548, `replay_cos` 0.051, `z_erank` 54/64, `ctx_sens` 0.465).
+- **On `latp2_inv`'s collapse alarm.**  `rec_margin` fell 0.686 -> 0.099 and `z_erank` 54 -> 48, which reads as
+  partial collapse -- but every action probe ROSE.  The degeneracy is in the E-after-T inversion channel, not in the
+  code's content.  My earlier reading of that alarm as a content collapse was wrong, and the probes that decide it
+  are the action ones.
+- **What is still missing.**  None of this reaches a policy yet.  Offline chain L1 moves 0.427 -> 0.423 while the
+  whole spread from the best latent to NO LATENT AT ALL is 0.012 (0.421 vs 0.433), so that harness cannot resolve it
+  either -- the second independent confirmation, after the full-data closed-loop tie, that the field's measurements
+  are insensitive to what they are meant to measure.  The data-efficiency pair at 43 demonstrations remains the only
+  in-budget test with headroom.
+- **Artifacts.** `acdc_la/logs/long_20754166.out`, `acdc_la/logs/probe_control.out`, `acdc_la/logs/tcgate_20747389.out`.
+
 ## Registered next method: intervention first, real pairs second
 
 
