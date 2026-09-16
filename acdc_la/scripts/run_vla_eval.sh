@@ -6,6 +6,9 @@
 #SBATCH -t 06:00:00
 #SBATCH -J acdc_vlaeval
 #SBATCH -o /anvil/scratch/x-tding2/latent_free/acdc_la/logs/vlaeval_%j.out
+# 2026-09-16: job 20754113 died with SIGABRT (exit 134) at the first rollout on h006 -- model loaded, benchmark
+# built, then a native abort with no traceback, the signature of an EGL/MuJoCo context failure on that node.
+# Successful evaluations ran on h005 and h008.  Pass --exclude=h004,h006 until it is understood.
 # UniVLA's LIBERO evaluator on a controlled checkpoint: RUN=<run_dir under ckpt/vla_runs>, SUITE (libero_spatial), TRIALS (50).
 set -u -o pipefail
 cd /anvil/scratch/x-tding2/latent_free
