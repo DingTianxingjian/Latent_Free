@@ -15,6 +15,12 @@ set -u -o pipefail
 cd /anvil/scratch/x-tding2/latent_free
 source /anvil/scratch/x-tding2/latent_free/acdc_la/scripts/common.sh
 TAGS=${TAGS:-"tc_cont tc_vq256"}
+# 2026-09-15: the tokenizers were stopped at ~half budget (tc_cont 65k, tc_vq256 75k of 128k) because resuming to
+# the full budget would not have finished before the deadline.  The validation dump is normally written at the end of
+# training, so write it here from whatever checkpoint exists.
+for T in $TAGS; do
+  [ -f acdc_la/results/${T}_val.npz ] || run stage2_tc.train --tag $T --eval-only --workers 8 || exit 1
+done
 run stage1_preserve.probes --code-only $TAGS s1_acdc_1ep s1_mean_1ep
 run common.predictability $TAGS s1_acdc_1ep s1_mean_1ep   # P, S, usable -- WITHIN-FAMILY only (retraction 2026-09-15):
                                                          # univla is deliberately absent, its deployed code is 4 indices,
