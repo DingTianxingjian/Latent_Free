@@ -2534,6 +2534,53 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   (20746342/3) to add its own row to the tie.
 - **Artifacts.** `acdc_la/logs/vlaeval_20740894.out`, `vlaeval_20740897.out`.
 
+### 2026-09-15 — FIRST POSITIVE METHOD RESULT: LATP v2 improves the encoder, with every cheating probe negative
+
+- **Setup.** `latp2_anchor` = `stage3_transport/train_v2.py --init-from tc_cont --lam-effect 1 --lam-recover 0
+  --lam-rel 0.5`, 15,000 steps, batch 64.  The anchored cycle: an ONLINE code realised on another row's state must
+  carry that donor's REAL effect descriptor Psi = [N, A1], fixed and whitened from real data.
+- **Encoder probes (OXE val, the same leave-one-source-out ridge as every other row in this ledger).**
+
+  | | dims | r2_net | seg1 | prof | seq | patch_drop |
+  |---|---|---|---|---|---|---|
+  | `tc_cont` (the starting point, 65k of 128k) | 256 | 0.265 | 0.232 | 0.091 | 0.192 | 22.4 % |
+  | **`latp2_anchor`** | 256 | **0.300** | **0.267** | 0.085 | **0.216** | **19.7 %** |
+  | `s1_acdc_1ep` (old tokenizer, full budget) | 256 | 0.324 | 0.264 | 0.085 | 0.224 | 28.9 % |
+
+  Action information rose on net (+0.035), seg1 (+0.035) and seq (+0.024), profile fell 0.006, and nuisance
+  robustness improved to the best of the three.  seg1 now exceeds the full-budget old tokenizer.
+- **Why it matters.** LATP v1 froze the tokenizer and trained only the transport operator, and the VLA labeller
+  calls only the encoder -- so v1's gains could not reach a policy by construction.  This is the first evidence that
+  a transport objective can improve the part of the model that is actually deployed, and it did so WITHOUT the
+  feared cost: the concern was that the transport objective would drag the encoder off its action content.
+- **Every instrumented failure mode came back negative (step 15,000).**
+
+  | probe | value | reading |
+  |---|---|---|
+  | `effect_cos` / `effect_shuffle` | 0.564 / 0.016 | |
+  | **`effect_margin`** | **0.548** | the anchored term really carries the donor's effect |
+  | **`replay_cos`** | **0.051** | NOT replay: the realisation is near-orthogonal to the recipient's own motion |
+  | `z_erank` | 54.0 of 64 | no collapse |
+  | `ctx_sens` | 0.465 | the operator still uses the state; RTC is not satisfied by ignoring it |
+  | `rtc_cos` | 0.945 | the relation between two interventions transfers in direction |
+  | `mmd` | -0.006 | synthetic transitions are distributionally indistinguishable from real ones |
+
+  `replay_cos` is the surprise: I had written off the replay solution as the unavoidable residual degeneracy, and it
+  did not happen -- the transported effect correlates with the DONOR (0.56) and not with the recipient (0.05).
+- **The confound, and the control now running.** `latp2_anchor` saw 15,000 optimiser steps that `tc_cont` did not,
+  and `tc_cont` was stopped at 51 % of budget and still improving.  The gain may be extra training rather than the
+  objective.  `tc_cont_plus15k` (job 20752402) is the control: same checkpoint, same 15,000 steps, same fresh
+  schedule, plain reconstruction objective.  **No claim until that lands.**
+- **A negative signal to report alongside.**  `rec_frozen` falls 0.90 -> 0.27 over training: the encoder can no
+  longer read codes out of the FROZEN Phase-1 operator's output, i.e. it has co-adapted with the current operator
+  rather than learning an operator-independent reading.  That is the inversion signature the probe was built to
+  catch, and it did appear.  With `lam_recover = 0` it is not optimised and the encoder probes say it did no harm,
+  but it belongs in the paper.
+- **Bug found while building the control.** `run()` prefers `build()` over its own `--init-from` branch, so
+  `stage2_tc --init-from` was **silently ignored** and would have trained from scratch.  Fixed in `build()`.  Same
+  class as the `tc_tag` and knob-accepted-and-ignored failures earlier in this project.
+- **Artifacts.** `acdc_la/logs/long_20746301.out`, `acdc_la/logs/probe_latp2.out`.
+
 ## Registered next method: intervention first, real pairs second
 
 
