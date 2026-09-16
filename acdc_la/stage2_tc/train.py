@@ -17,6 +17,15 @@ from ..common.tcvq import TCVQ
 
 
 def build(a, dev):
+    # --init-from continues an existing tokenizer with a FRESH schedule.  run() prefers build() over its own
+    # --init-from branch, so the load has to happen here; without it the flag is silently ignored and the run starts
+    # from scratch.  This is the control for LATP v2: the same 15k extra steps, plain reconstruction objective.
+    if a.init_from:
+        from ..common.model import load_ckpt
+        from ..common.train_loop import resolve_ckpt
+        m, dstats, _ = load_ckpt(resolve_ckpt(a.init_from), dev)
+        print(f"[{a.tag}] continuing {a.init_from} with a fresh schedule (dF rms {dstats:.4f})", flush=True)
+        return m, dstats
     return TCVQ(a.T - 1, a.tc, a.n_tokens, a.codebook, a.latent_dim, a.width, a.enc_layers,
                 a.heads, a.layers, bottleneck=a.bottleneck, code_norm=a.code_norm,
                 struct_q=a.struct_queries).to(dev), None          # dstats: estimated by run()
