@@ -29,8 +29,10 @@ class TCVQLatentTokenizer(nn.Module):
         if self.dz and os.path.exists(p):
             zs = np.load(p); self.register_buffer("zmean", torch.as_tensor(zs["mean"]).to(dev)); self.register_buffer("zstd", torch.as_tensor(zs["std"]).to(dev))
         elif self.dz:
-            self.register_buffer("zmean", torch.zeros(self.dz, device=dev)); self.register_buffer("zstd", torch.ones(self.dz, device=dev))
-            print(f"[tcvq-labeller] WARNING: no z_stats_{tag}.npz; the continuous code is fed unstandardised", flush=True)
+            # FAIL, do not warn (2026-09-16).  A warning here silently feeds an unstandardised code to the regression
+            # head, whose per-dimension scales differ by an order of magnitude, and the continuous arm then looks bad
+            # for a reason that has nothing to do with continuity.  No z_stats existed for tc_cont or any LATP tag.
+            raise FileNotFoundError(f"{p} missing: run tcvq_tokens.write_z_stats('{tag}') on its validation dump first")
 
     @property
     def device(self): return self.dev
