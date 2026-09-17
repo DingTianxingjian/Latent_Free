@@ -1,0 +1,1417 @@
+Task suite: libero_spatial
+Tested Ckpt': univla+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000 
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 1...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 1
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 2...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 2
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 3...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 3
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 4...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 4
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 5...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 5
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 6...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 6
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 7...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 7
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 8...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 8
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 9...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 9
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 10...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 10
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 11...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 11
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 12...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 12
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 13...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 13
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 14...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 14
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 15...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 15
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 16...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 16
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 17...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 17
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 18...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 18
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 19...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 19
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 20...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 20
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 21...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 21
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 22...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 22
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 23...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 23
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 24...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 24
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 25...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 25
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 26...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 26
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 27...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 27
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 28...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 28
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 29...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 29
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 30...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 30
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 31...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 31
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 32...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 32
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 33...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 33
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 34...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 34
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 35...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 35
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 36...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 36
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 37...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 37
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 38...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 38
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 39...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 39
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 40...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 40
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 41...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 41
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 42...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 42
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 43...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 43
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 44...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 44
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 45...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 45
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 46...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 46
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 47...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 47
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 48...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 48
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 49...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 49
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl between the plate and the ramekin and place it on the plate
+Starting episode 50...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 50
+# successes: 0 (0.0%)
+Current task success rate: 0.0
+Current total success rate: 0.0
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 1...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 51
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 2...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 52
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 3...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 53
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 4...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 54
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 5...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 55
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 6...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 56
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 7...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 57
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 8...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 58
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 9...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 59
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 10...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 60
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 11...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 61
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 12...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 62
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 13...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 63
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 14...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 64
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 15...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 65
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 16...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 66
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 17...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 67
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 18...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 68
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 19...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 69
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 20...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 70
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 21...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 71
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 22...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 72
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 23...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 73
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 24...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 74
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 25...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 75
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 26...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 76
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 27...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 77
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 28...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 78
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 29...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 79
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 30...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 80
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 31...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 81
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 32...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 82
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 33...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 83
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 34...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 84
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 35...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 85
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 36...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 86
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 37...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 87
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 38...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 88
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 39...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 89
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 40...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 90
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 41...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 91
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 42...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 92
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 43...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 93
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 44...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 94
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 45...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 95
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 46...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 96
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 47...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 97
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 48...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 98
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 49...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 99
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl next to the ramekin and place it on the plate
+Starting episode 50...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 100
+# successes: 0 (0.0%)
+Current task success rate: 0.0
+Current total success rate: 0.0
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 1...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 101
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 2...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 102
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 3...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 103
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 4...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 104
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 5...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 105
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 6...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 106
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 7...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 107
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 8...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 108
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 9...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 109
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 10...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 110
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 11...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 111
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 12...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 112
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 13...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 113
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 14...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 114
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 15...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 115
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 16...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 116
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 17...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 117
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 18...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 118
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 19...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 119
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 20...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 120
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 21...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 121
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 22...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 122
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 23...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 123
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 24...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 124
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 25...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 125
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 26...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 126
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 27...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 127
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 28...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 128
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 29...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 129
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 30...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 130
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 31...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 131
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 32...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 132
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 33...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 133
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 34...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 134
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 35...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 135
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 36...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 136
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 37...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 137
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 38...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 138
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 39...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 139
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 40...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 140
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 41...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 141
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 42...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 142
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 43...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 143
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 44...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 144
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 45...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 145
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 46...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 146
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 47...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 147
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 48...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 148
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 49...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 149
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl from table center and place it on the plate
+Starting episode 50...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 150
+# successes: 0 (0.0%)
+Current task success rate: 0.0
+Current total success rate: 0.0
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 1...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 151
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 2...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 152
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 3...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 153
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 4...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 154
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 5...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 155
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 6...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 156
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 7...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 157
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 8...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 158
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 9...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 159
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 10...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 160
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 11...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 161
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 12...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 162
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 13...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 163
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 14...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 164
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 15...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 165
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 16...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 166
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 17...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 167
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 18...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 168
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 19...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 169
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 20...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 170
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 21...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 171
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 22...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 172
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 23...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 173
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 24...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 174
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 25...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 175
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 26...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 176
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 27...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 177
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 28...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 178
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 29...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 179
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 30...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 180
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 31...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 181
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 32...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 182
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 33...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 183
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 34...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 184
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 35...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 185
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 36...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 186
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 37...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 187
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 38...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 188
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 39...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 189
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 40...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 190
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 41...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 191
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 42...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 192
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 43...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 193
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 44...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 194
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 45...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 195
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 46...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 196
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 47...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 197
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 48...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 198
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 49...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 199
+# successes: 0 (0.0%)
+
+Task: pick up the black bowl on the cookie box and place it on the plate
+Starting episode 50...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 200
+# successes: 0 (0.0%)
+Current task success rate: 0.0
+Current total success rate: 0.0
+
+Task: pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate
+Starting episode 1...
+Caught exception: 'OpenVLAForActionPrediction' object has no attribute 'predict_latent_action'
+Success: False
+# episodes completed so far: 201
+# successes: 0 (0.0%)

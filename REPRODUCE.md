@@ -70,8 +70,11 @@ and edit the `#SBATCH` lines (or run the python commands directly; each script i
 rsync -avP <anvil-user>@anvil.rcac.purdue.edu:/anvil/scratch/x-tding2/latent_free/transfer/acdc_la_artifacts.tar .
 tar -xf acdc_la_artifacts.tar -C latent_free/        # unpacks acdc_la/ckpt/*.pt, claude_survey/ckpt/s2mix_1ep.pt, cache/index.npz
 ```
-(Optional mirror: `huggingface-cli upload --private Potestates/acdc-la-artifacts transfer/acdc_la_artifacts.tar` from Anvil,
-then `snapshot_download` on the new server.  Not done automatically.)
+HF mirror (private): `Potestates/acdc-la-artifacts`.  `ckpt_20260917/` holds the LATP v2 / structured-tokenizer
+checkpoints with their z-stats, laid out under their `latent_free/`-relative paths, and the bundle above as
+`acdc_la_artifacts.tar`.  Download with
+`huggingface-cli download Potestates/acdc-la-artifacts --include "ckpt_20260917/*" --local-dir hf_artifacts`, then copy
+`hf_artifacts/ckpt_20260917/acdc_la` and `.../claude_survey` into `latent_free/`.
 * `acdc_la/ckpt/s1_acdc_1ep.pt`: Stage-I ACDC tokenizer (8 cells x 32, T=5, stride 4), 128k steps x 64 on the capped OXE mixture.
 * `acdc_la/ckpt/s3_latp_1ep.pt`: LATP transport decoder on top of it (tokenizer frozen, 10k steps).  `s1_mean_1ep.pt`: pooled ablation.
 * `claude_survey/ckpt/s2mix_1ep.pt`: UniVLA Stage-2 recipe trained by us on the same mixture at the same budget (their class
@@ -81,6 +84,31 @@ then `snapshot_download` on the new server.  Not done automatically.)
 * `cache/index.npz`: LIBERO step index used by `data.py` (rebuilt by `python data.py` from the hdf5 files if missing).
 
 ## 3. The experiments, in priority order
+
+### 3-MAIN (2026-09-17). The main table: 10 % demonstrations, four LIBERO suites, UniVLA latent vs ours  — `PAPER_PLAN.md`
+Same recipe as 3a; only the labeller, the suite and `LIBERO_TRAIN_FRAC` change.  Anvil runs Spatial and Object;
+Goal and Long are the cells to run elsewhere (job map and status in `PAPER_PLAN.md` / `LEDGER.md`).
+Files needed beyond 3a (HF private repo `Potestates/acdc-la-artifacts`, folder `ckpt_20260917/`; paths are relative to `latent_free/`):
+`acdc_la/ckpt/latp2_inv.pt` + `acdc_la/ckpt/z_stats_latp2_inv.npz` (ours; the labeller refuses to run without the z-stats),
+`claude_survey/ckpt/s2mix_1ep.pt` (UniVLA same-data).  Data: `data/libero_rlds/libero_{spatial,object,goal,10}_no_noops`
+(HF dataset `openvla/modified_libero_rlds`).
+```
+export LIBERO_TRAIN_FRAC=10          # train[:10%]: spatial 43, object 45, goal 43, libero_10 38 demos; every task has >= 1
+# 2 GPUs: batch 8 x accum 4 per GPU = 64/step (Anvil uses 4 x 8 x 2; exp_id reads b32x2 instead of b16x4, same 64)
+for DS in libero_goal_no_noops libero_10_no_noops; do
+  $PY -m torch.distributed.run --standalone --nproc-per-node 2 -m acdc_la.downstream.vla.finetune_libero_ctrl --latent tc_cont --tc_tag latp2_inv \
+      --dataset_name $DS --run_id_note latp2inv_frac10 --grad_accumulation_steps 4 --max_steps 15000
+  $PY -m torch.distributed.run --standalone --nproc-per-node 2 -m acdc_la.downstream.vla.finetune_libero_ctrl --latent univla \
+      --dataset_name $DS --run_id_note frac10 --grad_accumulation_steps 4 --max_steps 15000
+done
+# evaluation, 50 trials x 10 tasks.  CONTINUOUS arms (tc_cont / acdc_cont / none) MUST use run_libero_eval_cont.py;
+# token arms (univla / acdc / tc_vq) use run_libero_eval_ctrl.py.  run_vla_eval.sh routes by ctrl_meta.json.
+PYTHONPATH=$PYTHONPATH:envs/LIBERO MUJOCO_GL=egl PYOPENGL_PLATFORM=egl $PY -m acdc_la.downstream.vla.run_libero_eval_cont --pretrained_checkpoint acdc_la/ckpt/vla_runs/<tc_cont exp_id> --task_suite_name libero_goal --num_trials_per_task 50 --local_log_dir acdc_la/results/vla_eval
+PYTHONPATH=$PYTHONPATH:envs/LIBERO MUJOCO_GL=egl PYOPENGL_PLATFORM=egl $PY -m acdc_la.downstream.vla.run_libero_eval_ctrl --pretrained_checkpoint acdc_la/ckpt/vla_runs/<univla exp_id> --task_suite_name libero_goal --num_trials_per_task 50 --local_log_dir acdc_la/results/vla_eval
+```
+**Evaluator fix of 2026-09-16 (pull before evaluating a continuous arm):** `run_libero_eval_cont.py` now applies UniVLA's
+0.9-area center crop (training uses random-crop augmentation; their token evaluator asserts it) and accepts `tc_cont`.
+An older checkout evaluates the continuous arm on uncropped images without any error.
 
 ### 3a. Full-VLA controlled comparison (the success-rate result)  — `acdc_la/VLA_DOWNSTREAM_PLAN.md`
 Both arms: UniVLA's LIBERO fine-tuning recipe from `openvla/openvla-7b`, only the latent labels differ.

@@ -1,0 +1,2 @@
+Task suite: libero_spatial
+Tested Ckpt': acdc+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000 

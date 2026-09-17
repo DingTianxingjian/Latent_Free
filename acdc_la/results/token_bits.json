@@ -1,0 +1,154 @@
+{
+ "univla+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000@libero_spatial_no_noops.val": {
+  "run": "univla+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000",
+  "arm": "univla",
+  "dataset": "libero_spatial_no_noops",
+  "split": "val",
+  "n_tokens": 4,
+  "codebook": 16,
+  "stable_per_token": 0.5785,
+  "stable_all_tokens": 0.14,
+  "all": {
+   "n": 1500,
+   "residual_bits": 4.035405735359166,
+   "label_entropy_bits": 9.438431032656046,
+   "recovered_bits": 5.40302529729688,
+   "recovered_frac": 0.5724495182094294,
+   "max_bits": 16.0
+  },
+  "stable_positions": {
+   "positions": 4,
+   "n_median": 920,
+   "residual_bits": 2.2936183320857806,
+   "label_entropy_bits": 6.767774311507059,
+   "recovered_bits": 4.474155979421279,
+   "recovered_frac": 0.6610971012750817
+  },
+  "stable": {
+   "n": 210,
+   "residual_bits": 2.155684892432116,
+   "label_entropy_bits": 6.045906825266045,
+   "recovered_bits": 3.890221932833929,
+   "recovered_frac": 0.6434472189641697,
+   "max_bits": 16.0
+  },
+  "unstable": {
+   "n": 1290,
+   "residual_bits": 4.3414072427680255,
+   "label_entropy_bits": 9.774079875497158,
+   "recovered_bits": 5.432672632729132,
+   "recovered_frac": 0.5558244563100422,
+   "max_bits": 16.0
+  }
+ },
+ "univla+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000@libero_spatial_no_noops.train": {
+  "run": "univla+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000",
+  "arm": "univla",
+  "dataset": "libero_spatial_no_noops",
+  "split": "train",
+  "n_tokens": 4,
+  "codebook": 16,
+  "stable_per_token": 0.5958333333333333,
+  "stable_all_tokens": 0.14133333333333334,
+  "all": {
+   "n": 1500,
+   "residual_bits": 2.356917492640417,
+   "label_entropy_bits": 9.37612492555357,
+   "recovered_bits": 7.019207432913154,
+   "recovered_frac": 0.7486256303798914,
+   "max_bits": 16.0
+  },
+  "stable_positions": {
+   "positions": 4,
+   "n_median": 935,
+   "residual_bits": 1.2778526367376888,
+   "label_entropy_bits": 6.812335633335443,
+   "recovered_bits": 5.534482996597754,
+   "recovered_frac": 0.8124207752647048
+  },
+  "stable": {
+   "n": 212,
+   "residual_bits": 1.158301519725833,
+   "label_entropy_bits": 5.852930368865528,
+   "recovered_bits": 4.694628849139695,
+   "recovered_frac": 0.8020988724063112,
+   "max_bits": 16.0
+  },
+  "unstable": {
+   "n": 1288,
+   "residual_bits": 2.5542054987685283,
+   "label_entropy_bits": 9.688610296249816,
+   "recovered_bits": 7.134404797481288,
+   "recovered_frac": 0.7363702924704084,
+   "max_bits": 16.0
+  }
+ },
+ "acdc+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000@libero_spatial_no_noops.val": {
+  "run": "acdc+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000",
+  "arm": "acdc",
+  "dataset": "libero_spatial_no_noops",
+  "split": "val",
+  "n_tokens": 16,
+  "codebook": 64,
+  "stable_per_token": 0.1165,
+  "stable_all_tokens": 0.0,
+  "all": {
+   "n": 1500,
+   "residual_bits": 52.63791819146777,
+   "label_entropy_bits": 83.20426197539437,
+   "recovered_bits": 30.566343783926605,
+   "recovered_frac": 0.36736512118773257,
+   "max_bits": 96.0
+  },
+  "stable_positions": {
+   "positions": 16,
+   "n_median": 133,
+   "residual_bits": 39.37298799717224,
+   "label_entropy_bits": 73.03736738161811,
+   "recovered_bits": 33.66437938444587,
+   "recovered_frac": 0.4609199453828952
+  },
+  "unstable": {
+   "n": 1500,
+   "residual_bits": 52.63791819146777,
+   "label_entropy_bits": 83.20426197539437,
+   "recovered_bits": 30.566343783926605,
+   "recovered_frac": 0.36736512118773257,
+   "max_bits": 96.0
+  }
+ },
+ "acdc+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000@libero_spatial_no_noops.train": {
+  "run": "acdc+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000",
+  "arm": "acdc",
+  "dataset": "libero_spatial_no_noops",
+  "split": "train",
+  "n_tokens": 16,
+  "codebook": 64,
+  "stable_per_token": 0.118375,
+  "stable_all_tokens": 0.0,
+  "all": {
+   "n": 1500,
+   "residual_bits": 47.538200572966524,
+   "label_entropy_bits": 85.06374610081346,
+   "recovered_bits": 37.52554552784694,
+   "recovered_frac": 0.4411461668214502,
+   "max_bits": 96.0
+  },
+  "stable_positions": {
+   "positions": 16,
+   "n_median": 145,
+   "residual_bits": 33.82766384623342,
+   "label_entropy_bits": 76.69814436643442,
+   "recovered_bits": 42.870480520201,
+   "recovered_frac": 0.5589506874557777
+  },
+  "unstable": {
+   "n": 1500,
+   "residual_bits": 47.538200572966524,
+   "label_entropy_bits": 85.06374610081346,
+   "recovered_bits": 37.52554552784694,
+   "recovered_frac": 0.4411461668214502,
+   "max_bits": 96.0
+  }
+ }
+}

@@ -1,0 +1,43 @@
+{
+ "T": 5,
+ "stride": 4,
+ "split": "train",
+ "n_sources": 2,
+ "n_clips": 9090,
+ "sampling": "p_i = w_i * n_transitions_i(full, est. = episodes_available x mean converted episode length) / Z; spread uniformly over the converted clips of source i (UniVLA rlds/dataset.py balance_weights=True)",
+ "sources": [
+  {
+   "source": "bridge_big",
+   "cache": "/anvil/scratch/x-tding2/latent_free/cache/bridge_big",
+   "w": 1.0,
+   "episodes": 30,
+   "clips": 796,
+   "lang": true,
+   "action_kind": "delta",
+   "episodes_all": 5000,
+   "frames": 187587,
+   "episodes_available": 53192,
+   "n_transitions_full_est": 1144554,
+   "p_univla": 0.80361,
+   "p_univla_on_cache_counts": 0.08757,
+   "p_uniform_clips": 0.08757
+  },
+  {
+   "source": "toto",
+   "cache": "/anvil/scratch/x-tding2/latent_free/cache/oxe/toto",
+   "w": 1.0,
+   "episodes": 30,
+   "clips": 8294,
+   "lang": true,
+   "action_kind": "absolute",
+   "episodes_all": 902,
+   "frames": 294139,
+   "episodes_available": 902,
+   "n_transitions_full_est": 279707,
+   "p_univla": 0.19639,
+   "p_univla_on_cache_counts": 0.91243,
+   "p_uniform_clips": 0.91243
+  }
+ ],
+ "batch_mode": "source"
+}
