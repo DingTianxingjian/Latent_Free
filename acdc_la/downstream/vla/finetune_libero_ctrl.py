@@ -147,6 +147,15 @@ def build_labeller(cfg, device_id):
 
 @draccus.wrap()
 def finetune(cfg: Cfg) -> None:
+    # Per-job re-targeting (2026-09-16).  Slurm freezes a pending job's environment and `scontrol top` is denied to users
+    # on Anvil, so changing what an already-queued job trains without giving up its queue age goes through a file named
+    # by its job id.  Applied before anything reads cfg; printed, and recorded in ctrl_meta.json.
+    ov = Path(__file__).parent / "job_overrides" / f"{os.environ.get('SLURM_JOB_ID', 'none')}.json"
+    ov_d = json.load(open(ov)) if ov.exists() else {}
+    for k, v in ov_d.items():
+        assert hasattr(cfg, k) and not isinstance(getattr(cfg, k), bool), f"override key {k!r} is not a non-bool Cfg field"
+        setattr(cfg, k, v if getattr(cfg, k) is None else type(getattr(cfg, k))(v))
+    if ov_d: print(f"[ctrl] OVERRIDE {ov}: {ov_d}", flush=True)
     assert torch.cuda.is_available(); assert cfg.latent in ("univla", "acdc", "acdc_cont", "none", "tc_cont", "tc_vq")
     state = PartialState(); torch.cuda.set_device(device_id := state.local_process_index); torch.cuda.empty_cache()
     exp_id = f"{cfg.latent}+{cfg.dataset_name}+b{cfg.batch_size * cfg.grad_accumulation_steps}x{state.num_processes}+lr{cfg.learning_rate}+r{cfg.lora_rank}+s{cfg.max_steps}" + (f"--{cfg.run_id_note}" if cfg.run_id_note else "")
@@ -213,7 +222,8 @@ def finetune(cfg: Cfg) -> None:
                     model.module.vla.save_pretrained(adapter_dir)
                     torch.save((model.module.heads if cont else model.module.action_decoder).state_dict(), run_dir / "action_decoder.pt")
                     json.dump(dict(latent=cfg.latent, n_tokens=n_tokens, codebook_size=codebook_size, dz=dz, window_size=cfg.window_size, step=step + 1, vla_path=cfg.vla_path,
-                                   lam_path=cfg.lam_path, acdc_tag=cfg.acdc_tag, acdc_codebook=cfg.acdc_codebook), open(run_dir / "ctrl_meta.json", "w"), indent=1)
+                                   lam_path=cfg.lam_path, acdc_tag=cfg.acdc_tag, acdc_codebook=cfg.acdc_codebook, tc_tag=cfg.tc_tag, dataset_name=cfg.dataset_name,
+                                   train_frac=os.environ.get("LIBERO_TRAIN_FRAC"), override=ov_d), open(run_dir / "ctrl_meta.json", "w"), indent=1)
                     print(f"[ctrl] saved adapter + decoder at step {step + 1}", flush=True)
                 dist.barrier()
             if step + 1 >= cfg.max_steps: break

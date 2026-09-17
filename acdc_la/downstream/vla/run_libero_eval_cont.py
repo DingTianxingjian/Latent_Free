@@ -1,4 +1,4 @@
-"""LIBERO evaluation of the CONTINUOUS-latent arm (finetune_libero_ctrl.py --latent acdc_cont).
+"""LIBERO evaluation of the CONTINUOUS-latent arms (finetune_libero_ctrl.py --latent acdc_cont | tc_cont | none).
 
 The token arms are evaluated by UniVLA's own script (run_libero_eval_ctrl.py): the VLM GENERATES latent tokens and the
 decoder reads their hidden states.  This arm has no latent vocabulary, so the VLM is run forward once per step and the
@@ -24,6 +24,20 @@ from libero.libero import benchmark
 from experiments.robot.libero.libero_utils import get_libero_env, get_libero_image, get_libero_dummy_action
 from experiments.robot.robot_utils import set_seed_everywhere, normalize_gripper_action, invert_gripper_action
 from .finetune_libero_ctrl import ContHeads
+from experiments.robot.openvla_utils import crop_and_resize
+import tensorflow as tf
+try: tf.config.set_visible_devices([], "GPU")                 # TF only does the crop below; keep it off the policy's GPU
+except RuntimeError: pass                                     # already initialised (and hidden) by the RLDS import
+
+
+def center_crop(img, crop_scale=0.9):
+    """UniVLA's get_vla_latent_action(center_crop=True), verbatim in behaviour (openvla_utils.py:182-203).  The token arms
+    are evaluated WITH it (their script asserts center_crop because training uses random-crop augmentation); this
+    evaluator shipped without it until 2026-09-16, which would have fed the continuous arms an uncropped image that no
+    training batch ever looked like."""
+    x = tf.image.convert_image_dtype(tf.convert_to_tensor(np.array(img)), tf.float32)
+    x = tf.clip_by_value(crop_and_resize(x, crop_scale, 1), 0, 1)
+    return Image.fromarray(tf.image.convert_image_dtype(x, tf.uint8, saturate=True).numpy()).convert("RGB")
 
 MAX_STEPS = {"libero_spatial": 240, "libero_object": 300, "libero_goal": 320, "libero_10": 550, "libero_90": 420}
 
@@ -56,7 +70,7 @@ def main():
     ap.add_argument("--seed", type=int, default=7)
     a = ap.parse_args(); set_seed_everywhere(a.seed); dev = "cuda"
     meta = json.load(open(os.path.join(a.pretrained_checkpoint, "ctrl_meta.json")))
-    assert meta["latent"] == "acdc_cont", meta["latent"]
+    assert meta["latent"] in ("acdc_cont", "tc_cont", "none"), meta["latent"]     # every arm trained through ContHeads
     W = int(meta["window_size"]); dz = int(meta["dz"])
 
     AutoConfig.register("openvla", OpenVLAConfig); AutoImageProcessor.register(OpenVLAConfig, PrismaticImageProcessor)
@@ -86,7 +100,7 @@ def main():
             while t < MAX_STEPS[a.task_suite_name] + a.num_steps_wait and not done:
                 if t < a.num_steps_wait:
                     obs, _, done, _ = env.step(get_libero_dummy_action("openvla")); t += 1; continue
-                img = Image.fromarray(get_libero_image(obs, 224)).convert("RGB")
+                img = center_crop(Image.fromarray(get_libero_image(obs, 224)).convert("RGB"))
                 inputs = processor(prompt, img)
                 inputs = {k: (v.to(dev, dtype=torch.bfloat16) if v.dtype.is_floating_point else v.to(dev)) for k, v in inputs.items()}
                 with torch.no_grad():

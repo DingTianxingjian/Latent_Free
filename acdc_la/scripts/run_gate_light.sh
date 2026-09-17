@@ -15,4 +15,6 @@ for T in ${TAGS:?set TAGS}; do
 done
 run stage1_preserve.probes --code-only $TAGS s1_acdc_1ep s1_mean_1ep
 run common.predictability $TAGS s1_acdc_1ep s1_mean_1ep
+# ZSTATS: tags whose continuous code will label a VLA; the labeller refuses to run without these standardisation stats.
+for T in ${ZSTATS:-}; do run downstream.vla.tcvq_tokens $T || exit 1; done
 echo "GATE LITE DONE $(date)"

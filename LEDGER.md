@@ -2726,6 +2726,51 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   jobs in the queue, not a long shot.  They stay.  Its labeller now reads `z_stats_tc_cont.npz` (written today; the run
   would otherwise have trained on unstandardised targets).  Steps-to-success is logged for both arms.
 
+### 2026-09-16 (night) — main table first (user); deadline 2026-09-24; seven main-table VLA runs queued; the continuous-arm evaluator was broken and is fixed before it produced anything
+
+- **Decision (user).** Ablations are deprioritised; the paper needs its main table.  Deadline is ICLR 2026-09-24.
+  The plan (sections, tables, figures, job map, open decision) is `PAPER_PLAN.md`.
+- **Main table.** Controlled VLA post-training at **10 % of the demonstrations on all four LIBERO suites**, UniVLA
+  same-data latent (`s2mix_1ep`) vs ours (`latp2_inv`), identical recipe (15k x 64, their evaluator, 500 episodes).
+  The 10 % split covers every task in every suite (demos per task, sorted by instruction): spatial 43 total (2-9),
+  object 45 (1-7), goal 43 (2-7), libero_10 38 (1-7).  Held-out `train[95%:]` is untouched.
+- **Queue swap, and how.** `scontrol top` is denied to users on Anvil, and a pending job's environment is frozen.
+  `finetune_libero_ctrl.py` now reads `downstream/vla/job_overrides/<SLURM_JOB_ID>.json` before anything reads cfg,
+  prints it, and records it in `ctrl_meta.json` (which now also stores `tc_tag`, `dataset_name`, `train_frac`).
+  20754114 (priority 2942, submitted as `tc_cont`@10 % spatial) now trains **`latp2_inv`@10 % spatial**; 20775018
+  (submitted as `latp2_inv`@10 %) now trains **UniVLA@10 % libero_object**.  Tested on CPU against the real `Cfg`: both
+  resolve to the run directories the new evaluation jobs expect; a job without a file is unchanged.
+- **BUG, caught before it produced a number (nothing to retract).**  The continuous-arm evaluation had never run for
+  a `tc_cont` checkpoint, and would have been wrong in three ways: (1) `run_vla_eval.sh` / `run_vla_loadtest.sh`
+  routed only `acdc_cont` to `run_libero_eval_cont.py`, so `tc_cont` checkpoints would have gone to the TOKEN
+  evaluator; (2) `run_libero_eval_cont.py` asserted `latent == acdc_cont`; (3) it **did not apply UniVLA's 0.9-area
+  center crop**, which their evaluator asserts because training uses random-crop augmentation.  (3) is the dangerous
+  one: it would have run without an error while showing our arm a crop no training batch ever looked like, a
+  train/test mismatch only our arm would have suffered.  All three fixed; the crop is their `crop_and_resize` call
+  and was checked on CPU.  A libero_10 smoke plus load test of both evaluators (20783066 -> 20783067) now gates every
+  main-table evaluation.
+- **Stale jobs to cancel.** 20754115 and 20775019 are evaluations holding frozen copies of the OLD routing script
+  (20775019 would evaluate the `latp2_inv` run through the token evaluator).  My `scancel` was blocked by the
+  auto-mode permission check; the user was asked to cancel them.
+- **Residual asymmetry, stated, not fixed.** The continuous head pools text hidden states that include right-padding
+  in training batches and none at batch-1 evaluation.  Removing it needs retraining.
+- **Jobs.**
+
+  | cell | train | eval |
+  |---|---|---|
+  | spatial / Ours | 20754114 (override) | 20783070 |
+  | object / UniVLA, Ours | 20775018 (override), 20783072 | 20783071, 20783073 |
+  | goal / Ours, UniVLA | 20783074, 20783076 | 20783075, 20783077 |
+  | libero_10 / Ours, UniVLA | 20783078, 20783080 | 20783079, 20783081 |
+  | LATP on `tc_acdc` (`latp2_acdc_inv`, same flags as `latp2_inv`) -> probes vs `tc_acdc`, `latp2_inv`, `tc_cont` + z-stats | 20783064 -> 20783065 | |
+
+  `train_v2.step` was checked on CPU against the `tc_acdc` architecture (netdyn, structured queries, 8 x 32) before
+  submission.  Intermediate `_stepN` snapshots do not carry the architecture config and cannot initialise LATP; the
+  final `tc_acdc.pt` does.
+- **Open decision.** Which base is "Ours": `latp2_inv` (`tc_cont`: F0 in the encoder, 4 x 64) or `latp2_acdc_inv`
+  (the clean ACDC definition).  Proposed rule in `PAPER_PLAN.md`; the not-yet-started Ours runs can be re-targeted
+  by override.
+
 ## Registered next method: intervention first, real pairs second
 
 
