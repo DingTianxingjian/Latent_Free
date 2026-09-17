@@ -2793,6 +2793,40 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   to the user: run Goal and Long on the workstation (2 x RTX PRO 6000, ~13 h per training arm), or shrink the main
   table to the suites that finish.
 
+### 2026-09-17 (11:30) — clean ACDC (`tc_acdc`, 125k) reads LESS action than `tc_cont` and than the old tokenizer; Ours@10 % spatial trained; libero_10 smoke passed
+
+- **Probes (job 20781752; OXE val, 400 clips/source, per-source episode-disjoint ridge, the same protocol as every row
+  in this ledger).  The `tc_acdc` dump was written by `--eval-only` from `ckpt/tc_acdc.pt` = step 125,000; the
+  architecture comes from the checkpoint's stored `tcvq` config.**
+
+  | | steps | r2_net | seg1 | prof | seq | patch_drop | P(z given state) |
+  |---|---|---|---|---|---|---|---|
+  | **`tc_acdc`** (clean ACDC: netdyn, 8 x 32 structured slots, no F0 in the encoder) | 125k | **0.223** | **0.199** | 0.074 | **0.157** | **31.9 %** | 0.018 |
+  | `tc_cont` (endpointdyn, 4 x 64, F0 in the encoder) | 65k | 0.265 | 0.232 | 0.091 | 0.192 | 22.4 % | 0.019 |
+  | `latp2_inv` (LATP v2 on `tc_cont`) | 65k + 15k | 0.329 | 0.283 | 0.091 | 0.236 | 17.9 % | 0.224 |
+  | `s1_acdc_1ep` (old quadrant + MLP tokenizer) | 128k | 0.324 | 0.264 | 0.085 | 0.224 | 28.9 % | 0.045 |
+  | `s1_mean_1ep` (pooled) | 128k | 0.336 | 0.210 | 0.017 | 0.200 | 33.6 % | 0.087 |
+
+- **Reading.** `tc_acdc` is below `tc_cont` on every column (net -0.042, seg1 -0.033, prof -0.017, seq -0.035,
+  distractor drop +9.5 points) despite ~2x the optimiser steps, and below the old tokenizer on net, seg1 and seq.
+  **Confounded, so no single cause is claimed:** it differs from `tc_cont` in three ways at once (no state/F0 evidence
+  in the encoder; 8 x 32 structured slots vs 4 x 64; netdyn vs endpointdyn evidence).  Deployment predictability is the
+  same (0.018 vs 0.019).  The in-training curve (net ~0.13 on 200 clips/source) had already pointed this way.
+- **Consequence for the open "which base is Ours" decision.** The proposed rule required LATP on `tc_acdc` to land
+  within 0.01 of `latp2_inv`.  `tc_acdc` starts 0.04-0.06 below `tc_cont`, and LATP added +0.064 on `tc_cont`.
+  Recommendation to the user: keep `latp2_inv` as Ours and describe the `tc_cont` architecture as it is.  20783064
+  (LATP on `tc_acdc`) is kept, as evidence that LATP helps a second base, not as the main model.
+- **Main table.** 20754114 finished: 15k steps in 3 h 53 min, train-batch latent_r2 0.826, action_l1 0.0214;
+  `ckpt/vla_runs/tc_cont+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000--latp2inv_frac10`.  Its evaluation
+  20783070 is pending (1 GPU, no Slurm estimate yet).  UniVLA object (20775018) started 11:01 on h016.  Estimates:
+  Ours object 9/18 00:20, Ours goal 9/18 00:55.
+- **libero_10 smoke (20783066): both arms exit 0**, dataset statistics computed (12-step numbers validate the code path
+  only).  The evaluator load test 20783067 is still pending.
+- **Guard added.** `run_libero_eval_ctrl.py` now refuses a checkpoint with no latent vocabulary (continuous arm).  The
+  stale 20775019 (old routing script, frozen at submission) becomes eligible when 20775018 finishes today and would
+  have evaluated the `latp2_inv` spatial checkpoint with the token evaluator; it now fails at startup.  The user has
+  been asked to cancel it and 20754115.
+
 ## Registered next method: intervention first, real pairs second
 
 
