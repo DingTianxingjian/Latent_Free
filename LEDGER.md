@@ -2772,6 +2772,27 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   (the clean ACDC definition).  Proposed rule in `PAPER_PLAN.md`; the not-yet-started Ours runs can be re-targeted
   by override.
 
+### 2026-09-17 (00:10) — `tc_acdc` stopped by walltime at 127.2k; the 125k checkpoint is used; the queue puts Goal and Long past the deadline
+
+- **Walltime.** 20747388 (gpu partition, `-t 08:00:00`) was cancelled at step 127,200 of 128,000.  The last full
+  checkpoint, `ckpt/tc_acdc.pt`, is **step 125,000 (97.7 % of budget)**.  The in-training curve has been flat since
+  50k (net 0.129 at 50k, 0.137 at 120k; drop 44 % -> 35 %).  Decision: use 125k rather than wait for a 1-GPU slot
+  to run the last 3k steps (the 1-GPU smoke is estimated at 9/18 17:30).  The paper states 125k of 128k, or the
+  run is resumed later.
+- **Chain repaired.** 20781752 (probes: `tc_acdc`, `tc_cont`, `latp2_inv`) and 20783064 (`latp2_acdc_inv`) had
+  `afterok:20747388`, which can no longer be satisfied; both dependencies were cleared, so they run from the 125k
+  checkpoint.  20783065 still follows 20783064.
+- **Main-table progress.** 20754114 (`latp2_inv` @ 10 % spatial, override confirmed in the log): step 7,250 after
+  1 h 53 min, 0.93 s/step on h008, so training ends around 02:10.  Train-batch latent_r2 is 0.75-0.78.
+- **Queue risk.** The ai partition has 303 pending jobs and 64 GPUs running.  Priority is age plus partition only
+  (sprio shows no fairshare term), so order is effectively submission order.  Our pending jobs rank 54 (UniVLA
+  object), 90 (Ours object), 96 (Ours goal) and 146-148 (UniVLA goal, both Long).  Slurm estimates: 9/18 06:10,
+  9/21 21:00, 9/22 09:00, and no estimate for the rest.  Evaluations enter the queue at priority 75 when their
+  training ends.  **At these estimates Goal and Long do not finish before 2026-09-24.**  Estimates have been
+  pessimistic (20754114 was estimated for 9/17 06:00 and started 9/16 22:05), but not by three days.  Options put
+  to the user: run Goal and Long on the workstation (2 x RTX PRO 6000, ~13 h per training arm), or shrink the main
+  table to the suites that finish.
+
 ## Registered next method: intervention first, real pairs second
 
 
