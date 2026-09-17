@@ -2747,8 +2747,9 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   center crop**, which their evaluator asserts because training uses random-crop augmentation.  (3) is the dangerous
   one: it would have run without an error while showing our arm a crop no training batch ever looked like, a
   train/test mismatch only our arm would have suffered.  All three fixed; the crop is their `crop_and_resize` call
-  and was checked on CPU.  A libero_10 smoke plus load test of both evaluators (20783066 -> 20783067) now gates every
-  main-table evaluation.
+  and was checked on CPU.  A libero_10 smoke plus load test of both evaluators (20783066 -> 20783067) runs as an early
+  warning.  It first gated every evaluation, but Slurm estimated the 1-GPU smoke for 9/18 22:00, so the evaluations
+  now depend only on their training job; the evaluators are read at run time, so a failure can still be fixed first.
 - **Stale jobs to cancel.** 20754115 and 20775019 are evaluations holding frozen copies of the OLD routing script
   (20775019 would evaluate the `latp2_inv` run through the token evaluator).  My `scancel` was blocked by the
   auto-mode permission check; the user was asked to cancel them.

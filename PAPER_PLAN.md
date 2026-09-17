@@ -61,8 +61,9 @@ net (0.329 vs 0.261) and seg1 (0.283 vs 0.249), **worse on profile** (0.091 vs 0
 
 ## Experiments (submitted 2026-09-16 night)
 
-VLA training is 4xH100, ~5.6 h; evaluation is 1 GPU, 2-6 h (Long up to 12 h limit).  Every evaluation also waits
-for the libero_10 load test, so an evaluator failure costs one small job, not seven evaluations.
+VLA training is 4xH100, ~5.6 h; evaluation is 1 GPU, 2-6 h (Long up to 12 h limit).  Evaluations depend only on their
+training job.  The libero_10 smoke + load test (20783066 -> 20783067) runs independently as an early warning; the
+evaluators are Python modules read at run time, so a failure it finds can be fixed before any evaluation starts.
 
 | cell | train job | eval job |
 |---|---|---|
