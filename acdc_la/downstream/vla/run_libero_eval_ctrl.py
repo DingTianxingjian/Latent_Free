@@ -3,7 +3,7 @@ tokens and a Kc-word latent vocabulary, both read from ctrl_meta.json next to th
 finetune_libero_ctrl.py.  Sampling, history prompt, MAP decoder, open-loop 12-step chunk, 50 trials/task: unchanged.
   python -m acdc_la.downstream.vla.run_libero_eval_ctrl --pretrained_checkpoint <run_dir> --task_suite_name libero_spatial
 """
-import os, sys, json
+import os, re, sys, json
 from acdc_la.paths import UNIVLA_ROOT
 sys.path.insert(0, UNIVLA_ROOT); sys.path.insert(0, os.path.join(UNIVLA_ROOT, "experiments", "robot", "libero"))
 _ck = next(sys.argv[i + 1] for i, a in enumerate(sys.argv) if a == "--pretrained_checkpoint")
@@ -255,6 +255,7 @@ def eval_libero(cfg: GenerateConfig) -> None:
 
     # Initialize local logging
     run_id = f"EVAL-{cfg.task_suite_name}-{cfg.model_family}-{DATE_TIME}"
+    if os.environ.get("LIBERO_TASK_IDS"): run_id += "--t" + os.environ["LIBERO_TASK_IDS"].replace(",", "_")
     if cfg.run_id_note is not None:
         run_id += f"--{cfg.run_id_note}"
     os.makedirs(cfg.local_log_dir, exist_ok=True)
@@ -285,7 +286,12 @@ def eval_libero(cfg: GenerateConfig) -> None:
 
     # Start evaluation
     total_episodes, total_successes = 0, 0
-    for task_id in tqdm.tqdm(range(num_tasks_in_suite)):
+    # LIBERO_TASK_IDS (2026-09-17): evaluate only these task ids, so 500 episodes can be split across short jobs that
+    # backfill.  Episodes and initial states per task are unchanged; merge the parts with downstream/vla/eval_merge.py.
+    _ids = os.environ.get("LIBERO_TASK_IDS")
+    _ids = [int(x) for x in re.split(r"[,_]", _ids)] if _ids else list(range(num_tasks_in_suite))   # "_" as well as "," : sbatch --export splits on commas
+    assert all(0 <= i < num_tasks_in_suite for i in _ids), (_ids, num_tasks_in_suite)
+    for task_id in tqdm.tqdm(_ids):
 
         # Get task
         task = task_suite.get_task(task_id)

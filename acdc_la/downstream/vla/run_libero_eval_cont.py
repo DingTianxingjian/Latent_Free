@@ -8,7 +8,7 @@ overlapping chunks, same gripper conventions, same max_steps, 50 trials per task
 
   python -m acdc_la.downstream.vla.run_libero_eval_cont --pretrained_checkpoint <run_dir> --task_suite_name libero_spatial
 """
-import os, sys, json, argparse, time
+import os, re, sys, json, argparse, time
 import numpy as np
 import torch
 from PIL import Image
@@ -89,7 +89,14 @@ def main():
     os.makedirs(a.local_log_dir, exist_ok=True)
     out = {"checkpoint": a.pretrained_checkpoint, "suite": a.task_suite_name, "trials": a.num_trials_per_task, "per_task": {}}
     ens = Ensembler(W); t0 = time.time(); tot = succ = 0
-    for ti in range(suite.n_tasks):
+    ids = os.environ.get("LIBERO_TASK_IDS")                      # see the note in run_libero_eval_ctrl.py
+    ids = [int(x) for x in re.split(r"[,_]", ids)] if ids else list(range(suite.n_tasks))   # "_" as well as "," : sbatch --export splits on commas
+    assert all(0 <= i < suite.n_tasks for i in ids), (ids, suite.n_tasks)
+    out["task_ids"] = ids
+    out_name = "cont_" + a.task_suite_name + (f"_{a.run_id_note}" if a.run_id_note else "")
+    if os.environ.get("LIBERO_TASK_IDS"): out_name += "_t" + "_".join(str(i) for i in ids)
+    out_name += ".json"
+    for ti in ids:
         task = suite.get_task(ti); inits = suite.get_task_init_states(ti)
         env, desc = get_libero_env(task, "openvla", resolution=256)
         pb0 = PurePromptBuilder("openvla"); pb0.add_turn("human", f"What action should the robot take to {desc.lower()}?"); pb0.add_turn("gpt", "")
@@ -113,7 +120,7 @@ def main():
         env.close(); out["per_task"][desc] = tsucc / a.num_trials_per_task
         print(f"[cont-eval] task {ti} {desc[:44]}: {tsucc}/{a.num_trials_per_task}  running total {succ}/{tot} ({time.time()-t0:.0f}s)", flush=True)
         out["success"] = succ / tot
-        json.dump(out, open(os.path.join(a.local_log_dir, f"cont_{a.task_suite_name}{('_' + a.run_id_note) if a.run_id_note else ''}.json"), "w"), indent=1)
+        json.dump(out, open(os.path.join(a.local_log_dir, out_name), "w"), indent=1)
     print(f"[cont-eval] Current total success rate: {succ / tot:.3f} ({succ}/{tot})", flush=True)
 
 

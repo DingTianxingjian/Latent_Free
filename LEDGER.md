@@ -2827,6 +2827,28 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   have evaluated the `latp2_inv` spatial checkpoint with the token evaluator; it now fails at startup.  The user has
   been asked to cancel it and 20754115.
 
+### 2026-09-17 (20:30) — the evaluations were queued for 2026-09-24; split into per-task jobs so they backfill
+
+- **Training is fine, the queue is not.** UniVLA @ 10 % object (20775018) COMPLETED 16:34 (5 h 33 min); Ours object
+  (20783072) started 19:34 on h010 and Ours goal (20783074) 19:59 on h004.  But the two 1-GPU evaluations of the
+  finished checkpoints, 20783070 (Ours spatial) and 20783071 (UniVLA object), were estimated to start
+  **2026-09-24 05:00 and 07:00** — the deadline itself.  Trained checkpoints with no numbers is the worst failure mode
+  available at this point.
+- **Fix: evaluate a task subset per job.**  `LIBERO_TASK_IDS` (comma or underscore separated, because `sbatch --export`
+  splits on commas) in both evaluators, carried into the run id / output filename; `NOTE` in `run_vla_eval.sh` names the
+  output files (the old default, the first 40 characters of the run dir, is NOT unique across arms and would have made
+  two arms' logs merge); `downstream/vla/eval_merge.py` merges the parts and refuses a task counted twice.
+- **What the split does and does not change.**  Each task keeps its own 50 initial states and every task is evaluated by
+  exactly one job, so the per-task numbers are the protocol's.  The only difference is the token arm's sampling RNG
+  stream (`do_sample`, temperature 0.75), which starts fresh per job instead of continuing through the suite.
+- **Submitted** (5 jobs x 2 tasks = 100 episodes each, 1.5 h limit, h004/h006 excluded):
+  Ours spatial 20810386-20810390 (`NOTE=ours_spatial_f10`), UniVLA object 20810391-20810395 (`NOTE=univla_object_f10`).
+  The whole-suite jobs 20783070/20783071 stay queued as a backup; `eval_merge` defaults to parts-only so they cannot be
+  double-counted.
+  Merge: `python -m acdc_la.downstream.vla.eval_merge --suite libero_spatial --note ours_spatial_f10 --kind cont`.
+- **Housekeeping.** The user cancelled the two stale evaluations (20754115, 20775019) at 14:38 and pushed `main` to
+  GitHub; the Spatial evaluation's walltime was cut 6 h -> 4 h earlier for the same backfill reason.
+
 ## Registered next method: intervention first, real pairs second
 
 
