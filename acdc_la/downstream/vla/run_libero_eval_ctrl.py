@@ -10,7 +10,7 @@ _ck = next(sys.argv[i + 1] for i, a in enumerate(sys.argv) if a == "--pretrained
 _META = json.load(open(os.path.join(_ck, "ctrl_meta.json"))); N_TOKENS, KC = int(_META["n_tokens"]), int(_META["codebook_size"])
 # A continuous arm has no latent vocabulary (KC = 0): this evaluator would generate tokens its head was never trained on.
 # Pending jobs submitted before 2026-09-16 still route tc_cont here; fail them before the model loads.
-assert KC > 0 and _META["latent"] not in ("acdc_cont", "tc_cont", "none"), f"{_ck}: continuous arm {_META['latent']!r}; use run_libero_eval_cont.py"
+assert KC > 0 and _META["latent"] not in ("acdc_cont", "tc_cont", "none", "univla_cont"), f"{_ck}: continuous arm {_META['latent']!r}; use run_libero_eval_cont.py"
 if "--action_decoder_path" not in sys.argv: sys.argv += ["--action_decoder_path", os.path.join(_ck, "action_decoder.pt")]
 import torch as _torch
 from prismatic.extern.hf.modeling_prismatic import OpenVLAForActionPrediction as _OVLA

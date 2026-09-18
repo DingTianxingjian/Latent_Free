@@ -220,7 +220,7 @@ def build_labeller(cfg, device_id):
         from .acdc_tokens import ACDCLatentTokenizer
         t = ACDCLatentTokenizer(cfg.acdc_tag, cfg.acdc_codebook, dev=f"cuda:{device_id}" if isinstance(device_id, int) else device_id)
         return t, 0, 0                                                    # no vocabulary: the head regresses t.dz values
-    if cfg.latent == "univla":
+    if cfg.latent in ("univla", "univla_cont"):
         from ...paths import TORCH_HUB
         torch.hub.set_dir(TORCH_HUB)                                     # offline DINO for their LAM (compute nodes have no network)
         from latent_action_model.genie.modules.lam import ControllableDINOLatentActionModel
@@ -229,7 +229,17 @@ def build_labeller(cfg, device_id):
         sd = {k.replace("lam.", "", 1): v for k, v in sd.items()}
         res = lam.load_state_dict(sd, strict=False)          # rala2 does not save the frozen DINO encoder (built from the hub cache) and adds lang_proj
         assert all(k.startswith("dino_encoder.") for k in res.missing_keys) and all(k.startswith("lang_proj.") for k in res.unexpected_keys), (res.missing_keys[:5], res.unexpected_keys[:5])
-        lam = lam.to(device_id).eval(); return lam, 4, 16          # their class exposes .device as a read-only property
+        lam = lam.to(device_id).eval()
+        if cfg.latent == "univla_cont":
+            # 2026-09-18, suspect 2 (interface, not latent): UniVLA's DEPLOYED latent — the vq_action codebook vectors of its 4
+            # tokens (z_q, 4 x 128) — as a continuous target for the same head our latent uses.  Same information as the 4
+            # tokens, delivered through our interface instead of their token pathway.  Standardised per dimension by the
+            # spread of the 16 codebook entries (uniform over entries: z_q only ever takes those values).
+            cb = lam.vq_action.codebook.weight.detach().float()
+            lam.zmean, lam.zstd = cb.mean(0).repeat(4).to(device_id), (cb.std(0) + 1e-6).repeat(4).to(device_id)
+            lam.dz = 4 * cb.shape[1]
+            return lam, 0, 0
+        return lam, 4, 16          # their class exposes .device as a read-only property
     from .acdc_tokens import ACDCLatentTokenizer
     t = ACDCLatentTokenizer(cfg.acdc_tag, cfg.acdc_codebook, dev=f"cuda:{device_id}" if isinstance(device_id, int) else device_id)
     return t, t.n_tokens, t.codebook_size
@@ -246,7 +256,7 @@ def finetune(cfg: Cfg) -> None:
         assert hasattr(cfg, k) and not isinstance(getattr(cfg, k), bool), f"override key {k!r} is not a non-bool Cfg field"
         setattr(cfg, k, v if getattr(cfg, k) is None else type(getattr(cfg, k))(v))
     if ov_d: print(f"[ctrl] OVERRIDE {ov}: {ov_d}", flush=True)
-    assert torch.cuda.is_available(); assert cfg.latent in ("univla", "acdc", "acdc_cont", "none", "tc_cont", "tc_vq")
+    assert torch.cuda.is_available(); assert cfg.latent in ("univla", "univla_cont", "acdc", "acdc_cont", "none", "tc_cont", "tc_vq")
     state = PartialState(); torch.cuda.set_device(device_id := state.local_process_index); torch.cuda.empty_cache()
     exp_id = f"{cfg.latent}+{cfg.dataset_name}+b{cfg.batch_size * cfg.grad_accumulation_steps}x{state.num_processes}+lr{cfg.learning_rate}+r{cfg.lora_rank}+s{cfg.max_steps}" + {"flow": "+fm", "reg_text": "+rt"}.get(cfg.head, "") + (f"--{cfg.run_id_note}" if cfg.run_id_note else "")
     run_dir = cfg.run_root_dir / exp_id; adapter_dir = cfg.run_root_dir / "adapters" / exp_id; os.makedirs(run_dir, exist_ok=True); os.makedirs(adapter_dir, exist_ok=True)
@@ -259,7 +269,7 @@ def finetune(cfg: Cfg) -> None:
     vla = AutoModelForVision2Seq.from_pretrained(cfg.vla_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True)
 
     labeller, n_tokens, codebook_size = build_labeller(cfg, device_id)
-    cont = cfg.latent in ("acdc_cont", "none", "tc_cont"); dz = getattr(labeller, "dz", 0) if cfg.latent in ("acdc_cont", "tc_cont") else 0
+    cont = cfg.latent in ("acdc_cont", "none", "tc_cont", "univla_cont"); dz = getattr(labeller, "dz", 0) if cfg.latent in ("acdc_cont", "tc_cont", "univla_cont") else 0
     if not cont:
         # the latent vocabulary: <ACT_0..K-1> appended after <PAD> (32000) -> ids 32001..; embeddings + lm_head rows are trained
         assert len(processor.tokenizer) == LATENT_TOKEN_BASE + 1, len(processor.tokenizer)

@@ -37,9 +37,11 @@ class RLDSBatchTransformCtrl:
         if self.latent == "acdc_cont":
             stride = self.window_size // (self.labeller.T - 1)
             return self.labeller.encode_continuous([imgs[ro + k * stride] for k in range(self.labeller.T)])
-        if self.latent == "univla":
+        if self.latent in ("univla", "univla_cont"):
             a = self.image_transform_lam(Image.fromarray(imgs[ro])); b = self.image_transform_lam(Image.fromarray(imgs[self.window_size - 1 + ro]))
-            return self.labeller.vq_encode(torch.stack([a, b], 0).unsqueeze(0).to(self.labeller.device))["indices"].reshape(-1)
+            out = self.labeller.vq_encode(torch.stack([a, b], 0).unsqueeze(0).to(self.labeller.device))
+            if self.latent == "univla": return out["indices"].reshape(-1)
+            return (out["z_q"].reshape(-1) - self.labeller.zmean) / self.labeller.zstd      # their deployed code, continuous
         stride = self.window_size // (self.labeller.T - 1)
         return self.labeller.encode([imgs[ro + k * stride] for k in range(self.labeller.T)])
 
@@ -50,7 +52,7 @@ class RLDSBatchTransformCtrl:
         pixel_values = self.image_transform(Image.fromarray(imgs[ro]))
         with torch.no_grad():
             idx = self.tokens(imgs, ro); hist = self.tokens(imgs, 0) if ro > 0 else None
-        if self.latent in ("acdc_cont", "none", "tc_cont"):
+        if self.latent in ("acdc_cont", "none", "tc_cont", "univla_cont"):
             # no latent vocabulary: the prompt is the bare instruction and the whole label is ignored; the VLM's hidden
             # state feeds a regression head instead of the LM head (the history trick has no discrete token to carry)
             pb = self.prompt_builder_fn("openvla")

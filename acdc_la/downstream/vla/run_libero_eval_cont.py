@@ -71,7 +71,7 @@ def main():
     ap.add_argument("--flow_steps", type=int, default=0, help="flow head: Euler steps at evaluation (0 = the value in ctrl_meta.json)")
     a = ap.parse_args(); set_seed_everywhere(a.seed); dev = "cuda"
     meta = json.load(open(os.path.join(a.pretrained_checkpoint, "ctrl_meta.json")))
-    assert meta["latent"] in ("acdc_cont", "tc_cont", "none"), meta["latent"]     # every arm trained through ContHeads
+    assert meta["latent"] in ("acdc_cont", "tc_cont", "none", "univla_cont"), meta["latent"]     # every arm trained through ContHeads
     W = int(meta["window_size"]); dz = int(meta["dz"])
 
     AutoConfig.register("openvla", OpenVLAConfig); AutoImageProcessor.register(OpenVLAConfig, PrismaticImageProcessor)

@@ -14,7 +14,7 @@ PY=/anvil/scratch/x-tding2/envs/univla_vla/bin/python
 FAIL=0
 for R in ${RUNS:?set RUNS}; do
   D=/anvil/scratch/x-tding2/latent_free/acdc_la/ckpt/vla_runs/$R
-  MOD=acdc_la.downstream.vla.run_libero_eval_ctrl; grep -qE '"latent": "(acdc_cont|tc_cont|none)"' $D/ctrl_meta.json && MOD=acdc_la.downstream.vla.run_libero_eval_cont
+  MOD=acdc_la.downstream.vla.run_libero_eval_ctrl; grep -qE '"latent": "(acdc_cont|tc_cont|none|univla_cont)"' $D/ctrl_meta.json && MOD=acdc_la.downstream.vla.run_libero_eval_cont
   echo "== $R via $MOD"
   RAW=/anvil/scratch/x-tding2/latent_free/acdc_la/logs/loadtest_raw_${SLURM_JOB_ID}_${R:0:6}.txt
   echo n | timeout ${TMO:-900} $PY -m $MOD --pretrained_checkpoint $D --task_suite_name ${SUITE:-libero_spatial} --num_trials_per_task 1 > $RAW 2>&1

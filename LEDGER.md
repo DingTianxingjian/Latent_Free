@@ -3070,6 +3070,25 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   (b) the no-latent + flow control on Spatial (held until after the maintenance): if it matches or beats 66.0, the LATP
   latent adds nothing or hurts through this interface.
 
+### 2026-09-18 (19:25) — suspect 2 first (user): UniVLA's latent through OUR continuous flow interface (`--latent univla_cont`)
+
+- **The question.** LATP + flow (66.0 %) and LATP + legacy regression (70.4 %) are both far below UniVLA (84.2 %).
+  Suspects (user review): (1) the LATP target is too fine / high conditional entropy; (2) the continuous head is a newly
+  initialised interface that does not reuse OpenVLA's native token pathway; (3) the head ignores z; (4) seed variance.
+  User: do suspect 2 first; the no-latent control can wait.
+- **Design.**  `univla_cont` = UniVLA's DEPLOYED latent — `vq_encode(...)["z_q"]`, the `vq_action` codebook vectors of its
+  4 tokens (4 x 128 = 512-d) — as the continuous target of the same `FlowHeads` our latent uses, standardised per
+  dimension by the spread of the 16 codebook entries.  Same information as their 4 tokens; only the interface changes.
+  Reading: UniVLA-flow near 84 -> the continuous interface is not the problem and our latent is; near 66 -> the interface
+  costs about what we lost, and our latent is not worse than theirs.
+- **Code.**  build_labeller / datasets_ctrl / both evaluators / eval + load-test routing accept `univla_cont`.  The LAM
+  needs CUDA even for a forward pass, so the check runs on a GPU: unit test (shape, standardisation, continuous code ==
+  standardised codebook rows of the same frames' tokens) 20827768 -> 12-step training smoke 20827769 -> 1-episode eval
+  20827770.  Main run: train 20827771 (4 h 40 min; cannot finish before the 23:30 maintenance, so it starts after
+  9/20 21:00 unless run on the workstation) -> evals 20827772-76 (`NOTE=univlacont_fm_spatial_f10`).
+- **Past-frame history (user asked whether it was done).**  Measured, not implemented: the CPU probe of 17:00 found the
+  observed past adds +0.026 R2 on z, the same as raw past motion.  Open if the user still wants it after suspect 2.
+
 ## Registered next method: intervention first, real pairs second
 
 
