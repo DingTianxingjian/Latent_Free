@@ -1,0 +1,3022 @@
+Task suite: libero_object
+Tested Ckpt': univla+libero_object_no_noops+b16x4+lr0.00035+r32+s15000--frac10 
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 1...
+Success: False steps: 310
+# episodes completed so far: 1
+# successes: 0 (0.0%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 2...
+Success: True steps: 283
+# episodes completed so far: 2
+# successes: 1 (50.0%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 3...
+Success: False steps: 310
+# episodes completed so far: 3
+# successes: 1 (33.3%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 4...
+Success: False steps: 310
+# episodes completed so far: 4
+# successes: 1 (25.0%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 5...
+Success: True steps: 151
+# episodes completed so far: 5
+# successes: 2 (40.0%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 6...
+Success: False steps: 310
+# episodes completed so far: 6
+# successes: 2 (33.3%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 7...
+Success: False steps: 310
+# episodes completed so far: 7
+# successes: 2 (28.6%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 8...
+Success: False steps: 310
+# episodes completed so far: 8
+# successes: 2 (25.0%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 9...
+Success: True steps: 135
+# episodes completed so far: 9
+# successes: 3 (33.3%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 10...
+Success: False steps: 310
+# episodes completed so far: 10
+# successes: 3 (30.0%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 11...
+Success: False steps: 310
+# episodes completed so far: 11
+# successes: 3 (27.3%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 12...
+Success: False steps: 310
+# episodes completed so far: 12
+# successes: 3 (25.0%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 13...
+Success: True steps: 178
+# episodes completed so far: 13
+# successes: 4 (30.8%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 14...
+Success: False steps: 310
+# episodes completed so far: 14
+# successes: 4 (28.6%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 15...
+Success: False steps: 310
+# episodes completed so far: 15
+# successes: 4 (26.7%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 16...
+Success: True steps: 196
+# episodes completed so far: 16
+# successes: 5 (31.2%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 17...
+Success: False steps: 310
+# episodes completed so far: 17
+# successes: 5 (29.4%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 18...
+Success: False steps: 310
+# episodes completed so far: 18
+# successes: 5 (27.8%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 19...
+Success: False steps: 310
+# episodes completed so far: 19
+# successes: 5 (26.3%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 20...
+Success: True steps: 140
+# episodes completed so far: 20
+# successes: 6 (30.0%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 21...
+Success: False steps: 310
+# episodes completed so far: 21
+# successes: 6 (28.6%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 22...
+Success: False steps: 310
+# episodes completed so far: 22
+# successes: 6 (27.3%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 23...
+Success: True steps: 149
+# episodes completed so far: 23
+# successes: 7 (30.4%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 24...
+Success: True steps: 148
+# episodes completed so far: 24
+# successes: 8 (33.3%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 25...
+Success: True steps: 160
+# episodes completed so far: 25
+# successes: 9 (36.0%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 26...
+Success: False steps: 310
+# episodes completed so far: 26
+# successes: 9 (34.6%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 27...
+Success: True steps: 146
+# episodes completed so far: 27
+# successes: 10 (37.0%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 28...
+Success: False steps: 310
+# episodes completed so far: 28
+# successes: 10 (35.7%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 29...
+Success: False steps: 310
+# episodes completed so far: 29
+# successes: 10 (34.5%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 30...
+Success: True steps: 235
+# episodes completed so far: 30
+# successes: 11 (36.7%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 31...
+Success: True steps: 153
+# episodes completed so far: 31
+# successes: 12 (38.7%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 32...
+Success: True steps: 144
+# episodes completed so far: 32
+# successes: 13 (40.6%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 33...
+Success: False steps: 310
+# episodes completed so far: 33
+# successes: 13 (39.4%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 34...
+Success: True steps: 154
+# episodes completed so far: 34
+# successes: 14 (41.2%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 35...
+Success: False steps: 310
+# episodes completed so far: 35
+# successes: 14 (40.0%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 36...
+Success: False steps: 310
+# episodes completed so far: 36
+# successes: 14 (38.9%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 37...
+Success: False steps: 310
+# episodes completed so far: 37
+# successes: 14 (37.8%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 38...
+Success: False steps: 310
+# episodes completed so far: 38
+# successes: 14 (36.8%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 39...
+Success: False steps: 310
+# episodes completed so far: 39
+# successes: 14 (35.9%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 40...
+Success: False steps: 310
+# episodes completed so far: 40
+# successes: 14 (35.0%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 41...
+Success: False steps: 310
+# episodes completed so far: 41
+# successes: 14 (34.1%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 42...
+Success: False steps: 310
+# episodes completed so far: 42
+# successes: 14 (33.3%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 43...
+Success: False steps: 310
+# episodes completed so far: 43
+# successes: 14 (32.6%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 44...
+Success: False steps: 310
+# episodes completed so far: 44
+# successes: 14 (31.8%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 45...
+Success: False steps: 310
+# episodes completed so far: 45
+# successes: 14 (31.1%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 46...
+Success: False steps: 310
+# episodes completed so far: 46
+# successes: 14 (30.4%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 47...
+Success: False steps: 310
+# episodes completed so far: 47
+# successes: 14 (29.8%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 48...
+Success: True steps: 223
+# episodes completed so far: 48
+# successes: 15 (31.2%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 49...
+Success: True steps: 160
+# episodes completed so far: 49
+# successes: 16 (32.7%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 50...
+Success: True steps: 135
+# episodes completed so far: 50
+# successes: 17 (34.0%)
+Current task success rate: 0.34
+Current total success rate: 0.34
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 1...
+Success: True steps: 157
+# episodes completed so far: 51
+# successes: 18 (35.3%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 2...
+Success: True steps: 147
+# episodes completed so far: 52
+# successes: 19 (36.5%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 3...
+Success: True steps: 150
+# episodes completed so far: 53
+# successes: 20 (37.7%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 4...
+Success: False steps: 310
+# episodes completed so far: 54
+# successes: 20 (37.0%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 5...
+Success: True steps: 134
+# episodes completed so far: 55
+# successes: 21 (38.2%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 6...
+Success: True steps: 158
+# episodes completed so far: 56
+# successes: 22 (39.3%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 7...
+Success: True steps: 141
+# episodes completed so far: 57
+# successes: 23 (40.4%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 8...
+Success: True steps: 148
+# episodes completed so far: 58
+# successes: 24 (41.4%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 9...
+Success: True steps: 157
+# episodes completed so far: 59
+# successes: 25 (42.4%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 10...
+Success: True steps: 140
+# episodes completed so far: 60
+# successes: 26 (43.3%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 11...
+Success: True steps: 145
+# episodes completed so far: 61
+# successes: 27 (44.3%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 12...
+Success: True steps: 138
+# episodes completed so far: 62
+# successes: 28 (45.2%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 13...
+Success: True steps: 165
+# episodes completed so far: 63
+# successes: 29 (46.0%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 14...
+Success: True steps: 145
+# episodes completed so far: 64
+# successes: 30 (46.9%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 15...
+Success: True steps: 138
+# episodes completed so far: 65
+# successes: 31 (47.7%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 16...
+Success: True steps: 143
+# episodes completed so far: 66
+# successes: 32 (48.5%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 17...
+Success: True steps: 139
+# episodes completed so far: 67
+# successes: 33 (49.3%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 18...
+Success: True steps: 159
+# episodes completed so far: 68
+# successes: 34 (50.0%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 19...
+Success: False steps: 310
+# episodes completed so far: 69
+# successes: 34 (49.3%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 20...
+Success: True steps: 134
+# episodes completed so far: 70
+# successes: 35 (50.0%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 21...
+Success: True steps: 128
+# episodes completed so far: 71
+# successes: 36 (50.7%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 22...
+Success: False steps: 310
+# episodes completed so far: 72
+# successes: 36 (50.0%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 23...
+Success: True steps: 152
+# episodes completed so far: 73
+# successes: 37 (50.7%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 24...
+Success: True steps: 125
+# episodes completed so far: 74
+# successes: 38 (51.4%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 25...
+Success: False steps: 310
+# episodes completed so far: 75
+# successes: 38 (50.7%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 26...
+Success: True steps: 129
+# episodes completed so far: 76
+# successes: 39 (51.3%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 27...
+Success: True steps: 134
+# episodes completed so far: 77
+# successes: 40 (51.9%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 28...
+Success: True steps: 136
+# episodes completed so far: 78
+# successes: 41 (52.6%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 29...
+Success: True steps: 135
+# episodes completed so far: 79
+# successes: 42 (53.2%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 30...
+Success: False steps: 310
+# episodes completed so far: 80
+# successes: 42 (52.5%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 31...
+Success: False steps: 310
+# episodes completed so far: 81
+# successes: 42 (51.9%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 32...
+Success: True steps: 128
+# episodes completed so far: 82
+# successes: 43 (52.4%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 33...
+Success: True steps: 149
+# episodes completed so far: 83
+# successes: 44 (53.0%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 34...
+Success: True steps: 127
+# episodes completed so far: 84
+# successes: 45 (53.6%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 35...
+Success: True steps: 161
+# episodes completed so far: 85
+# successes: 46 (54.1%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 36...
+Success: True steps: 126
+# episodes completed so far: 86
+# successes: 47 (54.7%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 37...
+Success: True steps: 135
+# episodes completed so far: 87
+# successes: 48 (55.2%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 38...
+Success: True steps: 136
+# episodes completed so far: 88
+# successes: 49 (55.7%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 39...
+Success: True steps: 130
+# episodes completed so far: 89
+# successes: 50 (56.2%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 40...
+Success: True steps: 148
+# episodes completed so far: 90
+# successes: 51 (56.7%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 41...
+Success: True steps: 192
+# episodes completed so far: 91
+# successes: 52 (57.1%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 42...
+Success: True steps: 145
+# episodes completed so far: 92
+# successes: 53 (57.6%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 43...
+Success: True steps: 133
+# episodes completed so far: 93
+# successes: 54 (58.1%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 44...
+Success: False steps: 310
+# episodes completed so far: 94
+# successes: 54 (57.4%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 45...
+Success: True steps: 129
+# episodes completed so far: 95
+# successes: 55 (57.9%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 46...
+Success: False steps: 310
+# episodes completed so far: 96
+# successes: 55 (57.3%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 47...
+Success: True steps: 129
+# episodes completed so far: 97
+# successes: 56 (57.7%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 48...
+Success: True steps: 151
+# episodes completed so far: 98
+# successes: 57 (58.2%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 49...
+Success: True steps: 144
+# episodes completed so far: 99
+# successes: 58 (58.6%)
+
+Task: pick up the cream cheese and place it in the basket
+Starting episode 50...
+Success: True steps: 139
+# episodes completed so far: 100
+# successes: 59 (59.0%)
+Current task success rate: 0.84
+Current total success rate: 0.59
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 1...
+Success: True steps: 126
+# episodes completed so far: 101
+# successes: 60 (59.4%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 2...
+Success: False steps: 310
+# episodes completed so far: 102
+# successes: 60 (58.8%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 3...
+Success: True steps: 112
+# episodes completed so far: 103
+# successes: 61 (59.2%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 4...
+Success: True steps: 125
+# episodes completed so far: 104
+# successes: 62 (59.6%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 5...
+Success: True steps: 113
+# episodes completed so far: 105
+# successes: 63 (60.0%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 6...
+Success: True steps: 121
+# episodes completed so far: 106
+# successes: 64 (60.4%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 7...
+Success: True steps: 125
+# episodes completed so far: 107
+# successes: 65 (60.7%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 8...
+Success: True steps: 111
+# episodes completed so far: 108
+# successes: 66 (61.1%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 9...
+Success: True steps: 124
+# episodes completed so far: 109
+# successes: 67 (61.5%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 10...
+Success: False steps: 310
+# episodes completed so far: 110
+# successes: 67 (60.9%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 11...
+Success: True steps: 124
+# episodes completed so far: 111
+# successes: 68 (61.3%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 12...
+Success: True steps: 119
+# episodes completed so far: 112
+# successes: 69 (61.6%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 13...
+Success: True steps: 129
+# episodes completed so far: 113
+# successes: 70 (61.9%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 14...
+Success: True steps: 130
+# episodes completed so far: 114
+# successes: 71 (62.3%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 15...
+Success: True steps: 128
+# episodes completed so far: 115
+# successes: 72 (62.6%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 16...
+Success: False steps: 310
+# episodes completed so far: 116
+# successes: 72 (62.1%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 17...
+Success: True steps: 121
+# episodes completed so far: 117
+# successes: 73 (62.4%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 18...
+Success: True steps: 127
+# episodes completed so far: 118
+# successes: 74 (62.7%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 19...
+Success: False steps: 310
+# episodes completed so far: 119
+# successes: 74 (62.2%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 20...
+Success: True steps: 125
+# episodes completed so far: 120
+# successes: 75 (62.5%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 21...
+Success: True steps: 127
+# episodes completed so far: 121
+# successes: 76 (62.8%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 22...
+Success: False steps: 310
+# episodes completed so far: 122
+# successes: 76 (62.3%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 23...
+Success: True steps: 127
+# episodes completed so far: 123
+# successes: 77 (62.6%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 24...
+Success: True steps: 112
+# episodes completed so far: 124
+# successes: 78 (62.9%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 25...
+Success: True steps: 126
+# episodes completed so far: 125
+# successes: 79 (63.2%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 26...
+Success: True steps: 126
+# episodes completed so far: 126
+# successes: 80 (63.5%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 27...
+Success: True steps: 134
+# episodes completed so far: 127
+# successes: 81 (63.8%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 28...
+Success: True steps: 198
+# episodes completed so far: 128
+# successes: 82 (64.1%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 29...
+Success: False steps: 310
+# episodes completed so far: 129
+# successes: 82 (63.6%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 30...
+Success: True steps: 130
+# episodes completed so far: 130
+# successes: 83 (63.8%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 31...
+Success: True steps: 111
+# episodes completed so far: 131
+# successes: 84 (64.1%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 32...
+Success: True steps: 124
+# episodes completed so far: 132
+# successes: 85 (64.4%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 33...
+Success: False steps: 310
+# episodes completed so far: 133
+# successes: 85 (63.9%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 34...
+Success: True steps: 141
+# episodes completed so far: 134
+# successes: 86 (64.2%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 35...
+Success: True steps: 114
+# episodes completed so far: 135
+# successes: 87 (64.4%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 36...
+Success: True steps: 132
+# episodes completed so far: 136
+# successes: 88 (64.7%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 37...
+Success: True steps: 127
+# episodes completed so far: 137
+# successes: 89 (65.0%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 38...
+Success: True steps: 125
+# episodes completed so far: 138
+# successes: 90 (65.2%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 39...
+Success: True steps: 132
+# episodes completed so far: 139
+# successes: 91 (65.5%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 40...
+Success: True steps: 131
+# episodes completed so far: 140
+# successes: 92 (65.7%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 41...
+Success: True steps: 139
+# episodes completed so far: 141
+# successes: 93 (66.0%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 42...
+Success: True steps: 126
+# episodes completed so far: 142
+# successes: 94 (66.2%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 43...
+Success: False steps: 310
+# episodes completed so far: 143
+# successes: 94 (65.7%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 44...
+Success: True steps: 127
+# episodes completed so far: 144
+# successes: 95 (66.0%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 45...
+Success: True steps: 115
+# episodes completed so far: 145
+# successes: 96 (66.2%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 46...
+Success: True steps: 136
+# episodes completed so far: 146
+# successes: 97 (66.4%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 47...
+Success: True steps: 122
+# episodes completed so far: 147
+# successes: 98 (66.7%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 48...
+Success: True steps: 129
+# episodes completed so far: 148
+# successes: 99 (66.9%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 49...
+Success: False steps: 310
+# episodes completed so far: 149
+# successes: 99 (66.4%)
+
+Task: pick up the salad dressing and place it in the basket
+Starting episode 50...
+Success: True steps: 124
+# episodes completed so far: 150
+# successes: 100 (66.7%)
+Current task success rate: 0.82
+Current total success rate: 0.6666666666666666
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 1...
+Success: True steps: 137
+# episodes completed so far: 151
+# successes: 101 (66.9%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 2...
+Success: True steps: 134
+# episodes completed so far: 152
+# successes: 102 (67.1%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 3...
+Success: True steps: 141
+# episodes completed so far: 153
+# successes: 103 (67.3%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 4...
+Success: True steps: 132
+# episodes completed so far: 154
+# successes: 104 (67.5%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 5...
+Success: True steps: 259
+# episodes completed so far: 155
+# successes: 105 (67.7%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 6...
+Success: True steps: 156
+# episodes completed so far: 156
+# successes: 106 (67.9%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 7...
+Success: True steps: 138
+# episodes completed so far: 157
+# successes: 107 (68.2%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 8...
+Success: True steps: 131
+# episodes completed so far: 158
+# successes: 108 (68.4%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 9...
+Success: True steps: 133
+# episodes completed so far: 159
+# successes: 109 (68.6%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 10...
+Success: True steps: 170
+# episodes completed so far: 160
+# successes: 110 (68.8%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 11...
+Success: True steps: 138
+# episodes completed so far: 161
+# successes: 111 (68.9%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 12...
+Success: False steps: 310
+# episodes completed so far: 162
+# successes: 111 (68.5%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 13...
+Success: False steps: 310
+# episodes completed so far: 163
+# successes: 111 (68.1%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 14...
+Success: True steps: 137
+# episodes completed so far: 164
+# successes: 112 (68.3%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 15...
+Success: True steps: 136
+# episodes completed so far: 165
+# successes: 113 (68.5%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 16...
+Success: True steps: 139
+# episodes completed so far: 166
+# successes: 114 (68.7%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 17...
+Success: False steps: 310
+# episodes completed so far: 167
+# successes: 114 (68.3%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 18...
+Success: False steps: 310
+# episodes completed so far: 168
+# successes: 114 (67.9%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 19...
+Success: False steps: 310
+# episodes completed so far: 169
+# successes: 114 (67.5%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 20...
+Success: True steps: 129
+# episodes completed so far: 170
+# successes: 115 (67.6%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 21...
+Success: True steps: 136
+# episodes completed so far: 171
+# successes: 116 (67.8%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 22...
+Success: False steps: 310
+# episodes completed so far: 172
+# successes: 116 (67.4%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 23...
+Success: False steps: 310
+# episodes completed so far: 173
+# successes: 116 (67.1%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 24...
+Success: True steps: 139
+# episodes completed so far: 174
+# successes: 117 (67.2%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 25...
+Success: True steps: 153
+# episodes completed so far: 175
+# successes: 118 (67.4%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 26...
+Success: True steps: 137
+# episodes completed so far: 176
+# successes: 119 (67.6%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 27...
+Success: True steps: 131
+# episodes completed so far: 177
+# successes: 120 (67.8%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 28...
+Success: False steps: 310
+# episodes completed so far: 178
+# successes: 120 (67.4%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 29...
+Success: True steps: 206
+# episodes completed so far: 179
+# successes: 121 (67.6%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 30...
+Success: True steps: 137
+# episodes completed so far: 180
+# successes: 122 (67.8%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 31...
+Success: True steps: 126
+# episodes completed so far: 181
+# successes: 123 (68.0%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 32...
+Success: True steps: 133
+# episodes completed so far: 182
+# successes: 124 (68.1%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 33...
+Success: True steps: 196
+# episodes completed so far: 183
+# successes: 125 (68.3%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 34...
+Success: True steps: 133
+# episodes completed so far: 184
+# successes: 126 (68.5%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 35...
+Success: True steps: 141
+# episodes completed so far: 185
+# successes: 127 (68.6%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 36...
+Success: True steps: 132
+# episodes completed so far: 186
+# successes: 128 (68.8%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 37...
+Success: True steps: 135
+# episodes completed so far: 187
+# successes: 129 (69.0%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 38...
+Success: False steps: 310
+# episodes completed so far: 188
+# successes: 129 (68.6%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 39...
+Success: True steps: 144
+# episodes completed so far: 189
+# successes: 130 (68.8%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 40...
+Success: True steps: 121
+# episodes completed so far: 190
+# successes: 131 (68.9%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 41...
+Success: True steps: 134
+# episodes completed so far: 191
+# successes: 132 (69.1%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 42...
+Success: False steps: 310
+# episodes completed so far: 192
+# successes: 132 (68.8%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 43...
+Success: False steps: 310
+# episodes completed so far: 193
+# successes: 132 (68.4%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 44...
+Success: True steps: 130
+# episodes completed so far: 194
+# successes: 133 (68.6%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 45...
+Success: False steps: 310
+# episodes completed so far: 195
+# successes: 133 (68.2%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 46...
+Success: True steps: 132
+# episodes completed so far: 196
+# successes: 134 (68.4%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 47...
+Success: False steps: 310
+# episodes completed so far: 197
+# successes: 134 (68.0%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 48...
+Success: True steps: 159
+# episodes completed so far: 198
+# successes: 135 (68.2%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 49...
+Success: False steps: 310
+# episodes completed so far: 199
+# successes: 135 (67.8%)
+
+Task: pick up the bbq sauce and place it in the basket
+Starting episode 50...
+Success: True steps: 138
+# episodes completed so far: 200
+# successes: 136 (68.0%)
+Current task success rate: 0.72
+Current total success rate: 0.68
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 1...
+Success: True steps: 149
+# episodes completed so far: 201
+# successes: 137 (68.2%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 2...
+Success: True steps: 147
+# episodes completed so far: 202
+# successes: 138 (68.3%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 3...
+Success: True steps: 143
+# episodes completed so far: 203
+# successes: 139 (68.5%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 4...
+Success: False steps: 310
+# episodes completed so far: 204
+# successes: 139 (68.1%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 5...
+Success: True steps: 146
+# episodes completed so far: 205
+# successes: 140 (68.3%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 6...
+Success: True steps: 148
+# episodes completed so far: 206
+# successes: 141 (68.4%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 7...
+Success: True steps: 138
+# episodes completed so far: 207
+# successes: 142 (68.6%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 8...
+Success: True steps: 157
+# episodes completed so far: 208
+# successes: 143 (68.8%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 9...
+Success: True steps: 145
+# episodes completed so far: 209
+# successes: 144 (68.9%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 10...
+Success: True steps: 146
+# episodes completed so far: 210
+# successes: 145 (69.0%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 11...
+Success: True steps: 146
+# episodes completed so far: 211
+# successes: 146 (69.2%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 12...
+Success: False steps: 310
+# episodes completed so far: 212
+# successes: 146 (68.9%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 13...
+Success: True steps: 139
+# episodes completed so far: 213
+# successes: 147 (69.0%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 14...
+Success: True steps: 145
+# episodes completed so far: 214
+# successes: 148 (69.2%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 15...
+Success: True steps: 147
+# episodes completed so far: 215
+# successes: 149 (69.3%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 16...
+Success: True steps: 152
+# episodes completed so far: 216
+# successes: 150 (69.4%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 17...
+Success: True steps: 145
+# episodes completed so far: 217
+# successes: 151 (69.6%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 18...
+Success: True steps: 147
+# episodes completed so far: 218
+# successes: 152 (69.7%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 19...
+Success: True steps: 155
+# episodes completed so far: 219
+# successes: 153 (69.9%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 20...
+Success: True steps: 150
+# episodes completed so far: 220
+# successes: 154 (70.0%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 21...
+Success: True steps: 139
+# episodes completed so far: 221
+# successes: 155 (70.1%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 22...
+Success: True steps: 144
+# episodes completed so far: 222
+# successes: 156 (70.3%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 23...
+Success: True steps: 146
+# episodes completed so far: 223
+# successes: 157 (70.4%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 24...
+Success: True steps: 141
+# episodes completed so far: 224
+# successes: 158 (70.5%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 25...
+Success: True steps: 160
+# episodes completed so far: 225
+# successes: 159 (70.7%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 26...
+Success: True steps: 149
+# episodes completed so far: 226
+# successes: 160 (70.8%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 27...
+Success: True steps: 148
+# episodes completed so far: 227
+# successes: 161 (70.9%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 28...
+Success: True steps: 152
+# episodes completed so far: 228
+# successes: 162 (71.1%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 29...
+Success: True steps: 145
+# episodes completed so far: 229
+# successes: 163 (71.2%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 30...
+Success: True steps: 141
+# episodes completed so far: 230
+# successes: 164 (71.3%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 31...
+Success: True steps: 162
+# episodes completed so far: 231
+# successes: 165 (71.4%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 32...
+Success: True steps: 148
+# episodes completed so far: 232
+# successes: 166 (71.6%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 33...
+Success: True steps: 141
+# episodes completed so far: 233
+# successes: 167 (71.7%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 34...
+Success: True steps: 141
+# episodes completed so far: 234
+# successes: 168 (71.8%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 35...
+Success: True steps: 145
+# episodes completed so far: 235
+# successes: 169 (71.9%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 36...
+Success: True steps: 143
+# episodes completed so far: 236
+# successes: 170 (72.0%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 37...
+Success: True steps: 143
+# episodes completed so far: 237
+# successes: 171 (72.2%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 38...
+Success: True steps: 151
+# episodes completed so far: 238
+# successes: 172 (72.3%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 39...
+Success: True steps: 148
+# episodes completed so far: 239
+# successes: 173 (72.4%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 40...
+Success: True steps: 147
+# episodes completed so far: 240
+# successes: 174 (72.5%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 41...
+Success: True steps: 141
+# episodes completed so far: 241
+# successes: 175 (72.6%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 42...
+Success: True steps: 147
+# episodes completed so far: 242
+# successes: 176 (72.7%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 43...
+Success: True steps: 146
+# episodes completed so far: 243
+# successes: 177 (72.8%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 44...
+Success: True steps: 149
+# episodes completed so far: 244
+# successes: 178 (73.0%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 45...
+Success: True steps: 160
+# episodes completed so far: 245
+# successes: 179 (73.1%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 46...
+Success: False steps: 310
+# episodes completed so far: 246
+# successes: 179 (72.8%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 47...
+Success: True steps: 153
+# episodes completed so far: 247
+# successes: 180 (72.9%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 48...
+Success: True steps: 153
+# episodes completed so far: 248
+# successes: 181 (73.0%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 49...
+Success: True steps: 142
+# episodes completed so far: 249
+# successes: 182 (73.1%)
+
+Task: pick up the ketchup and place it in the basket
+Starting episode 50...
+Success: True steps: 151
+# episodes completed so far: 250
+# successes: 183 (73.2%)
+Current task success rate: 0.94
+Current total success rate: 0.732
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 1...
+Success: True steps: 144
+# episodes completed so far: 251
+# successes: 184 (73.3%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 2...
+Success: True steps: 130
+# episodes completed so far: 252
+# successes: 185 (73.4%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 3...
+Success: True steps: 150
+# episodes completed so far: 253
+# successes: 186 (73.5%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 4...
+Success: True steps: 140
+# episodes completed so far: 254
+# successes: 187 (73.6%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 5...
+Success: True steps: 154
+# episodes completed so far: 255
+# successes: 188 (73.7%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 6...
+Success: False steps: 310
+# episodes completed so far: 256
+# successes: 188 (73.4%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 7...
+Success: True steps: 135
+# episodes completed so far: 257
+# successes: 189 (73.5%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 8...
+Success: False steps: 310
+# episodes completed so far: 258
+# successes: 189 (73.3%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 9...
+Success: True steps: 134
+# episodes completed so far: 259
+# successes: 190 (73.4%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 10...
+Success: True steps: 126
+# episodes completed so far: 260
+# successes: 191 (73.5%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 11...
+Success: True steps: 130
+# episodes completed so far: 261
+# successes: 192 (73.6%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 12...
+Success: True steps: 135
+# episodes completed so far: 262
+# successes: 193 (73.7%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 13...
+Success: True steps: 135
+# episodes completed so far: 263
+# successes: 194 (73.8%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 14...
+Success: True steps: 143
+# episodes completed so far: 264
+# successes: 195 (73.9%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 15...
+Success: False steps: 310
+# episodes completed so far: 265
+# successes: 195 (73.6%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 16...
+Success: True steps: 132
+# episodes completed so far: 266
+# successes: 196 (73.7%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 17...
+Success: True steps: 166
+# episodes completed so far: 267
+# successes: 197 (73.8%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 18...
+Success: False steps: 310
+# episodes completed so far: 268
+# successes: 197 (73.5%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 19...
+Success: True steps: 135
+# episodes completed so far: 269
+# successes: 198 (73.6%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 20...
+Success: True steps: 136
+# episodes completed so far: 270
+# successes: 199 (73.7%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 21...
+Success: True steps: 150
+# episodes completed so far: 271
+# successes: 200 (73.8%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 22...
+Success: False steps: 310
+# episodes completed so far: 272
+# successes: 200 (73.5%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 23...
+Success: True steps: 134
+# episodes completed so far: 273
+# successes: 201 (73.6%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 24...
+Success: True steps: 142
+# episodes completed so far: 274
+# successes: 202 (73.7%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 25...
+Success: True steps: 157
+# episodes completed so far: 275
+# successes: 203 (73.8%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 26...
+Success: True steps: 169
+# episodes completed so far: 276
+# successes: 204 (73.9%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 27...
+Success: True steps: 139
+# episodes completed so far: 277
+# successes: 205 (74.0%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 28...
+Success: True steps: 153
+# episodes completed so far: 278
+# successes: 206 (74.1%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 29...
+Success: False steps: 310
+# episodes completed so far: 279
+# successes: 206 (73.8%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 30...
+Success: False steps: 310
+# episodes completed so far: 280
+# successes: 206 (73.6%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 31...
+Success: False steps: 310
+# episodes completed so far: 281
+# successes: 206 (73.3%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 32...
+Success: True steps: 140
+# episodes completed so far: 282
+# successes: 207 (73.4%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 33...
+Success: True steps: 148
+# episodes completed so far: 283
+# successes: 208 (73.5%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 34...
+Success: False steps: 310
+# episodes completed so far: 284
+# successes: 208 (73.2%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 35...
+Success: True steps: 145
+# episodes completed so far: 285
+# successes: 209 (73.3%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 36...
+Success: True steps: 135
+# episodes completed so far: 286
+# successes: 210 (73.4%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 37...
+Success: True steps: 133
+# episodes completed so far: 287
+# successes: 211 (73.5%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 38...
+Success: True steps: 142
+# episodes completed so far: 288
+# successes: 212 (73.6%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 39...
+Success: True steps: 131
+# episodes completed so far: 289
+# successes: 213 (73.7%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 40...
+Success: True steps: 141
+# episodes completed so far: 290
+# successes: 214 (73.8%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 41...
+Success: True steps: 132
+# episodes completed so far: 291
+# successes: 215 (73.9%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 42...
+Success: True steps: 134
+# episodes completed so far: 292
+# successes: 216 (74.0%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 43...
+Success: True steps: 149
+# episodes completed so far: 293
+# successes: 217 (74.1%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 44...
+Success: True steps: 162
+# episodes completed so far: 294
+# successes: 218 (74.1%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 45...
+Success: True steps: 136
+# episodes completed so far: 295
+# successes: 219 (74.2%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 46...
+Success: True steps: 135
+# episodes completed so far: 296
+# successes: 220 (74.3%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 47...
+Success: True steps: 150
+# episodes completed so far: 297
+# successes: 221 (74.4%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 48...
+Success: False steps: 310
+# episodes completed so far: 298
+# successes: 221 (74.2%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 49...
+Success: True steps: 143
+# episodes completed so far: 299
+# successes: 222 (74.2%)
+
+Task: pick up the tomato sauce and place it in the basket
+Starting episode 50...
+Success: True steps: 149
+# episodes completed so far: 300
+# successes: 223 (74.3%)
+Current task success rate: 0.8
+Current total success rate: 0.7433333333333333
+
+Task: pick up the butter and place it in the basket
+Starting episode 1...
+Success: True steps: 165
+# episodes completed so far: 301
+# successes: 224 (74.4%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 2...
+Success: False steps: 310
+# episodes completed so far: 302
+# successes: 224 (74.2%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 3...
+Success: True steps: 153
+# episodes completed so far: 303
+# successes: 225 (74.3%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 4...
+Success: True steps: 156
+# episodes completed so far: 304
+# successes: 226 (74.3%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 5...
+Success: True steps: 153
+# episodes completed so far: 305
+# successes: 227 (74.4%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 6...
+Success: True steps: 159
+# episodes completed so far: 306
+# successes: 228 (74.5%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 7...
+Success: True steps: 167
+# episodes completed so far: 307
+# successes: 229 (74.6%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 8...
+Success: True steps: 146
+# episodes completed so far: 308
+# successes: 230 (74.7%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 9...
+Success: True steps: 157
+# episodes completed so far: 309
+# successes: 231 (74.8%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 10...
+Success: True steps: 154
+# episodes completed so far: 310
+# successes: 232 (74.8%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 11...
+Success: True steps: 154
+# episodes completed so far: 311
+# successes: 233 (74.9%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 12...
+Success: True steps: 156
+# episodes completed so far: 312
+# successes: 234 (75.0%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 13...
+Success: True steps: 181
+# episodes completed so far: 313
+# successes: 235 (75.1%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 14...
+Success: True steps: 152
+# episodes completed so far: 314
+# successes: 236 (75.2%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 15...
+Success: True steps: 163
+# episodes completed so far: 315
+# successes: 237 (75.2%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 16...
+Success: True steps: 168
+# episodes completed so far: 316
+# successes: 238 (75.3%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 17...
+Success: True steps: 153
+# episodes completed so far: 317
+# successes: 239 (75.4%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 18...
+Success: True steps: 174
+# episodes completed so far: 318
+# successes: 240 (75.5%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 19...
+Success: True steps: 147
+# episodes completed so far: 319
+# successes: 241 (75.5%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 20...
+Success: True steps: 177
+# episodes completed so far: 320
+# successes: 242 (75.6%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 21...
+Success: True steps: 150
+# episodes completed so far: 321
+# successes: 243 (75.7%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 22...
+Success: True steps: 168
+# episodes completed so far: 322
+# successes: 244 (75.8%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 23...
+Success: True steps: 148
+# episodes completed so far: 323
+# successes: 245 (75.9%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 24...
+Success: True steps: 156
+# episodes completed so far: 324
+# successes: 246 (75.9%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 25...
+Success: True steps: 161
+# episodes completed so far: 325
+# successes: 247 (76.0%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 26...
+Success: True steps: 149
+# episodes completed so far: 326
+# successes: 248 (76.1%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 27...
+Success: True steps: 161
+# episodes completed so far: 327
+# successes: 249 (76.1%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 28...
+Success: True steps: 160
+# episodes completed so far: 328
+# successes: 250 (76.2%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 29...
+Success: True steps: 176
+# episodes completed so far: 329
+# successes: 251 (76.3%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 30...
+Success: True steps: 177
+# episodes completed so far: 330
+# successes: 252 (76.4%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 31...
+Success: True steps: 157
+# episodes completed so far: 331
+# successes: 253 (76.4%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 32...
+Success: True steps: 154
+# episodes completed so far: 332
+# successes: 254 (76.5%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 33...
+Success: True steps: 161
+# episodes completed so far: 333
+# successes: 255 (76.6%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 34...
+Success: True steps: 151
+# episodes completed so far: 334
+# successes: 256 (76.6%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 35...
+Success: True steps: 165
+# episodes completed so far: 335
+# successes: 257 (76.7%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 36...
+Success: True steps: 153
+# episodes completed so far: 336
+# successes: 258 (76.8%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 37...
+Success: True steps: 164
+# episodes completed so far: 337
+# successes: 259 (76.9%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 38...
+Success: True steps: 161
+# episodes completed so far: 338
+# successes: 260 (76.9%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 39...
+Success: True steps: 162
+# episodes completed so far: 339
+# successes: 261 (77.0%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 40...
+Success: True steps: 153
+# episodes completed so far: 340
+# successes: 262 (77.1%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 41...
+Success: True steps: 155
+# episodes completed so far: 341
+# successes: 263 (77.1%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 42...
+Success: True steps: 154
+# episodes completed so far: 342
+# successes: 264 (77.2%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 43...
+Success: True steps: 153
+# episodes completed so far: 343
+# successes: 265 (77.3%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 44...
+Success: True steps: 164
+# episodes completed so far: 344
+# successes: 266 (77.3%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 45...
+Success: True steps: 157
+# episodes completed so far: 345
+# successes: 267 (77.4%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 46...
+Success: True steps: 149
+# episodes completed so far: 346
+# successes: 268 (77.5%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 47...
+Success: True steps: 153
+# episodes completed so far: 347
+# successes: 269 (77.5%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 48...
+Success: True steps: 156
+# episodes completed so far: 348
+# successes: 270 (77.6%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 49...
+Success: True steps: 151
+# episodes completed so far: 349
+# successes: 271 (77.7%)
+
+Task: pick up the butter and place it in the basket
+Starting episode 50...
+Success: True steps: 154
+# episodes completed so far: 350
+# successes: 272 (77.7%)
+Current task success rate: 0.98
+Current total success rate: 0.7771428571428571
+
+Task: pick up the milk and place it in the basket
+Starting episode 1...
+Success: True steps: 136
+# episodes completed so far: 351
+# successes: 273 (77.8%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 2...
+Success: True steps: 140
+# episodes completed so far: 352
+# successes: 274 (77.8%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 3...
+Success: True steps: 141
+# episodes completed so far: 353
+# successes: 275 (77.9%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 4...
+Success: True steps: 137
+# episodes completed so far: 354
+# successes: 276 (78.0%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 5...
+Success: True steps: 134
+# episodes completed so far: 355
+# successes: 277 (78.0%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 6...
+Success: True steps: 179
+# episodes completed so far: 356
+# successes: 278 (78.1%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 7...
+Success: False steps: 310
+# episodes completed so far: 357
+# successes: 278 (77.9%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 8...
+Success: True steps: 138
+# episodes completed so far: 358
+# successes: 279 (77.9%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 9...
+Success: False steps: 310
+# episodes completed so far: 359
+# successes: 279 (77.7%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 10...
+Success: True steps: 149
+# episodes completed so far: 360
+# successes: 280 (77.8%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 11...
+Success: True steps: 135
+# episodes completed so far: 361
+# successes: 281 (77.8%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 12...
+Success: True steps: 132
+# episodes completed so far: 362
+# successes: 282 (77.9%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 13...
+Success: True steps: 129
+# episodes completed so far: 363
+# successes: 283 (78.0%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 14...
+Success: False steps: 310
+# episodes completed so far: 364
+# successes: 283 (77.7%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 15...
+Success: True steps: 143
+# episodes completed so far: 365
+# successes: 284 (77.8%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 16...
+Success: True steps: 133
+# episodes completed so far: 366
+# successes: 285 (77.9%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 17...
+Success: True steps: 145
+# episodes completed so far: 367
+# successes: 286 (77.9%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 18...
+Success: True steps: 141
+# episodes completed so far: 368
+# successes: 287 (78.0%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 19...
+Success: True steps: 141
+# episodes completed so far: 369
+# successes: 288 (78.0%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 20...
+Success: True steps: 146
+# episodes completed so far: 370
+# successes: 289 (78.1%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 21...
+Success: True steps: 134
+# episodes completed so far: 371
+# successes: 290 (78.2%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 22...
+Success: True steps: 144
+# episodes completed so far: 372
+# successes: 291 (78.2%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 23...
+Success: True steps: 128
+# episodes completed so far: 373
+# successes: 292 (78.3%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 24...
+Success: False steps: 310
+# episodes completed so far: 374
+# successes: 292 (78.1%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 25...
+Success: True steps: 142
+# episodes completed so far: 375
+# successes: 293 (78.1%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 26...
+Success: True steps: 143
+# episodes completed so far: 376
+# successes: 294 (78.2%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 27...
+Success: False steps: 310
+# episodes completed so far: 377
+# successes: 294 (78.0%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 28...
+Success: True steps: 137
+# episodes completed so far: 378
+# successes: 295 (78.0%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 29...
+Success: True steps: 138
+# episodes completed so far: 379
+# successes: 296 (78.1%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 30...
+Success: True steps: 139
+# episodes completed so far: 380
+# successes: 297 (78.2%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 31...
+Success: True steps: 132
+# episodes completed so far: 381
+# successes: 298 (78.2%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 32...
+Success: True steps: 132
+# episodes completed so far: 382
+# successes: 299 (78.3%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 33...
+Success: True steps: 158
+# episodes completed so far: 383
+# successes: 300 (78.3%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 34...
+Success: True steps: 136
+# episodes completed so far: 384
+# successes: 301 (78.4%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 35...
+Success: True steps: 133
+# episodes completed so far: 385
+# successes: 302 (78.4%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 36...
+Success: True steps: 141
+# episodes completed so far: 386
+# successes: 303 (78.5%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 37...
+Success: True steps: 141
+# episodes completed so far: 387
+# successes: 304 (78.6%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 38...
+Success: True steps: 133
+# episodes completed so far: 388
+# successes: 305 (78.6%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 39...
+Success: True steps: 136
+# episodes completed so far: 389
+# successes: 306 (78.7%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 40...
+Success: True steps: 134
+# episodes completed so far: 390
+# successes: 307 (78.7%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 41...
+Success: True steps: 138
+# episodes completed so far: 391
+# successes: 308 (78.8%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 42...
+Success: True steps: 136
+# episodes completed so far: 392
+# successes: 309 (78.8%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 43...
+Success: True steps: 142
+# episodes completed so far: 393
+# successes: 310 (78.9%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 44...
+Success: True steps: 135
+# episodes completed so far: 394
+# successes: 311 (78.9%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 45...
+Success: False steps: 310
+# episodes completed so far: 395
+# successes: 311 (78.7%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 46...
+Success: True steps: 135
+# episodes completed so far: 396
+# successes: 312 (78.8%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 47...
+Success: True steps: 148
+# episodes completed so far: 397
+# successes: 313 (78.8%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 48...
+Success: True steps: 133
+# episodes completed so far: 398
+# successes: 314 (78.9%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 49...
+Success: True steps: 133
+# episodes completed so far: 399
+# successes: 315 (78.9%)
+
+Task: pick up the milk and place it in the basket
+Starting episode 50...
+Success: True steps: 187
+# episodes completed so far: 400
+# successes: 316 (79.0%)
+Current task success rate: 0.88
+Current total success rate: 0.79
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 1...
+Success: True steps: 158
+# episodes completed so far: 401
+# successes: 317 (79.1%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 2...
+Success: True steps: 161
+# episodes completed so far: 402
+# successes: 318 (79.1%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 3...
+Success: True steps: 157
+# episodes completed so far: 403
+# successes: 319 (79.2%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 4...
+Success: True steps: 160
+# episodes completed so far: 404
+# successes: 320 (79.2%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 5...
+Success: True steps: 158
+# episodes completed so far: 405
+# successes: 321 (79.3%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 6...
+Success: True steps: 164
+# episodes completed so far: 406
+# successes: 322 (79.3%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 7...
+Success: True steps: 151
+# episodes completed so far: 407
+# successes: 323 (79.4%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 8...
+Success: True steps: 158
+# episodes completed so far: 408
+# successes: 324 (79.4%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 9...
+Success: True steps: 162
+# episodes completed so far: 409
+# successes: 325 (79.5%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 10...
+Success: True steps: 156
+# episodes completed so far: 410
+# successes: 326 (79.5%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 11...
+Success: True steps: 155
+# episodes completed so far: 411
+# successes: 327 (79.6%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 12...
+Success: True steps: 151
+# episodes completed so far: 412
+# successes: 328 (79.6%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 13...
+Success: True steps: 159
+# episodes completed so far: 413
+# successes: 329 (79.7%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 14...
+Success: True steps: 160
+# episodes completed so far: 414
+# successes: 330 (79.7%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 15...
+Success: True steps: 155
+# episodes completed so far: 415
+# successes: 331 (79.8%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 16...
+Success: True steps: 160
+# episodes completed so far: 416
+# successes: 332 (79.8%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 17...
+Success: True steps: 257
+# episodes completed so far: 417
+# successes: 333 (79.9%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 18...
+Success: True steps: 158
+# episodes completed so far: 418
+# successes: 334 (79.9%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 19...
+Success: True steps: 159
+# episodes completed so far: 419
+# successes: 335 (80.0%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 20...
+Success: True steps: 167
+# episodes completed so far: 420
+# successes: 336 (80.0%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 21...
+Success: True steps: 159
+# episodes completed so far: 421
+# successes: 337 (80.0%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 22...
+Success: True steps: 254
+# episodes completed so far: 422
+# successes: 338 (80.1%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 23...
+Success: True steps: 153
+# episodes completed so far: 423
+# successes: 339 (80.1%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 24...
+Success: True steps: 156
+# episodes completed so far: 424
+# successes: 340 (80.2%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 25...
+Success: True steps: 155
+# episodes completed so far: 425
+# successes: 341 (80.2%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 26...
+Success: True steps: 160
+# episodes completed so far: 426
+# successes: 342 (80.3%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 27...
+Success: True steps: 152
+# episodes completed so far: 427
+# successes: 343 (80.3%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 28...
+Success: True steps: 157
+# episodes completed so far: 428
+# successes: 344 (80.4%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 29...
+Success: True steps: 166
+# episodes completed so far: 429
+# successes: 345 (80.4%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 30...
+Success: True steps: 155
+# episodes completed so far: 430
+# successes: 346 (80.5%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 31...
+Success: True steps: 170
+# episodes completed so far: 431
+# successes: 347 (80.5%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 32...
+Success: True steps: 160
+# episodes completed so far: 432
+# successes: 348 (80.6%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 33...
+Success: True steps: 199
+# episodes completed so far: 433
+# successes: 349 (80.6%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 34...
+Success: True steps: 160
+# episodes completed so far: 434
+# successes: 350 (80.6%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 35...
+Success: True steps: 152
+# episodes completed so far: 435
+# successes: 351 (80.7%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 36...
+Success: True steps: 156
+# episodes completed so far: 436
+# successes: 352 (80.7%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 37...
+Success: True steps: 156
+# episodes completed so far: 437
+# successes: 353 (80.8%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 38...
+Success: True steps: 154
+# episodes completed so far: 438
+# successes: 354 (80.8%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 39...
+Success: True steps: 153
+# episodes completed so far: 439
+# successes: 355 (80.9%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 40...
+Success: True steps: 151
+# episodes completed so far: 440
+# successes: 356 (80.9%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 41...
+Success: True steps: 150
+# episodes completed so far: 441
+# successes: 357 (81.0%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 42...
+Success: True steps: 159
+# episodes completed so far: 442
+# successes: 358 (81.0%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 43...
+Success: True steps: 154
+# episodes completed so far: 443
+# successes: 359 (81.0%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 44...
+Success: True steps: 161
+# episodes completed so far: 444
+# successes: 360 (81.1%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 45...
+Success: True steps: 160
+# episodes completed so far: 445
+# successes: 361 (81.1%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 46...
+Success: True steps: 153
+# episodes completed so far: 446
+# successes: 362 (81.2%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 47...
+Success: True steps: 151
+# episodes completed so far: 447
+# successes: 363 (81.2%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 48...
+Success: True steps: 160
+# episodes completed so far: 448
+# successes: 364 (81.2%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 49...
+Success: True steps: 150
+# episodes completed so far: 449
+# successes: 365 (81.3%)
+
+Task: pick up the chocolate pudding and place it in the basket
+Starting episode 50...
+Success: True steps: 157
+# episodes completed so far: 450
+# successes: 366 (81.3%)
+Current task success rate: 1.0
+Current total success rate: 0.8133333333333334
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 1...
+Success: True steps: 128
+# episodes completed so far: 451
+# successes: 367 (81.4%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 2...
+Success: True steps: 125
+# episodes completed so far: 452
+# successes: 368 (81.4%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 3...
+Success: True steps: 127
+# episodes completed so far: 453
+# successes: 369 (81.5%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 4...
+Success: True steps: 121
+# episodes completed so far: 454
+# successes: 370 (81.5%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 5...
+Success: True steps: 174
+# episodes completed so far: 455
+# successes: 371 (81.5%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 6...
+Success: True steps: 135
+# episodes completed so far: 456
+# successes: 372 (81.6%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 7...
+Success: True steps: 145
+# episodes completed so far: 457
+# successes: 373 (81.6%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 8...
+Success: True steps: 139
+# episodes completed so far: 458
+# successes: 374 (81.7%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 9...
+Success: True steps: 127
+# episodes completed so far: 459
+# successes: 375 (81.7%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 10...
+Success: True steps: 146
+# episodes completed so far: 460
+# successes: 376 (81.7%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 11...
+Success: True steps: 134
+# episodes completed so far: 461
+# successes: 377 (81.8%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 12...
+Success: True steps: 144
+# episodes completed so far: 462
+# successes: 378 (81.8%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 13...
+Success: True steps: 157
+# episodes completed so far: 463
+# successes: 379 (81.9%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 14...
+Success: True steps: 159
+# episodes completed so far: 464
+# successes: 380 (81.9%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 15...
+Success: True steps: 145
+# episodes completed so far: 465
+# successes: 381 (81.9%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 16...
+Success: True steps: 121
+# episodes completed so far: 466
+# successes: 382 (82.0%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 17...
+Success: True steps: 131
+# episodes completed so far: 467
+# successes: 383 (82.0%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 18...
+Success: True steps: 131
+# episodes completed so far: 468
+# successes: 384 (82.1%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 19...
+Success: True steps: 149
+# episodes completed so far: 469
+# successes: 385 (82.1%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 20...
+Success: True steps: 142
+# episodes completed so far: 470
+# successes: 386 (82.1%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 21...
+Success: True steps: 131
+# episodes completed so far: 471
+# successes: 387 (82.2%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 22...
+Success: True steps: 125
+# episodes completed so far: 472
+# successes: 388 (82.2%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 23...
+Success: True steps: 149
+# episodes completed so far: 473
+# successes: 389 (82.2%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 24...
+Success: False steps: 310
+# episodes completed so far: 474
+# successes: 389 (82.1%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 25...
+Success: True steps: 136
+# episodes completed so far: 475
+# successes: 390 (82.1%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 26...
+Success: True steps: 134
+# episodes completed so far: 476
+# successes: 391 (82.1%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 27...
+Success: True steps: 134
+# episodes completed so far: 477
+# successes: 392 (82.2%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 28...
+Success: True steps: 146
+# episodes completed so far: 478
+# successes: 393 (82.2%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 29...
+Success: True steps: 129
+# episodes completed so far: 479
+# successes: 394 (82.3%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 30...
+Success: True steps: 134
+# episodes completed so far: 480
+# successes: 395 (82.3%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 31...
+Success: True steps: 151
+# episodes completed so far: 481
+# successes: 396 (82.3%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 32...
+Success: True steps: 129
+# episodes completed so far: 482
+# successes: 397 (82.4%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 33...
+Success: True steps: 129
+# episodes completed so far: 483
+# successes: 398 (82.4%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 34...
+Success: True steps: 132
+# episodes completed so far: 484
+# successes: 399 (82.4%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 35...
+Success: True steps: 135
+# episodes completed so far: 485
+# successes: 400 (82.5%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 36...
+Success: True steps: 126
+# episodes completed so far: 486
+# successes: 401 (82.5%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 37...
+Success: True steps: 133
+# episodes completed so far: 487
+# successes: 402 (82.5%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 38...
+Success: True steps: 140
+# episodes completed so far: 488
+# successes: 403 (82.6%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 39...
+Success: True steps: 124
+# episodes completed so far: 489
+# successes: 404 (82.6%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 40...
+Success: True steps: 128
+# episodes completed so far: 490
+# successes: 405 (82.7%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 41...
+Success: True steps: 131
+# episodes completed so far: 491
+# successes: 406 (82.7%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 42...
+Success: True steps: 154
+# episodes completed so far: 492
+# successes: 407 (82.7%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 43...
+Success: True steps: 132
+# episodes completed so far: 493
+# successes: 408 (82.8%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 44...
+Success: True steps: 135
+# episodes completed so far: 494
+# successes: 409 (82.8%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 45...
+Success: True steps: 131
+# episodes completed so far: 495
+# successes: 410 (82.8%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 46...
+Success: False steps: 310
+# episodes completed so far: 496
+# successes: 410 (82.7%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 47...
+Success: True steps: 143
+# episodes completed so far: 497
+# successes: 411 (82.7%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 48...
+Success: True steps: 133
+# episodes completed so far: 498
+# successes: 412 (82.7%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 49...
+Success: True steps: 147
+# episodes completed so far: 499
+# successes: 413 (82.8%)
+
+Task: pick up the orange juice and place it in the basket
+Starting episode 50...
+Success: True steps: 136
+# episodes completed so far: 500
+# successes: 414 (82.8%)
+Current task success rate: 0.96
+Current total success rate: 0.828

@@ -1,0 +1,54 @@
+{
+ "suite": "libero_object",
+ "note": "univla+libero_object_no_noops",
+ "kind": "token",
+ "files": [
+  "EVAL-libero_object-openvla-2026_09_18-02_52_37--univla+libero_object_no_noops+b16x4+lr0..txt"
+ ],
+ "per_task": {
+  "pick up the alphabet soup and place it in the basket": {
+   "successes": 17,
+   "episodes": 50
+  },
+  "pick up the cream cheese and place it in the basket": {
+   "successes": 42,
+   "episodes": 50
+  },
+  "pick up the salad dressing and place it in the basket": {
+   "successes": 41,
+   "episodes": 50
+  },
+  "pick up the bbq sauce and place it in the basket": {
+   "successes": 36,
+   "episodes": 50
+  },
+  "pick up the ketchup and place it in the basket": {
+   "successes": 47,
+   "episodes": 50
+  },
+  "pick up the tomato sauce and place it in the basket": {
+   "successes": 40,
+   "episodes": 50
+  },
+  "pick up the butter and place it in the basket": {
+   "successes": 49,
+   "episodes": 50
+  },
+  "pick up the milk and place it in the basket": {
+   "successes": 44,
+   "episodes": 50
+  },
+  "pick up the chocolate pudding and place it in the basket": {
+   "successes": 50,
+   "episodes": 50
+  },
+  "pick up the orange juice and place it in the basket": {
+   "successes": 48,
+   "episodes": 50
+  }
+ },
+ "successes": 414,
+ "episodes": 500,
+ "success_rate": 0.828,
+ "complete": true
+}

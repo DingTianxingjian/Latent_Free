@@ -1,0 +1,27 @@
+{
+ "checkpoint": "/anvil/scratch/x-tding2/latent_free/acdc_la/ckpt/vla_runs/tc_cont+libero_goal_no_noops+b16x4+lr0.00035+r32+s15000--latp2inv_frac10",
+ "suite": "libero_goal",
+ "trials": 50,
+ "per_task": {
+  "open the middle drawer of the cabinet": 0.06,
+  "put the bowl on the stove": 0.38,
+  "put the wine bottle on top of the cabinet": 0.56,
+  "open the top drawer and put the bowl inside": 0.08,
+  "put the bowl on top of the cabinet": 0.28,
+  "push the plate to the front of the stove": 0.02,
+  "put the cream cheese in the bowl": 0.02
+ },
+ "task_ids": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "success": 0.2
+}

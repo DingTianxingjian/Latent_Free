@@ -2849,6 +2849,45 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Housekeeping.** The user cancelled the two stale evaluations (20754115, 20775019) at 14:38 and pushed `main` to
   GitHub; the Spatial evaluation's walltime was cut 6 h -> 4 h earlier for the same backfill reason.
 
+### 2026-09-18 (09:45) — MAIN TABLE, first cells: **Ours LOSES to UniVLA at 10 % demos on Spatial (70.4 vs 84.2) and Object (78.2 vs 82.8)**
+
+- **Results (500 episodes each, their evaluator, per-step query + temporal ensembling; single training seed per arm).**
+
+  | suite | UniVLA same-data latent (token interface) | Ours `latp2_inv` (continuous interface) | diff |
+  |---|---|---|---|
+  | Spatial | **421/500 = 84.2 %** (20759214) | 352/500 = 70.4 % (20783070) | **-13.8** |
+  | Object | **414/500 = 82.8 %** (20783071) | 391/500 = 78.2 % (20783073) | -4.6 |
+
+  Per task, spatial (UniVLA / Ours): 0.92/0.80, 0.98/0.74, 0.96/0.76, 0.78/**0.96**, 0.66/0.54, 0.98/0.98, 0.96/0.98,
+  **0.90/0.10** (bowl on the stove), 0.88/0.86, 0.40/0.32.
+  Per task, object: **0.34/0.80** (alphabet soup), 0.84/0.54, 0.82/0.76, 0.72/0.68, 0.94/0.92, 0.80/0.64, 0.98/0.84,
+  0.88/0.84, 1.00/0.90, 0.96/0.90.
+- **Reading.**  Ours is worse on both suites.  The spatial gap is 14 points against a standard error of about 2.5 for a
+  difference of two 500-episode rates, so it is not evaluation noise; 8 of the 14 points come from one task
+  (stove, 0.90 -> 0.10), and without it ours is still ~6 points lower.  The object gap (4.6) is under 2 SE.  **Both arms
+  have one collapsed task** (Ours: stove 0.10; UniVLA: alphabet soup 0.34 where Ours gets 0.80), which says training
+  variance at 43 demonstrations is large and one seed per arm cannot resolve differences of a few points.
+- **Training fit runs the other way.**  Final train-batch action L1: Ours 0.021 (spatial) / 0.019 (object) vs UniVLA
+  0.027 / 0.028.  Our arm fits the few demonstrations more tightly and does worse in closed loop.  Train-batch numbers,
+  not held-out; consistent with overfitting of the richer conditioning or of the regression head, not proof of it.
+- **The comparison is confounded, and this must be said wherever the numbers go:** the two arms differ in the latent AND
+  in the VLA interface.  UniVLA's arm predicts discrete latent tokens with the LM head (with the history prompt) and
+  decodes from their hidden states; ours regresses a continuous code from pooled prompt states (`ContHeads`) — the
+  plain-regression setting LAFP criticises.  Nothing here separates "our latent is a worse target" from "the continuous
+  regression interface is worse".  The no-latent arm through the same `ContHeads` (`--latent none`) is the control that
+  separates them; it has never been run.
+- **Checked and ruled out as the explanation: prompt padding.**  Training pools over right-padded prompts, evaluation
+  has none (asymmetry noted 2026-09-16).  The padding per task is 0-6 tokens and does not track the losses (the stove
+  task and three tasks with 0.86-0.96 success all have 5 pad tokens; the 0-pad task is hard for both arms).
+- **Evaluation infrastructure.**  The split evaluation reproduces the full run exactly (tasks 0-3: 40/37/38/48 in both),
+  so `LIBERO_TASK_IDS` + `eval_merge.py` are validated; the continuous evaluator is deterministic.  The libero_10 load
+  test (20783067) died with SIGABRT on **h003** for both arms: h003 joins h004/h006 as a node to exclude for MuJoCo/EGL.
+- **LATP on the clean-ACDC base (20783064 -> 20783065).**  `latp2_acdc_inv`: net 0.238 / seg1 0.207 / prof 0.079 /
+  seq 0.165 / drop 30.2 %, P(z|state) 0.048, against `tc_acdc` 0.223 / 0.199 / 0.074 / 0.157 / 31.9 %, 0.018.  +0.015 net
+  where it gave +0.064 on `tc_cont`, and no +15k control exists for this base, so not attributable.  `latp2_inv` stays
+  the main-table model (the open decision is moot at these numbers).
+- **Still running.**  Ours goal evaluation 20783075, UniVLA goal training 20783076; both Long arms queued.
+
 ## Registered next method: intervention first, real pairs second
 
 
