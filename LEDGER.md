@@ -3026,6 +3026,23 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Monitor defect fixed:** the job watcher dropped jobs that left `squeue` and were outside the `sacct -S` window, so
   UniVLA Long's completion produced no event; it now keeps every id it has seen.
 
+### 2026-09-18 (19:00) — evaluations were crashing SILENTLY on h001 (exit 134 reported as COMPLETED); fixed
+
+- **Found.** Goal-flow evaluation part tasks 4-5 (20820643) ended after 70 s with `VLA EVAL exit 134` (MuJoCo/EGL
+  SIGABRT) on **h001**, and Slurm reported COMPLETED: `run_vla_eval.sh` ended on `echo`, so its exit status was 0.  The
+  flow check 20823981, which I reported to the user as passed, **also crashed on h001 the same way** — corrected.
+- **Scope.** Across all evaluation logs, the only aborts are these two, both on h001.  Every real result so far came
+  from nodes that ran to the end (h000, h005, h007, h008, h009, h010, h013, h016, h018); the crash signature is
+  node-bound (h001, h003, h017; h004/h006 earlier).  Every job sees CUDA_VISIBLE_DEVICES=0 and all four /dev/nvidia*
+  files (checked with `srun --overlap` in three running evaluations), so the GPU index does not explain it.
+- **Fixes.** `run_vla_eval.sh` now exits with the evaluator's status (new submissions only; pending jobs keep their
+  frozen script).  All 26 pending evaluations exclude h001, h003, h004, h006, h017.  Goal-flow tasks 4-5 resubmitted
+  (20827663).  The job watcher reads the real exit code from the log of every evaluation that ends COMPLETED and flags
+  crashes.  `eval_merge.py` already marks a suite INCOMPLETE when a part is missing.
+- **Partial Spatial-flow (8 of 10 tasks):** 269/400 = 67.3 %, against 293/400 = 73.3 % for the legacy regression head
+  and 357/400 = 89.3 % for UniVLA on the same tasks.  The stove task fails under both heads (0.16 flow, 0.10 legacy;
+  UniVLA 0.90); task 1 fell 0.74 -> 0.26 under flow.  On Spatial the output interface is not the main problem.
+
 ## Registered next method: intervention first, real pairs second
 
 
