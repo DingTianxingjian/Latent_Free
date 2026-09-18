@@ -3128,6 +3128,21 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   used 1 of 16 codes throughout training)."  `PAPER_PLAN.md` comparison rule updated.  Removing the prior completely would
   take a stage-2 rerun with a non-released TI codebook (~14 h on 1 GPU at 0.39 s/step) plus its VLA run.
 
+### 2026-09-18 (19:40) — decision (user): the UniVLA baseline must not carry the released TI prior; rerun stage 2 with a RANDOM-init TI codebook
+
+- **Decision.**  A fair baseline initialises the task-irrelevant codebook randomly instead of from the released stage-1.
+  `claude_survey/rala2.py --no-inherit` does exactly that: `vq` (TI codebook) and `action_latent` stay at their random
+  init; `--ubranch frozen` (default) keeps UniVLA's freezing, so the ONLY change from the official recipe is the source
+  of the frozen codebook.  Same mixture, same 128k x 64 budget, same seed as `s2mix_1ep`.
+- **Jobs (all start after the maintenance ends 2026-09-20 21:00).**  Stage 2 `s2mix_noinh_1ep`: 20827810 (1 GPU,
+  ~14 h at 0.39 s/step; no resume in rala2, so a 16 h limit).  Then, depending on it: OXE probe dump/probes
+  `univla_noinh` 20827835; token-interface VLA @ 10 % on all four suites with `--lam_path .../s2mix_noinh_1ep.pt`
+  (6 h 30 min limit; the UniVLA arm takes 5.4-5.6 h): spatial 20827811, object 20827817, goal 20827823, libero_10
+  20827829, each followed by 5 evaluation parts (`NOTE=univla_noinh_<suite>_f10`).  Expected ~9/21 midday for the LAM,
+  ~9/22 for the four suites.
+- **Consequence for the paper.**  The main-table UniVLA row becomes this run; `s2mix_1ep` (released TI prior) stays as the
+  "official recipe" row with the corrected wording.
+
 ## Registered next method: intervention first, real pairs second
 
 
