@@ -2050,7 +2050,8 @@ Jobs `20492637` (rec_fz, grank_fz), `20494896` (swap_fz). Single seed each.
   log prints "Restarting 10 codes"), so nothing in the final checkpoint is inherited (0 of 201,757,184 tensors
   byte-identical).  (iv) Everything that produces the deployed code -- the 114M encoder, the projections, `vq_action` --
   is trained from scratch on our capped mixture at our budget.
-- **Conclusion: the controlled comparison is fair on this axis**, and the earlier caveat in this ledger ("the codebook
+- **[PARTLY WITHDRAWN 2026-09-18 — see the correction entry of that date: survival of parameters does not bound influence.]**
+  **Conclusion: the controlled comparison is fair on this axis**, and the earlier caveat in this ledger ("the codebook
   saw their full data, an advantage we gave the baseline") is **RETRACTED** as substantively wrong: the released
   stage-1 gives the baseline nothing that survives to the deployed tokens.  Both sides do use the same frozen Meta
   DINOv2 ViT-B/14 (ours plain, theirs with registers), which is symmetric.
@@ -3107,6 +3108,25 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   is pooling each sample over its real tokens only (MAPBlock's own mask cannot take per-sample masks) plus retraining.
 - **UniVLA-cont unit test (20827768) PASSED:** 512-d code, mean 0.006 / std 0.905 after standardisation, and it equals the
   standardised codebook rows of the same frames' tokens.  Training smoke 20827769 follows.
+
+### 2026-09-18 (19:45) — CORRECTION of the 2026-09-14 "no warm start" conclusion: parameter survival does not bound influence; measured: the TI branch used ONE code throughout
+
+- **What was overstated.**  The 2026-09-14 entry concluded "the released stage-1 gives the baseline nothing that survives to
+  the deployed tokens" and RETRACTED the earlier caveat that the codebook saw their full data; today I repeated it as
+  "zero influence".  User review: that is the wrong argument.  The TI codebook is FROZEN in stage 2 (`lam.py:240`), so it
+  is a persistent structural prior, not an initialisation; and a 16 x 128 codebook defines a partition of all transitions,
+  so 0.0025 % of the parameters says nothing about its influence (a frozen teacher leaves no weights in the student and
+  still shapes it).  The retraction of 2026-09-14 is itself withdrawn as too strong.
+- **Measured for this run** (`claude_survey/logs/cs_univla_1ep_20543308.out`): the TI branch used **1 of 16 codes at every
+  one of the 1,280 logged steps, from step 100 to 128,000**.  Every transition went to the same TI code, so the 16-way
+  partition never operated and the decoder received one constant 128-d vector — a decomposition in name only (the same
+  collapse the 2026-08 audit found in the released stage-2 weights).  The mechanism "TC learns the residual after TI
+  explains part of the variation" therefore had nothing to act on after step 100.  What can remain: the first <= 100
+  steps, and the value of that one constant vector (external data).  Small by this measurement; not provably zero.
+- **Baseline description from now on:** "UniVLA Stage-2 trained on the matched mixture, initialised with the released
+  Stage-1 latent prior as prescribed by the official recipe (the frozen task-irrelevant codebook; in our run its branch
+  used 1 of 16 codes throughout training)."  `PAPER_PLAN.md` comparison rule updated.  Removing the prior completely would
+  take a stage-2 rerun with a non-released TI codebook (~14 h on 1 GPU at 0.39 s/step) plus its VLA run.
 
 ## Registered next method: intervention first, real pairs second
 

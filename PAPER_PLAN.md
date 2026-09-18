@@ -9,8 +9,10 @@ number goes and what is still missing.  Status: ✅ in hand · ⏳ job running/q
 A half-diagnostic paper: controlled diagnostics of latent action models (UniVLA line), then our method, then a
 simulation-only positive result.  No real robot.
 
-**Comparison rule (fixed 2026-09-12):** every UniVLA number comes from THEIR recipe trained on OUR capped mixture at
-OUR budget (`s2mix_1ep`, 29 OXE sources).  The released weights are a reference row in the probe tables only.
+**Comparison rule (fixed 2026-09-12; wording corrected 2026-09-18):** every UniVLA number comes from "UniVLA Stage-2 trained
+on the matched mixture, initialised with the released Stage-1 latent prior as prescribed by the official recipe" (`s2mix_1ep`,
+29 OXE sources, our budget).  The frozen task-irrelevant codebook comes from their data; its branch used 1 of 16 codes
+throughout our training, so its influence is small by measurement but not zero, and the text must say so.  The released weights are a reference row in the probe tables only.
 The VLA recipe is identical across arms (openvla-7b + LoRA r32 + action head, 15k x 64, their evaluator,
 500 episodes per suite); only the latent labeller changes.
 
