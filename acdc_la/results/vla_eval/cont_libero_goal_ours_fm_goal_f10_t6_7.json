@@ -3,11 +3,12 @@
  "suite": "libero_goal",
  "trials": 50,
  "per_task": {
-  "put the cream cheese in the bowl": 0.02
+  "put the cream cheese in the bowl": 0.02,
+  "turn on the stove": 0.14
  },
  "task_ids": [
   6,
   7
  ],
- "success": 0.02
+ "success": 0.08
 }

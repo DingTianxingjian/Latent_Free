@@ -3143,6 +3143,19 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Consequence for the paper.**  The main-table UniVLA row becomes this run; `s2mix_1ep` (released TI prior) stays as the
   "official recipe" row with the corrected wording.
 
+### 2026-09-18 (20:00) — LATP + FLOW @ 10 % Goal = 9.2 % (legacy regression 17.0 %, UniVLA 86.6 %); padding test task 0 unchanged
+
+- **Result (merged, 5 parts, 500 episodes): 46/500 = 9.2 %.**  Per task 0.00, 0.22, 0.28, 0.04, 0.14, 0.00, 0.02, 0.14, 0.02,
+  0.06.  Lower than the legacy regression head (17.0 %), against UniVLA's token interface at 86.6 %.
+- **Padding test (training-like right padding to 27 tokens), flow model, task 0: 0/50** — identical to unpadded.  Tasks
+  1-3 and the legacy-head variant still running; on this first task the padding mismatch explains nothing.
+- **Code check.**  The token and continuous arms build their training samples identically (same frame, same 12-step action
+  slice, same instruction); they differ in the prompt's latent part, the target and the output interface.  No data bug
+  found.
+- **Suspect 2 made decisive on Goal.**  UniVLA's latent through the same flow head on Goal @ 10 %: train 20827992, evals 20827993 20827994 20827995 20827996 20827997
+  (after the maintenance; Spatial counterpart 20827771).  UniVLA-flow on Goal near 87 -> our latent / pipeline is the
+  problem; near 9-17 -> the continuous interface cannot use this data regime, whatever the latent.
+
 ## Registered next method: intervention first, real pairs second
 
 

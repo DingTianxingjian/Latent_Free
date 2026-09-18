@@ -1,0 +1,12 @@
+{
+ "checkpoint": "/anvil/scratch/x-tding2/latent_free/acdc_la/ckpt/vla_runs/univla_cont+libero_spatial_no_noops+b2x1+lr0.00035+r32+s12+fm--smoke",
+ "suite": "libero_spatial",
+ "trials": 1,
+ "per_task": {
+  "pick up the black bowl between the plate and the ramekin and place it on the plate": 0.0
+ },
+ "task_ids": [
+  0
+ ],
+ "success": 0.0
+}
