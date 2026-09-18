@@ -1,0 +1,58 @@
+{
+ "suite": "libero_spatial",
+ "note": "ours_fm_spatial_f10",
+ "kind": "cont",
+ "files": [
+  "cont_libero_spatial_ours_fm_spatial_f10_t0_1.json",
+  "cont_libero_spatial_ours_fm_spatial_f10_t2_3.json",
+  "cont_libero_spatial_ours_fm_spatial_f10_t4_5.json",
+  "cont_libero_spatial_ours_fm_spatial_f10_t6_7.json",
+  "cont_libero_spatial_ours_fm_spatial_f10_t8_9.json"
+ ],
+ "per_task": {
+  "pick up the black bowl between the plate and the ramekin and place it on the plate": {
+   "successes": 39,
+   "episodes": 50
+  },
+  "pick up the black bowl next to the ramekin and place it on the plate": {
+   "successes": 13,
+   "episodes": 50
+  },
+  "pick up the black bowl from table center and place it on the plate": {
+   "successes": 41,
+   "episodes": 50
+  },
+  "pick up the black bowl on the cookie box and place it on the plate": {
+   "successes": 44,
+   "episodes": 50
+  },
+  "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate": {
+   "successes": 35,
+   "episodes": 50
+  },
+  "pick up the black bowl on the ramekin and place it on the plate": {
+   "successes": 49,
+   "episodes": 50
+  },
+  "pick up the black bowl next to the cookie box and place it on the plate": {
+   "successes": 40,
+   "episodes": 50
+  },
+  "pick up the black bowl on the stove and place it on the plate": {
+   "successes": 8,
+   "episodes": 50
+  },
+  "pick up the black bowl next to the plate and place it on the plate": {
+   "successes": 43,
+   "episodes": 50
+  },
+  "pick up the black bowl on the wooden cabinet and place it on the plate": {
+   "successes": 18,
+   "episodes": 50
+  }
+ },
+ "successes": 330,
+ "episodes": 500,
+ "success_rate": 0.66,
+ "complete": true
+}

@@ -19,8 +19,8 @@ export PYTHONPATH=/anvil/scratch/x-tding2/latent_free:/anvil/scratch/x-tding2/la
 PY=/anvil/scratch/x-tding2/envs/univla_vla/bin/python
 R=/anvil/scratch/x-tding2/latent_free/acdc_la/ckpt/vla_runs/${RUN:?set RUN}
 MOD=acdc_la.downstream.vla.run_libero_eval_ctrl; grep -qE '"latent": "(acdc_cont|tc_cont|none)"' $R/ctrl_meta.json && MOD=acdc_la.downstream.vla.run_libero_eval_cont
-echo n | $PY -m $MOD --pretrained_checkpoint $R --task_suite_name ${SUITE:-libero_spatial} --num_trials_per_task ${TRIALS:-50} --local_log_dir /anvil/scratch/x-tding2/latent_free/acdc_la/results/vla_eval --run_id_note ${NOTE:-$(basename $R | cut -c1-40)} 2>&1 | grep --line-buffered -vE "xFormers|warnings.warn|UserWarning|tensorflow/|I0000|E0000|W0000|oneDNN|TF-TRT|cuda_|AtomicFunction|NoneType|Exception ignored|^Traceback|atomic_function.py|robosuite WARNING|macros"
-RC=${PIPESTATUS[1]}
+echo n | $PY -m $MOD --pretrained_checkpoint $R --task_suite_name ${SUITE:-libero_spatial} --num_trials_per_task ${TRIALS:-50} --local_log_dir /anvil/scratch/x-tding2/latent_free/acdc_la/results/vla_eval --run_id_note ${NOTE:-$(basename $R | cut -c1-40)} 2>&1 | tee /anvil/scratch/x-tding2/latent_free/acdc_la/logs/vlaeval_raw_${SLURM_JOB_ID}.txt | grep --line-buffered -vE "xFormers|warnings.warn|UserWarning|tensorflow/|I0000|E0000|W0000|oneDNN|TF-TRT|cuda_|AtomicFunction|NoneType|Exception ignored|^Traceback|atomic_function.py|robosuite WARNING|macros"
+RC=${PIPESTATUS[1]}   # (echo | python | tee | grep): index 1 is the evaluator
 echo "VLA EVAL exit $RC $(date)"
 # 2026-09-18: exit with the evaluator's status.  Before this the script ended on `echo`, so a MuJoCo/EGL abort (134)
 # on a bad node was reported by Slurm as COMPLETED and a missing half of the tasks was invisible.

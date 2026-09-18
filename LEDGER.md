@@ -3043,6 +3043,33 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   and 357/400 = 89.3 % for UniVLA on the same tasks.  The stove task fails under both heads (0.16 flow, 0.10 legacy;
   UniVLA 0.90); task 1 fell 0.74 -> 0.26 under flow.  On Spatial the output interface is not the main problem.
 
+### 2026-09-18 (19:05) — LATP + FLOW head @ 10 % Spatial = 66.0 %: the interface change does NOT recover Spatial
+
+- **Result (20817931 -> 20817934-38, 500 episodes, all five parts exit 0).**  **330/500 = 66.0 %**, against LATP + legacy
+  regression 352/500 = 70.4 % and UniVLA 421/500 = 84.2 %.
+
+  | task | flow | legacy reg | UniVLA |
+  |---|---|---|---|
+  | 0 between plate and ramekin | 0.78 | 0.80 | 0.92 |
+  | 1 next to the ramekin | **0.26** | 0.74 | 0.98 |
+  | 2 table center | 0.82 | 0.76 | 0.96 |
+  | 3 on the cookie box | 0.88 | 0.96 | 0.78 |
+  | 4 in the top drawer | 0.70 | 0.54 | 0.66 |
+  | 5 on the ramekin | 0.98 | 0.98 | 0.98 |
+  | 6 next to the cookie box | 0.80 | 0.98 | 0.96 |
+  | 7 on the stove | **0.16** | 0.10 | 0.90 |
+  | 8 next to the plate | 0.86 | 0.86 | 0.88 |
+  | 9 on the wooden cabinet | 0.36 | 0.32 | 0.40 |
+
+- **Reading.**  On Spatial the output interface is not what separates us from UniVLA: two different heads give 70.4 and
+  66.0 (a 4.4-point difference, within about 2 SE of each other), and both collapse on the stove task where UniVLA gets
+  0.90.  A failure that survives a change of head points at what the two runs share — the latent target (and the 43
+  demonstrations) — not at regression.  Task-level swings between the two of our runs (task 1: 0.74 -> 0.26; task 4:
+  0.54 -> 0.70) are as large as the gaps to UniVLA, so single-seed per-task numbers are not interpretable one by one.
+- **What remains decisive.**  (a) Goal with the flow head (the language-bottleneck test; evaluation in progress);
+  (b) the no-latent + flow control on Spatial (held until after the maintenance): if it matches or beats 66.0, the LATP
+  latent adds nothing or hurts through this interface.
+
 ## Registered next method: intervention first, real pairs second
 
 
