@@ -2888,6 +2888,29 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   the main-table model (the open decision is moot at these numbers).
 - **Still running.**  Ours goal evaluation 20783075, UniVLA goal training 20783076; both Long arms queued.
 
+### 2026-09-18 (11:00) — interface change (user): flow-matching head for the continuous arm; Spatial + Object runs and a no-latent control queued
+
+- **Decision (user).** Keep the latent continuous, change the VLA interface.  The field's stated fix for the policy side
+  of continuous latent actions is a generative head: LAFP (plain behaviour cloning "tends to collapse inherently
+  multimodal action distributions into unimodal ones") and RotVLA (a flow-matching head that "jointly denoises latent and
+  robot actions").  Our `ContHeads` is exactly the regression setting LAFP criticises.
+- **Also clarified to the user:** the UniVLA arm has no stage-2 (latent-pretraining) advantage and no released weights in
+  the deployed path — both arms start from `openvla-7b`, both LAMs were trained on the same capped OXE mixture (theirs
+  128k steps, ours 65k + 15k), and 0 of `s2mix_1ep`'s final tensors equal the release (ledger 2026-09-14).
+- **Implementation (`finetune_libero_ctrl.py`, `--head flow`).** `FlowHeads`: rectified flow over [12 x 7 action chunk,
+  z split into 8 tokens of 32], conditioned on the same MAP-pooled visual and prompt states as `ContHeads` (UniVLA's
+  decoder pools the same way); a 4-layer, 512-wide transformer denoiser with a time embedding; loss = action velocity
+  MSE + `lam_z` x latent velocity MSE; logged diagnostics are the one-step action L1 and latent R2.  `--latent none
+  --head flow` is the identical head without z.  Evaluation (`run_libero_eval_cont.py`) samples with 10 Euler steps,
+  clips to [-1, 1], and fixes the noise per (seed, task, episode), so a rerun is reproducible.  Run dirs get `+fm`.
+- **Jobs.**  smoke (tc_cont + none, 12 steps) 20817929 -> spatial load test 20817930;
+  Ours-FM spatial 20817931 -> evals 20817934-38 (`NOTE=ours_fm_spatial_f10`);
+  none-FM spatial 20817932 -> evals 20817939-43 (`NOTE=none_fm_spatial_f10`);
+  Ours-FM object 20817933 -> evals 20817944-48 (`NOTE=ours_fm_object_f10`).  Evaluations are split 5 x 2 tasks and
+  exclude h003/h004/h006.  Goal/Long with the flow head only after the Spatial result.
+- **What the three Spatial numbers will separate.**  Ours-reg 70.4 vs Ours-FM: the interface.  none-FM vs Ours-FM:
+  what the latent adds through the same head.  UniVLA 84.2 stays the external reference (their native interface).
+
 ## Registered next method: intervention first, real pairs second
 
 
