@@ -3089,6 +3089,25 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Past-frame history (user asked whether it was done).**  Measured, not implemented: the CPU probe of 17:00 found the
   observed past adds +0.026 R2 on z, the same as raw past motion.  Open if the user still wants it after suspect 2.
 
+### 2026-09-18 (19:30) — Goal with the FLOW head is as bad as the legacy head: the "instruction only through z" account is REFUTED as the main cause; a padding mismatch is now suspected
+
+- **Partial Goal-flow (parts done: tasks 0-3, 6).**  0.00, 0.22, 0.28, 0.04, 0.02 — against legacy regression 0.06,
+  0.38, 0.56, 0.08, 0.02 and UniVLA 0.62, 0.98, 1.00, 0.80, 0.72.  The flow head reads a pooled summary of the text
+  states directly, and Goal does not recover.  **The language-bottleneck reading of 2026-09-18 11:20 is refuted as the
+  main cause** (the bottleneck itself was real in the code; it is not what makes Goal fail).
+- **New suspect, specific to our continuous arms and absent from the token arm.**  Training batches are right-padded to
+  the batch's longest prompt, and both continuous heads MAP-pool over every text position including pads.  Pad positions
+  attend to the whole real sequence, so their states act as sentence summaries a head can learn to rely on; evaluation
+  (batch 1) has no pads.  The token arm's decoder reads the latent-token positions, which precede the pads, so it never
+  sees them.  Goal is the suite where the instruction is the only task signal, so it would be hit hardest.  Earlier
+  (2026-09-18 09:45) padding was "ruled out" on the per-task Spatial pattern alone; that was a weak test.
+- **Test tonight, no retraining.**  `LIBERO_PAD_TO=max` in `run_libero_eval_cont.py` right-pads each prompt to the suite's
+  longest (the typical training condition).  Goal tasks 0-3 on the flow model (20827790-91, `ours_fm_goal_padmax`) and on
+  the legacy-regression model (20827792-93, `ours_reg_goal_padmax`).  Recovery -> the mismatch is real, and the proper fix
+  is pooling each sample over its real tokens only (MAPBlock's own mask cannot take per-sample masks) plus retraining.
+- **UniVLA-cont unit test (20827768) PASSED:** 512-d code, mean 0.006 / std 0.905 after standardisation, and it equals the
+  standardised codebook rows of the same frames' tokens.  Training smoke 20827769 follows.
+
 ## Registered next method: intervention first, real pairs second
 
 

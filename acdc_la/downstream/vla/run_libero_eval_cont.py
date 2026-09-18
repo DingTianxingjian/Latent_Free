@@ -101,7 +101,19 @@ def main():
     out["task_ids"] = ids
     out_name = "cont_" + a.task_suite_name + (f"_{a.run_id_note}" if a.run_id_note else "")
     if os.environ.get("LIBERO_TASK_IDS"): out_name += "_t" + "_".join(str(i) for i in ids)
+    if os.environ.get("LIBERO_PAD_TO"): out_name += "_pad" + os.environ["LIBERO_PAD_TO"]
     out_name += ".json"
+    # LIBERO_PAD_TO=max (2026-09-18, diagnostic): training batches right-pad shorter prompts to the batch's longest, and the
+    # heads pool over ALL text positions, pads included (pad states attend to the whole instruction).  Evaluation has no
+    # pads.  This pads each prompt to the suite's longest prompt, the typical training condition, to test whether that
+    # train/test mismatch is what makes the continuous arms instruction-blind.
+    pad_to = 0
+    if os.environ.get("LIBERO_PAD_TO"):
+        def _plen(d):
+            pb = PurePromptBuilder("openvla"); pb.add_turn("human", f"What action should the robot take to {d.lower()}?"); pb.add_turn("gpt", "")
+            return processor(pb.get_prompt(), Image.new("RGB", (224, 224)))["input_ids"].shape[-1]
+        pad_to = max(_plen(suite.get_task(i).language) for i in range(suite.n_tasks)) if os.environ["LIBERO_PAD_TO"] == "max" else int(os.environ["LIBERO_PAD_TO"])
+        out["pad_to"] = pad_to; print(f"[cont-eval] prompts right-padded to {pad_to} tokens (training-like)", flush=True)
     for ti in ids:
         task = suite.get_task(ti); inits = suite.get_task_init_states(ti)
         env, desc = get_libero_env(task, "openvla", resolution=256)
@@ -116,6 +128,10 @@ def main():
                     obs, _, done, _ = env.step(get_libero_dummy_action("openvla")); t += 1; continue
                 img = center_crop(Image.fromarray(get_libero_image(obs, 224)).convert("RGB"))
                 inputs = processor(prompt, img)
+                if pad_to and inputs["input_ids"].shape[-1] < pad_to:
+                    n = pad_to - inputs["input_ids"].shape[-1]
+                    inputs["input_ids"] = torch.cat([inputs["input_ids"], torch.full((1, n), processor.tokenizer.pad_token_id, dtype=inputs["input_ids"].dtype)], 1)
+                    inputs["attention_mask"] = torch.cat([inputs["attention_mask"], torch.zeros((1, n), dtype=inputs["attention_mask"].dtype)], 1)
                 inputs = {k: (v.to(dev, dtype=torch.bfloat16) if v.dtype.is_floating_point else v.to(dev)) for k, v in inputs.items()}
                 with torch.no_grad():
                     h = vla(**inputs, output_hidden_states=True).hidden_states[-1]

@@ -3,11 +3,12 @@
  "suite": "libero_goal",
  "trials": 50,
  "per_task": {
-  "open the middle drawer of the cabinet": 0.0
+  "open the middle drawer of the cabinet": 0.0,
+  "put the bowl on the stove": 0.22
  },
  "task_ids": [
   0,
   1
  ],
- "success": 0.0
+ "success": 0.11
 }
