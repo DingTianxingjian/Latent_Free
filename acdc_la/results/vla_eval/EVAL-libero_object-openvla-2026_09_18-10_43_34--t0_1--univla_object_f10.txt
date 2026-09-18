@@ -228,3 +228,51 @@ Starting episode 38...
 Success: False steps: 310
 # episodes completed so far: 38
 # successes: 14 (36.8%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 39...
+Success: False steps: 310
+# episodes completed so far: 39
+# successes: 14 (35.9%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 40...
+Success: False steps: 310
+# episodes completed so far: 40
+# successes: 14 (35.0%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 41...
+Success: False steps: 310
+# episodes completed so far: 41
+# successes: 14 (34.1%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 42...
+Success: False steps: 310
+# episodes completed so far: 42
+# successes: 14 (33.3%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 43...
+Success: False steps: 310
+# episodes completed so far: 43
+# successes: 14 (32.6%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 44...
+Success: False steps: 310
+# episodes completed so far: 44
+# successes: 14 (31.8%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 45...
+Success: False steps: 310
+# episodes completed so far: 45
+# successes: 14 (31.1%)
+
+Task: pick up the alphabet soup and place it in the basket
+Starting episode 46...
+Success: False steps: 310
+# episodes completed so far: 46
+# successes: 14 (30.4%)

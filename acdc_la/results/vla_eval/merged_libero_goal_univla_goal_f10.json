@@ -1,0 +1,58 @@
+{
+ "suite": "libero_goal",
+ "note": "univla_goal_f10",
+ "kind": "token",
+ "files": [
+  "EVAL-libero_goal-openvla-2026_09_18-13_35_32--t0_1--univla_goal_f10.txt",
+  "EVAL-libero_goal-openvla-2026_09_18-13_44_02--t2_3--univla_goal_f10.txt",
+  "EVAL-libero_goal-openvla-2026_09_18-13_44_24--t4_5--univla_goal_f10.txt",
+  "EVAL-libero_goal-openvla-2026_09_18-13_54_51--t6_7--univla_goal_f10.txt",
+  "EVAL-libero_goal-openvla-2026_09_18-13_56_56--t8_9--univla_goal_f10.txt"
+ ],
+ "per_task": {
+  "open the middle drawer of the cabinet": {
+   "successes": 31,
+   "episodes": 50
+  },
+  "put the bowl on the stove": {
+   "successes": 49,
+   "episodes": 50
+  },
+  "put the wine bottle on top of the cabinet": {
+   "successes": 50,
+   "episodes": 50
+  },
+  "open the top drawer and put the bowl inside": {
+   "successes": 40,
+   "episodes": 50
+  },
+  "put the bowl on top of the cabinet": {
+   "successes": 46,
+   "episodes": 50
+  },
+  "push the plate to the front of the stove": {
+   "successes": 39,
+   "episodes": 50
+  },
+  "put the cream cheese in the bowl": {
+   "successes": 36,
+   "episodes": 50
+  },
+  "turn on the stove": {
+   "successes": 50,
+   "episodes": 50
+  },
+  "put the bowl on the plate": {
+   "successes": 48,
+   "episodes": 50
+  },
+  "put the wine bottle on the rack": {
+   "successes": 36,
+   "episodes": 41
+  }
+ },
+ "successes": 425,
+ "episodes": 491,
+ "success_rate": 0.8655804480651731,
+ "complete": false
+}

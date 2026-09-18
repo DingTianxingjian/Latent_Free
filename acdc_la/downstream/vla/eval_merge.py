@@ -9,7 +9,7 @@ changes nothing measured: each task keeps its 50 initial states, and a task is a
 `--kind token` reads UniVLA's text logs (`Task:` / `Success:` lines), `--kind cont` the json of
 `run_libero_eval_cont.py`.  Prints the per-task table and writes `merged_<suite>_<note>.json`.
 """
-import argparse, glob, json, os
+import argparse, glob, json, os, re
 from collections import OrderedDict
 
 
@@ -50,7 +50,9 @@ def main():
         paths = glob.glob(os.path.join(d, f"cont_{a.suite}_{a.note}_t*.json" if a.include == "parts" else f"cont_{a.suite}_{a.note}*.json"))
         per = from_cont_jsons(paths, a.trials)
     else:
-        paths = glob.glob(os.path.join(d, f"EVAL-{a.suite}-*{a.note}*--t*.txt" if a.include == "parts" else f"EVAL-{a.suite}-*{a.note}*.txt"))
+        # the token evaluator names parts EVAL-<suite>-openvla-<date>--t0_1--<note>.txt (task tag BEFORE the note)
+        paths = [p for p in glob.glob(os.path.join(d, f"EVAL-{a.suite}-*{a.note}*.txt"))
+                 if (a.include == "all" or re.search(r"--t\d+(_\d+)*--", os.path.basename(p)))]
         per = from_token_logs(paths, a.trials)
     assert paths, f"no evaluation files for {a.suite} / {a.note} in {d}"
     dup = {t: n for t, (_, n) in per.items() if n > a.trials}
