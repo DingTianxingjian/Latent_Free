@@ -1,0 +1,14 @@
+{
+ "checkpoint": "/anvil/scratch/x-tding2/latent_free/acdc_la/ckpt/vla_runs/tc_cont+libero_spatial_no_noops+b16x4+lr0.00035+r32+s15000--latp2inv_frac10",
+ "suite": "libero_spatial",
+ "trials": 50,
+ "per_task": {
+  "pick up the black bowl next to the plate and place it on the plate": 0.86,
+  "pick up the black bowl on the wooden cabinet and place it on the plate": 0.32
+ },
+ "task_ids": [
+  8,
+  9
+ ],
+ "success": 0.59
+}

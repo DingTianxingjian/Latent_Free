@@ -2917,6 +2917,26 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **What the three Spatial numbers will separate.**  Ours-reg 70.4 vs Ours-FM: the interface.  none-FM vs Ours-FM:
   what the latent adds through the same head.  UniVLA 84.2 stays the external reference (their native interface).
 
+### 2026-09-18 (11:20) — Ours (regression head) @ 10 % GOAL = 17.0 %; the old head has a structural LANGUAGE bottleneck; per-user GPU cap found
+
+- **Result (20783075, 500 episodes).** Ours `latp2_inv` + `ContHeads` on libero_goal @ 10 %: **85/500 = 17.0 %**.  Per task:
+  0.06, 0.38, 0.56, 0.08, 0.28, 0.02, 0.02, 0.16, 0.08, 0.06.  UniVLA goal is still training (20783076).
+- **Diagnosis, verified in code.** The VLM input is [BOS, image patches, text] (`modeling_prismatic.py:383-384`) under a
+  causal mask, so the hidden states at image positions never see the instruction.  `ContHeads` conditions the action on
+  [pooled IMAGE states, predicted z]: the instruction reaches the actions **only through the 256-d regressed z**.  For
+  `--latent none --head reg` it would not reach them at all.  UniVLA's decoder pools the latent-token states, which sit
+  after the text and see it.  LIBERO-Goal is the suite where all tasks share one initial scene and only the language
+  differs — the suite where this bottleneck must bite hardest, and it is the lowest number by far (Spatial 70.4, Object
+  78.2, where the scene largely identifies the task).  Consistent, not proven: the flow-head runs test it.
+- **Consequence.** The regression-head numbers measure that head's language bottleneck as much as the latent.
+  `FlowHeads` conditions on the pooled TEXT states directly (`txt_pool`, initialised from the image summary), for both
+  Ours and the no-latent control.  Submitted Ours-FM goal 20820640 -> evals 20820641-45 (`NOTE=ours_fm_goal_f10`).
+- **Scheduling constraint discovered.**  QOS `part-ai` caps a user at **12 GPUs** (UniVLA long 20783080 was pending with
+  `QOSMaxGRESPerUser` while 4 + 4 + 1 were in use).  1-GPU evaluation jobs therefore delay 4-GPU training.  The UniVLA
+  object split evaluations (20810391-95) duplicate the finished full evaluation (414/500) and should be cancelled; so
+  should the regression-head Long run (20783078 + eval 20783079), which the head change supersedes.  auto mode blocks my
+  `scancel`; the user was asked.
+
 ## Registered next method: intervention first, real pairs second
 
 

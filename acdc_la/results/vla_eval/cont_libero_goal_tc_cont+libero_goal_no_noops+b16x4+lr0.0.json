@@ -9,7 +9,10 @@
   "open the top drawer and put the bowl inside": 0.08,
   "put the bowl on top of the cabinet": 0.28,
   "push the plate to the front of the stove": 0.02,
-  "put the cream cheese in the bowl": 0.02
+  "put the cream cheese in the bowl": 0.02,
+  "turn on the stove": 0.16,
+  "put the bowl on the plate": 0.08,
+  "put the wine bottle on the rack": 0.06
  },
  "task_ids": [
   0,
@@ -23,5 +26,5 @@
   8,
   9
  ],
- "success": 0.2
+ "success": 0.17
 }
