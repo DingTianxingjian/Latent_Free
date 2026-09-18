@@ -7,12 +7,12 @@ W&B is replaced by a jsonl log (compute nodes have no network).
 
   torchrun --standalone --nproc-per-node 4 -m acdc_la.downstream.vla.finetune_libero_ctrl --latent acdc --max_steps 15000
 """
-import os, sys, json, time
+import os, sys, json, time, math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-import draccus, torch, torch.nn as nn, torch.distributed as dist, tqdm
+import draccus, torch, torch.nn as nn, torch.nn.functional as F, torch.distributed as dist, tqdm
 import torchvision.transforms as transforms
 from accelerate import PartialState
 from peft import LoraConfig, PeftModel, get_peft_model
@@ -68,10 +68,86 @@ class ContHeads(nn.Module):
         return self.act(torch.cat([v, z], -1)), z_pred
 
 
+class FlowHeads(nn.Module):
+    """Continuous arm with a FLOW-MATCHING head (2026-09-18): the action chunk and the continuous latent are generated
+    jointly from the VLM's visual and prompt states, as RotVLA's head "jointly denoises latent and robot actions".
+
+    Why it replaces ContHeads: ContHeads regresses the chunk with an L1/MSE target, the behaviour-cloning setting LAFP
+    names as the cause of the policy-side failure ("collapse inherently multimodal action distributions into unimodal
+    ones").  Generating z and the actions together also avoids LAFP's other named pitfall, a separately trained action
+    decoder misaligned with a stochastic latent policy.  Rectified flow: x_t = (1-t) x0 + t x1, x0 ~ N(0, I), target
+    velocity x1 - x0; sampling is `steps` Euler steps from noise.  Conditioning is the same MAP pooling of visual and
+    prompt states that ContHeads and UniVLA's ActionDecoder use; the denoiser is ~12M parameters, the size of theirs.
+    dz == 0 is the no-latent control through the identical head."""
+    def __init__(self, dz, window_size=12, hidden=512, width=512, layers=4, z_tok=32):
+        super().__init__(); self.dz, self.W, self.z_tok = dz, window_size, z_tok
+        assert dz % z_tok == 0, (dz, z_tok)
+        self.nz = dz // z_tok
+        self.vis_pool = MAPBlock(n_latents=1, vis_dim=4096, embed_dim=hidden, n_heads=hidden // 64)
+        self.txt_pool = MAPBlock(n_latents=1, vis_dim=4096, embed_dim=hidden, n_heads=hidden // 64)
+        self.c_in = nn.Linear(2 * hidden, width)
+        self.t_mlp = nn.Sequential(nn.Linear(width, width), nn.SiLU(), nn.Linear(width, width))
+        self.a_in, self.a_out = nn.Linear(7, width), nn.Linear(width, 7)
+        self.z_in, self.z_out = (nn.Linear(z_tok, width), nn.Linear(width, z_tok)) if dz else (None, None)
+        self.pos = nn.Parameter(torch.randn(1, 1 + window_size + self.nz, width) * 0.02)
+        self.blocks = nn.TransformerEncoder(nn.TransformerEncoderLayer(width, width // 64, 4 * width, 0.0, batch_first=True,
+                                                                       norm_first=True), layers)
+        self.norm = nn.LayerNorm(width)
+
+    def cond(self, visual, text):
+        v = self.vis_pool(visual)
+        return self.c_in(torch.cat([v, self.txt_pool(text, init_embed=v)], -1))
+
+    def _temb(self, t, width):
+        f = torch.exp(-math.log(10000.0) * torch.arange(width // 2, device=t.device) / (width // 2))
+        a = 1000.0 * t[:, None] * f[None]
+        return self.t_mlp(torch.cat([a.sin(), a.cos()], -1))
+
+    def velocity(self, xa, xz, t, c):
+        h = [c[:, None], self.a_in(xa)] + ([self.z_in(xz)] if self.dz else [])
+        h = torch.cat(h, 1) + self.pos + self._temb(t, c.shape[-1])[:, None]
+        h = self.norm(self.blocks(h))
+        return self.a_out(h[:, 1:1 + self.W]), (self.z_out(h[:, 1 + self.W:]) if self.dz else None)
+
+    def loss(self, visual, text, actions, z_star=None):
+        """-> (action flow loss, latent flow loss, one-step action L1, one-step latent R2); the last two are diagnostics."""
+        c = self.cond(visual, text); B = actions.shape[0]
+        t = torch.rand(B, device=actions.device)
+        a0 = torch.randn_like(actions); at = (1 - t[:, None, None]) * a0 + t[:, None, None] * actions
+        z1 = z_star.reshape(B, self.nz, self.z_tok) if self.dz else None
+        z0 = torch.randn_like(z1) if self.dz else None
+        zt = (1 - t[:, None, None]) * z0 + t[:, None, None] * z1 if self.dz else None
+        va, vz = self.velocity(at, zt, t, c)
+        la = F.mse_loss(va, actions - a0)
+        with torch.no_grad():
+            l1 = (at + (1 - t[:, None, None]) * va - actions).abs().mean()           # x1 estimated in one step
+        if not self.dz:
+            z0_ = torch.zeros((), device=actions.device); return la, z0_, l1, z0_
+        lz = F.mse_loss(vz, z1 - z0)
+        with torch.no_grad():
+            zh = (zt + (1 - t[:, None, None]) * vz).reshape(B, -1)
+            r2 = 1 - F.mse_loss(zh, z_star) / z_star.var(0).mean().clamp_min(1e-6)
+        return la, lz, l1, r2
+
+    @torch.no_grad()
+    def sample(self, visual, text, steps=10, generator=None):
+        c = self.cond(visual, text); B, dev = c.shape[0], c.device
+        xa = torch.randn(B, self.W, 7, device=dev, generator=generator)
+        xz = torch.randn(B, self.nz, self.z_tok, device=dev, generator=generator) if self.dz else None
+        for k in range(steps):
+            t = torch.full((B,), k / steps, device=dev)
+            va, vz = self.velocity(xa, xz, t, c)
+            xa = xa + va / steps
+            if self.dz: xz = xz + vz / steps
+        return xa.clamp(-1, 1), (xz.reshape(B, -1) if self.dz else None)
+
+
 class WrappedModel(nn.Module):
-    def __init__(self, vla, window_size=12, n_tokens=4, continuous=False, dz=0):
+    def __init__(self, vla, window_size=12, n_tokens=4, continuous=False, dz=0, head="reg", flow_kw=None):
         super().__init__(); self.vla, self.window_size, self.continuous = vla, window_size, continuous
-        if continuous: self.heads = ContHeads(dz, window_size)
+        self.flow = continuous and head == "flow"
+        if self.flow: self.heads = FlowHeads(dz, window_size, **(flow_kw or {}))
+        elif continuous: self.heads = ContHeads(dz, window_size)
         else: self.action_decoder = ActionDecoder(window_size, n_tokens=n_tokens)
 
     def forward(self, batch, p_oracle=0.0):
@@ -80,6 +156,10 @@ class WrappedModel(nn.Module):
                            labels=None if self.continuous else batch["labels"], output_hidden_states=True)
         n_patches = self.vla.vision_backbone.featurizer.patch_embed.num_patches
         visual_embed = out.hidden_states[-1][:, :n_patches].to(torch.float); latent_tokens = out.hidden_states[-1][:, n_patches:]
+        if self.flow:                                                   # flow-matching head: p_oracle has no role
+            z_star = batch["latent_action_idx"].to(torch.float) if self.heads.dz else None
+            la, lz, l1, r2 = self.heads.loss(visual_embed, latent_tokens.to(torch.float), batch["actions"].to(torch.float), z_star)
+            return out, la, l1, lz, r2
         if self.continuous and self.heads.dz == 0:                      # no-latent control: action head only
             pred = self.heads(visual_embed, latent_tokens.to(torch.float))[0].reshape(-1, self.window_size, 7)
             l1 = torch.nn.functional.l1_loss(pred, batch["actions"], reduction="none")
@@ -107,6 +187,8 @@ class Cfg:
     latent: str = "acdc"                                   # univla | acdc | acdc_cont
     lam_z: float = 1.0                                     # weight of the latent regression loss (continuous arm)
     curriculum_frac: float = 0.6                           # oracle -> predicted anneal, as in downstream/libero_policy.py
+    head: str = "reg"                                      # continuous arms: reg (ContHeads) | flow (FlowHeads, 2026-09-18)
+    flow_width: int = 512; flow_layers: int = 4; flow_z_tok: int = 32; flow_steps: int = 10   # flow head; steps used at evaluation
     vla_path: str = os.path.join(LF, "cache", "vla", "openvla-7b")
     lam_path: str = os.path.join(LF, "claude_survey", "ckpt", "s2mix_1ep.pt")      # univla arm: their Stage-2 recipe on our data
     acdc_tag: str = "s1_acdc_1ep"; acdc_codebook: str = "vq_s1_acdc_1ep_K64.npz"    # acdc arm
@@ -158,7 +240,7 @@ def finetune(cfg: Cfg) -> None:
     if ov_d: print(f"[ctrl] OVERRIDE {ov}: {ov_d}", flush=True)
     assert torch.cuda.is_available(); assert cfg.latent in ("univla", "acdc", "acdc_cont", "none", "tc_cont", "tc_vq")
     state = PartialState(); torch.cuda.set_device(device_id := state.local_process_index); torch.cuda.empty_cache()
-    exp_id = f"{cfg.latent}+{cfg.dataset_name}+b{cfg.batch_size * cfg.grad_accumulation_steps}x{state.num_processes}+lr{cfg.learning_rate}+r{cfg.lora_rank}+s{cfg.max_steps}" + (f"--{cfg.run_id_note}" if cfg.run_id_note else "")
+    exp_id = f"{cfg.latent}+{cfg.dataset_name}+b{cfg.batch_size * cfg.grad_accumulation_steps}x{state.num_processes}+lr{cfg.learning_rate}+r{cfg.lora_rank}+s{cfg.max_steps}" + ("+fm" if cfg.head == "flow" else "") + (f"--{cfg.run_id_note}" if cfg.run_id_note else "")
     run_dir = cfg.run_root_dir / exp_id; adapter_dir = cfg.run_root_dir / "adapters" / exp_id; os.makedirs(run_dir, exist_ok=True); os.makedirs(adapter_dir, exist_ok=True)
     if state.is_main_process: print(f"[ctrl] {exp_id} -> {run_dir}", flush=True)
 
@@ -179,7 +261,9 @@ def finetune(cfg: Cfg) -> None:
     lora = LoraConfig(r=cfg.lora_rank, lora_alpha=min(cfg.lora_rank, 16), lora_dropout=cfg.lora_dropout, target_modules="all-linear",
                       init_lora_weights="gaussian", modules_to_save=None if cont else ["embed_tokens", "lm_head"])
     vla = get_peft_model(vla, lora); vla.print_trainable_parameters()
-    model = WrappedModel(vla, cfg.window_size, n_tokens, continuous=cont, dz=dz).to(device_id)
+    assert cfg.head in ("reg", "flow") and (cfg.head == "reg" or cont), (cfg.head, cfg.latent)
+    model = WrappedModel(vla, cfg.window_size, n_tokens, continuous=cont, dz=dz, head=cfg.head,
+                         flow_kw=dict(width=cfg.flow_width, layers=cfg.flow_layers, z_tok=cfg.flow_z_tok)).to(device_id)
     model = DDP(model, device_ids=[device_id], find_unused_parameters=True, gradient_as_bucket_view=True)
     opt = AdamW([p for p in model.parameters() if p.requires_grad], lr=cfg.learning_rate)
     sched = torch.optim.lr_scheduler.StepLR(opt, step_size=int(cfg.max_steps * 0.8), gamma=0.1)
@@ -207,14 +291,14 @@ def finetune(cfg: Cfg) -> None:
             else:
                 preds = out.logits[:, n_patches:-1].argmax(2); gt = batch["labels"][:, 1:]; m = gt > LATENT_TOKEN_BASE
                 acc_buf.append(float(((preds == gt) & m).sum() / m.sum())); loss_buf.append(float(out.loss))
-            l1_buf.append(float(act_loss))
+            l1_buf.append(float(loss_1 if cfg.head == "flow" else act_loss))   # flow: one-step action L1, not the flow loss
         step = bi // cfg.grad_accumulation_steps
         if (bi + 1) % cfg.grad_accumulation_steps == 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step(); opt.zero_grad(); sched.step()
             if state.is_main_process and (step + 1) % cfg.log_every == 0:
                 key = "latent_r2" if model.module.continuous else "token_acc"
                 rec = {"step": step + 1, key: sum(acc_buf) / len(acc_buf), "latent_loss" if model.module.continuous else "token_loss": sum(loss_buf) / len(loss_buf),
-                       "action_l1": sum(l1_buf) / len(l1_buf), "p_oracle": p_or, "lr": opt.param_groups[0]["lr"], "seconds": int(time.time() - t0)}
+                       ("action_l1_1step" if cfg.head == "flow" else "action_l1"): sum(l1_buf) / len(l1_buf), "p_oracle": p_or, "lr": opt.param_groups[0]["lr"], "seconds": int(time.time() - t0)}
                 print(f"[ctrl:{cfg.latent}] " + " ".join(f"{k}={v:.4f}" if isinstance(v, float) else f"{k}={v}" for k, v in rec.items()), flush=True); log.write(json.dumps(rec) + "\n"); log.flush()
                 acc_buf, l1_buf, loss_buf = [], [], []
             if (step + 1) % cfg.save_steps == 0 or step + 1 == cfg.max_steps:
@@ -223,7 +307,8 @@ def finetune(cfg: Cfg) -> None:
                     torch.save((model.module.heads if cont else model.module.action_decoder).state_dict(), run_dir / "action_decoder.pt")
                     json.dump(dict(latent=cfg.latent, n_tokens=n_tokens, codebook_size=codebook_size, dz=dz, window_size=cfg.window_size, step=step + 1, vla_path=cfg.vla_path,
                                    lam_path=cfg.lam_path, acdc_tag=cfg.acdc_tag, acdc_codebook=cfg.acdc_codebook, tc_tag=cfg.tc_tag, dataset_name=cfg.dataset_name,
-                                   train_frac=os.environ.get("LIBERO_TRAIN_FRAC"), override=ov_d), open(run_dir / "ctrl_meta.json", "w"), indent=1)
+                                   train_frac=os.environ.get("LIBERO_TRAIN_FRAC"), override=ov_d, head=cfg.head,
+                                   flow=dict(width=cfg.flow_width, layers=cfg.flow_layers, z_tok=cfg.flow_z_tok, steps=cfg.flow_steps)), open(run_dir / "ctrl_meta.json", "w"), indent=1)
                     print(f"[ctrl] saved adapter + decoder at step {step + 1}", flush=True)
                 dist.barrier()
             if step + 1 >= cfg.max_steps: break

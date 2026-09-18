@@ -23,7 +23,7 @@ from prismatic.models.backbones.llm.prompting import PurePromptBuilder
 from libero.libero import benchmark
 from experiments.robot.libero.libero_utils import get_libero_env, get_libero_image, get_libero_dummy_action
 from experiments.robot.robot_utils import set_seed_everywhere, normalize_gripper_action, invert_gripper_action
-from .finetune_libero_ctrl import ContHeads
+from .finetune_libero_ctrl import ContHeads, FlowHeads
 from experiments.robot.openvla_utils import crop_and_resize
 import tensorflow as tf
 try: tf.config.set_visible_devices([], "GPU")                 # TF only does the crop below; keep it off the policy's GPU
@@ -68,6 +68,7 @@ def main():
     ap.add_argument("--num_trials_per_task", type=int, default=50); ap.add_argument("--num_steps_wait", type=int, default=10)
     ap.add_argument("--local_log_dir", default="acdc_la/results/vla_eval"); ap.add_argument("--run_id_note", default="")
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--flow_steps", type=int, default=0, help="flow head: Euler steps at evaluation (0 = the value in ctrl_meta.json)")
     a = ap.parse_args(); set_seed_everywhere(a.seed); dev = "cuda"
     meta = json.load(open(os.path.join(a.pretrained_checkpoint, "ctrl_meta.json")))
     assert meta["latent"] in ("acdc_cont", "tc_cont", "none"), meta["latent"]     # every arm trained through ContHeads
@@ -79,7 +80,11 @@ def main():
     vla = AutoModelForVision2Seq.from_pretrained(a.pretrained_checkpoint, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True,
                                                  trust_remote_code=True, attn_implementation="sdpa").to(dev).eval()
     vla.norm_stats = json.load(open(os.path.join(a.pretrained_checkpoint, "dataset_statistics.json")))
-    heads = ContHeads(dz, W).to(dev); heads.load_state_dict(torch.load(os.path.join(a.pretrained_checkpoint, "action_decoder.pt"), map_location="cpu")); heads.eval()
+    flow = meta.get("head", "reg") == "flow"; fk = meta.get("flow", {})
+    heads = (FlowHeads(dz, W, width=fk["width"], layers=fk["layers"], z_tok=fk["z_tok"]) if flow else ContHeads(dz, W)).to(dev)
+    heads.load_state_dict(torch.load(os.path.join(a.pretrained_checkpoint, "action_decoder.pt"), map_location="cpu")); heads.eval()
+    steps = int(a.flow_steps or fk.get("steps", 10)) if flow else 0
+    print(f"[cont-eval] head {'flow, ' + str(steps) + ' Euler steps' if flow else 'regression'}", flush=True)
     n_patches = vla.vision_backbone.featurizer.patch_embed.num_patches
     unnorm_key = a.task_suite_name if a.task_suite_name in vla.norm_stats else f"{a.task_suite_name}_no_noops"
     stats = vla.get_action_stats(unnorm_key); mask = np.array(stats.get("mask", np.ones_like(stats["q01"], dtype=bool)))
@@ -104,6 +109,7 @@ def main():
         tsucc = 0
         for ep in range(a.num_trials_per_task):
             env.reset(); ens.reset(); obs = env.set_init_state(inits[ep]); t, done = 0, False
+            gen = torch.Generator(device=dev).manual_seed(a.seed * 1_000_003 + ti * 1_000 + ep)   # flow noise: fixed per episode
             while t < MAX_STEPS[a.task_suite_name] + a.num_steps_wait and not done:
                 if t < a.num_steps_wait:
                     obs, _, done, _ = env.step(get_libero_dummy_action("openvla")); t += 1; continue
@@ -112,7 +118,8 @@ def main():
                 inputs = {k: (v.to(dev, dtype=torch.bfloat16) if v.dtype.is_floating_point else v.to(dev)) for k, v in inputs.items()}
                 with torch.no_grad():
                     h = vla(**inputs, output_hidden_states=True).hidden_states[-1]
-                    chunk = heads(h[:, :n_patches].float(), h[:, n_patches:].float())[0].reshape(W, 7).cpu().numpy()
+                    vis, txt = h[:, :n_patches].float(), h[:, n_patches:].float()
+                    chunk = (heads.sample(vis, txt, steps, gen) if flow else heads(vis, txt))[0].reshape(W, 7).cpu().numpy()
                 act = ens(chunk, mask, low, high)
                 act = invert_gripper_action(normalize_gripper_action(act, binarize=True))
                 obs, _, done, _ = env.step(act.tolist()); t += 1
