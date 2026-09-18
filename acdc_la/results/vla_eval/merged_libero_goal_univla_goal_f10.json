@@ -47,12 +47,12 @@
    "episodes": 50
   },
   "put the wine bottle on the rack": {
-   "successes": 36,
-   "episodes": 41
+   "successes": 44,
+   "episodes": 50
   }
  },
- "successes": 425,
- "episodes": 491,
- "success_rate": 0.8655804480651731,
- "complete": false
+ "successes": 433,
+ "episodes": 500,
+ "success_rate": 0.866,
+ "complete": true
 }

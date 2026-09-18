@@ -2974,8 +2974,8 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 
 ### 2026-09-18 (14:40) — UniVLA @ 10 % Goal ~86.6 % (491/500 episodes in); flow smoke trains; load tests abort natively on h003/h017
 
-- **UniVLA goal (20783076 -> split evals 20820893-97):** 425/491 = 86.6 % with the last part (tasks 8-9) still running.
-  Per task 0.62, 0.98, 1.00, 0.80, 0.92, 0.78, 0.72, 1.00, 0.96, (0.88 on 41).  Against 17.0 % for LATP + legacy
+- **UniVLA goal (20783076 -> split evals 20820893-97): FINAL 433/500 = 86.6 %** (merged, `merged_libero_goal_univla_goal_f10.json`).
+  Per task 0.62, 0.98, 1.00, 0.80, 0.92, 0.78, 0.72, 1.00, 0.96, 0.88.  Against 17.0 % for LATP + legacy
   regression interface: the gap the language-bottleneck reading predicts for this suite.
 - **Flow smoke (20817929):** both arms train (12 steps, exit 0).  **Flow load test (20817930) FAILED: exit 134 (SIGABRT)
   on h017** right after the model and the flow head loaded, before the first simulator step, with no Python traceback.

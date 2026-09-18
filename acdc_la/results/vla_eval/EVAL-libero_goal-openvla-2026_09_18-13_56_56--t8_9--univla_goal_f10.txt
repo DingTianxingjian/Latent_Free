@@ -554,3 +554,53 @@ Starting episode 42...
 Success: True steps: 154
 # episodes completed so far: 92
 # successes: 85 (92.4%)
+
+Task: put the wine bottle on the rack
+Starting episode 43...
+Success: True steps: 136
+# episodes completed so far: 93
+# successes: 86 (92.5%)
+
+Task: put the wine bottle on the rack
+Starting episode 44...
+Success: True steps: 151
+# episodes completed so far: 94
+# successes: 87 (92.6%)
+
+Task: put the wine bottle on the rack
+Starting episode 45...
+Success: True steps: 156
+# episodes completed so far: 95
+# successes: 88 (92.6%)
+
+Task: put the wine bottle on the rack
+Starting episode 46...
+Success: True steps: 135
+# episodes completed so far: 96
+# successes: 89 (92.7%)
+
+Task: put the wine bottle on the rack
+Starting episode 47...
+Success: True steps: 128
+# episodes completed so far: 97
+# successes: 90 (92.8%)
+
+Task: put the wine bottle on the rack
+Starting episode 48...
+Success: True steps: 134
+# episodes completed so far: 98
+# successes: 91 (92.9%)
+
+Task: put the wine bottle on the rack
+Starting episode 49...
+Success: False steps: 330
+# episodes completed so far: 99
+# successes: 91 (91.9%)
+
+Task: put the wine bottle on the rack
+Starting episode 50...
+Success: True steps: 133
+# episodes completed so far: 100
+# successes: 92 (92.0%)
+Current task success rate: 0.88
+Current total success rate: 0.92
