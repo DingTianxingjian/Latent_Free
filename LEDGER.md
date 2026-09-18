@@ -2908,6 +2908,12 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   none-FM spatial 20817932 -> evals 20817939-43 (`NOTE=none_fm_spatial_f10`);
   Ours-FM object 20817933 -> evals 20817944-48 (`NOTE=ours_fm_object_f10`).  Evaluations are split 5 x 2 tasks and
   exclude h003/h004/h006.  Goal/Long with the flow head only after the Spatial result.
+- **CPU check of the head (before any GPU run).**  Shapes and sampling range correct for dz = 256 and dz = 0.  On a toy
+  target that is +0.5 or -0.5 with probability 1/2 under identical conditioning, flow samples land 47 % / 53 % on the
+  two modes and 0 % in between, while the regression head outputs the average (mean |output| 0.045): the property the
+  interface change is for.  **Capacity is not matched to the old head:** `FlowHeads` has 26.3M parameters (13.7M
+  denoiser + the pooling) against 13.2M for `ContHeads`, so Ours-reg vs Ours-FM mixes interface and capacity;
+  none-FM vs Ours-FM uses the identical head and is the clean comparison.
 - **What the three Spatial numbers will separate.**  Ours-reg 70.4 vs Ours-FM: the interface.  none-FM vs Ours-FM:
   what the latent adds through the same head.  UniVLA 84.2 stays the external reference (their native interface).
 
