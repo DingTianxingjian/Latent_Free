@@ -65,15 +65,19 @@ VLA training is 4xH100, ~5.6 h; evaluation is 1 GPU, 2-6 h (Long up to 12 h limi
 training job.  The libero_10 smoke + load test (20783066 -> 20783067) runs independently as an early warning; the
 evaluators are Python modules read at run time, so a failure it finds can be fixed before any evaluation starts.
 
-| cell | train job | eval job |
-|---|---|---|
-| Spatial, Ours (`latp2_inv`) | 20754114 (re-targeted by override) | 20783070 |
-| Object, UniVLA | 20775018 (re-targeted by override) | 20783071 |
-| Object, Ours | 20783072 | 20783073 |
-| Goal, Ours / UniVLA | 20783074 / 20783076 | 20783075 / 20783077 |
-| Long, Ours / UniVLA | 20783078 / 20783080 | 20783079 / 20783081 |
-| smoke (libero_10, both arms) -> load test | 20783066 -> 20783067 | |
-| LATP on clean ACDC (`latp2_acdc_inv`, from `tc_acdc`) -> probes + z-stats | 20783064 -> 20783065 | |
+**Job map (2026-09-18 12:10, paper-table priority set by the user).**  Every evaluation is 5 jobs x 2 tasks, merged by
+`downstream/vla/eval_merge.py`; wiring verified by script (0 mismatches).  Per-user cap: 12 GPUs.
+
+| priority | cell | train | evals |
+|---|---|---|---|
+| T1 | UniVLA Goal / Long | 20783076 / 20783080 (running) | 20820893-97 / 20820898-902 |
+| 1 | **Ours = LATP + flow**, Spatial | 20817931 | 20817934-38 |
+| 2 | Ours, Goal | 20817933 (override: goal) | 20820641-45 |
+| 3 | Ours, Object | 20820640 (override: object) | 20817944-48 |
+| 4 | Ours, Long | 20820873 | 20820874-78 |
+| 5 | no latent + flow, Spatial (control row) | 20820879 | 20820880-84 |
+| 6 | LATP + legacy regression + direct text, Goal (appendix interface ablation) | 20820885 | 20820886-90 |
+| — | flow smoke -> load test | 20817929 -> 20817930 | |
 
 ## Open decision ❓
 

@@ -2960,6 +2960,18 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   Long (20783080) had already started at 11:05 when GPUs freed, so the hold had no effect; it is kept as the Long
   baseline.  Per-user cap is 12 GPUs: with UniVLA goal + UniVLA long running (8), one flow run fits now.
 
+### 2026-09-18 (12:10) — queue re-planned by paper table (user): Ours = LATP + flow on all four suites first
+
+- **User direction.** Paper results first, ordered by the tables the paper needs.  Main table T1 = UniVLA vs Ours
+  (LATP + flow head) on the four suites at 10 %; the no-latent + flow control row on Spatial next; the reg_text interface
+  ablation last (appendix).
+- **Actions.** Submitted the missing cell, Ours-flow Long (20820873).  Cancelled and resubmitted the no-latent control
+  (now 20820879) and reg_text (now 20820885) so they queue behind the four Ours cells (they had been pending ~1 h, so
+  the lost queue age is negligible).  Split UniVLA's Goal/Long evaluations into 5 parts (20820893-902; the single
+  8 h / 12 h jobs 20783077/20783081 were cancelled).  A script resolves every training job's effective config
+  (submission env + override file) and checks each evaluation's RUN against its dependency: 0 mismatches.  Job map in
+  `PAPER_PLAN.md`.
+
 ## Registered next method: intervention first, real pairs second
 
 
