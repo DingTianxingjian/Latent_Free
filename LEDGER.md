@@ -3012,6 +3012,20 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   (the VLA's own features are far richer); spatial only; hdf5 frames rather than the RLDS frames the VLA trains on.
 - **Artifacts.** `acdc_la/results/history_probe_latp2_inv.json`.
 
+### 2026-09-18 (17:05) — Anvil full-system maintenance 2026-09-18 23:30 -> 2026-09-20 21:00 (all compute AND login nodes)
+
+- **Found** because the remaining 7 h trainings went to `ReqNodeNotAvail, Reserved for maintenance` with starts estimated
+  9/23-9/24: reservation `anvil-maint-2026-q3`, flags MAINT, IGNORE_JOBS, covers h[000-020] and login[00-07].  A job
+  whose time limit overlaps 23:30 cannot start.  This session (on a login node) also ends at 23:30.
+- **Actions.**  Training takes ~3 h 55 min (0.935 s/step x 15k + load + merge), so the pending trainings' limits were
+  cut 7 h -> 4 h 40 min: Ours-flow Object (20820640) started 16:59 on h016 (done ~21:05).  Evaluation parts set to
+  1 h 30 min.  To keep GPUs under the 12-GPU cap free for the evaluations that answer tonight's question (Spatial-flow
+  and Goal-flow, ~18:15 / ~18:30), the no-latent control (20820879) and reg_text (20820885) are HELD until after the
+  maintenance: `scontrol release 20820879 20820885`.  Ours-flow Long (20820873) may still start before ~18:50.
+- UniVLA Long training COMPLETED 16:35; its split evaluations (20820898-902) are eligible.
+- **Monitor defect fixed:** the job watcher dropped jobs that left `squeue` and were outside the `sacct -S` window, so
+  UniVLA Long's completion produced no event; it now keeps every id it has seen.
+
 ## Registered next method: intervention first, real pairs second
 
 
