@@ -2937,6 +2937,29 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   should the regression-head Long run (20783078 + eval 20783079), which the head change supersedes.  auto mode blocks my
   `scancel`; the user was asked.
 
+### 2026-09-18 (11:45) — RELABEL: 70.4 / 78.2 / 17.0 are "LATP + LEGACY REGRESSION INTERFACE", not LATP's downstream performance; clean text-access control added
+
+- **Relabel (user review).**  The Spatial 70.4 %, Object 78.2 % and Goal 17.0 % rows are **LATP + legacy regression
+  interface (`ContHeads`)**.  They are not evidence about the continuous LATP latent as a control signal, because that
+  interface has two defects of its own: (a) the instruction reaches the action head only through the regressed z
+  (entry above), and (b) deterministic regression averages multimodal targets.  The downstream story of continuous
+  LATP is decided by the flow-head runs.  Every table must carry the interface in the row name.
+- **Bottleneck shown directly on the module (CPU).**  With the legacy head and z held fixed, replacing the text states
+  changes the action by exactly 0; with `text_direct=True` it changes.  The legacy head is language-blind except through z.
+- **New clean control (user proposal): `--head reg_text`.**  The legacy regression head plus ONE change: a MAP-pooled
+  summary of the text positions is concatenated into the action head's input.  Same regression loss, curriculum and z
+  target (19.7M vs 13.2M parameters, the added pooling).  LATP + reg_text on Goal @ 10 %: train 20820676 -> evals
+  20820677-81 (`NOTE=ours_rt_goal_f10`).  Reading: Goal recovers under reg_text -> the instruction bottleneck, cleanly
+  attributed; recovers only under flow -> multimodality / output interface.
+- **The pair that decides the method claim** is LATP + flow vs no-latent + flow on Spatial (same VLA, same head, same
+  text access; the only difference is the latent).
+- **Priority (user):** LATP+flow Spatial, no-latent+flow Spatial, LATP+flow Goal first; Object-flow second; Long last.
+  Executed: cancelled 20810391-95 (duplicate UniVLA object parts) and 20783078/79 (legacy-head Long), with the user's
+  explicit approval.  Goal-flow was submitted after Object-flow, so their contents were swapped through the override
+  files (20817933 now trains Goal, 20820640 Object) and their evaluation dependencies were swapped to match.  UniVLA
+  Long (20783080) had already started at 11:05 when GPUs freed, so the hold had no effect; it is kept as the Long
+  baseline.  Per-user cap is 12 GPUs: with UniVLA goal + UniVLA long running (8), one flow run fits now.
+
 ## Registered next method: intervention first, real pairs second
 
 

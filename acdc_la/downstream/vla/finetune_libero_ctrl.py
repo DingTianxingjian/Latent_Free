@@ -52,20 +52,28 @@ class ActionDecoder(nn.Module):
 class ContHeads(nn.Module):
     """Continuous-latent arm: no latent vocabulary.  The VLM's last hidden state is pooled into a prediction of the
     CONTINUOUS ACDC code, and the action head is conditioned on that code, so the only thing removed relative to the
-    token arms is the quantiser.  Mirrors the oracle->predicted curriculum of downstream/libero_policy.py."""
-    def __init__(self, dz, window_size=12, hidden=512):
-        super().__init__(); self.dz = dz
+    token arms is the quantiser.  Mirrors the oracle->predicted curriculum of downstream/libero_policy.py.
+
+    LANGUAGE PATH (found 2026-09-18): the VLM input is [BOS, image, text] under a causal mask, so `visual` (image
+    positions) never sees the instruction.  With text_direct=False the action head reads [visual summary, z] and the
+    instruction reaches it ONLY through the regressed z (for dz = 0, not at all).  text_direct=True (`--head reg_text`)
+    adds a pooled summary of the text positions to the action head's input and changes nothing else: the control that
+    isolates that bottleneck from the regression-vs-flow change."""
+    def __init__(self, dz, window_size=12, hidden=512, text_direct=False):
+        super().__init__(); self.dz, self.text_direct = dz, text_direct
         self.vis_pool = MAPBlock(n_latents=1, vis_dim=4096, embed_dim=hidden, n_heads=hidden // 64)
         self.z_pool = MAPBlock(n_latents=1, vis_dim=4096, embed_dim=hidden, n_heads=hidden // 64)
+        self.t_pool = MAPBlock(n_latents=1, vis_dim=4096, embed_dim=hidden, n_heads=hidden // 64) if text_direct else None
         self.to_z = nn.Sequential(nn.LayerNorm(hidden), nn.Linear(hidden, dz)) if dz else None
-        self.act = nn.Sequential(nn.Linear(hidden + dz, hidden), nn.GELU(), nn.Linear(hidden, 7 * window_size), nn.Tanh())
+        self.act = nn.Sequential(nn.Linear(hidden * (2 if text_direct else 1) + dz, hidden), nn.GELU(), nn.Linear(hidden, 7 * window_size), nn.Tanh())
 
     def forward(self, visual, text, z_for_head=None):
         v = self.vis_pool(visual)
-        if self.dz == 0: return self.act(v), None            # --latent none: the same head with no latent input at all
+        u = [v, self.t_pool(text, init_embed=v)] if self.text_direct else [v]
+        if self.dz == 0: return self.act(torch.cat(u, -1)), None     # --latent none: the same head with no latent input
         z_pred = self.to_z(self.z_pool(text, init_embed=v))
         z = z_pred if z_for_head is None else z_for_head
-        return self.act(torch.cat([v, z], -1)), z_pred
+        return self.act(torch.cat(u + [z], -1)), z_pred
 
 
 class FlowHeads(nn.Module):
@@ -147,7 +155,7 @@ class WrappedModel(nn.Module):
         super().__init__(); self.vla, self.window_size, self.continuous = vla, window_size, continuous
         self.flow = continuous and head == "flow"
         if self.flow: self.heads = FlowHeads(dz, window_size, **(flow_kw or {}))
-        elif continuous: self.heads = ContHeads(dz, window_size)
+        elif continuous: self.heads = ContHeads(dz, window_size, text_direct=(head == "reg_text"))
         else: self.action_decoder = ActionDecoder(window_size, n_tokens=n_tokens)
 
     def forward(self, batch, p_oracle=0.0):
@@ -187,7 +195,7 @@ class Cfg:
     latent: str = "acdc"                                   # univla | acdc | acdc_cont
     lam_z: float = 1.0                                     # weight of the latent regression loss (continuous arm)
     curriculum_frac: float = 0.6                           # oracle -> predicted anneal, as in downstream/libero_policy.py
-    head: str = "reg"                                      # continuous arms: reg (ContHeads) | flow (FlowHeads, 2026-09-18)
+    head: str = "reg"                                      # continuous arms: reg (ContHeads) | reg_text (+ direct text) | flow (FlowHeads)
     flow_width: int = 512; flow_layers: int = 4; flow_z_tok: int = 32; flow_steps: int = 10   # flow head; steps used at evaluation
     vla_path: str = os.path.join(LF, "cache", "vla", "openvla-7b")
     lam_path: str = os.path.join(LF, "claude_survey", "ckpt", "s2mix_1ep.pt")      # univla arm: their Stage-2 recipe on our data
@@ -240,7 +248,7 @@ def finetune(cfg: Cfg) -> None:
     if ov_d: print(f"[ctrl] OVERRIDE {ov}: {ov_d}", flush=True)
     assert torch.cuda.is_available(); assert cfg.latent in ("univla", "acdc", "acdc_cont", "none", "tc_cont", "tc_vq")
     state = PartialState(); torch.cuda.set_device(device_id := state.local_process_index); torch.cuda.empty_cache()
-    exp_id = f"{cfg.latent}+{cfg.dataset_name}+b{cfg.batch_size * cfg.grad_accumulation_steps}x{state.num_processes}+lr{cfg.learning_rate}+r{cfg.lora_rank}+s{cfg.max_steps}" + ("+fm" if cfg.head == "flow" else "") + (f"--{cfg.run_id_note}" if cfg.run_id_note else "")
+    exp_id = f"{cfg.latent}+{cfg.dataset_name}+b{cfg.batch_size * cfg.grad_accumulation_steps}x{state.num_processes}+lr{cfg.learning_rate}+r{cfg.lora_rank}+s{cfg.max_steps}" + {"flow": "+fm", "reg_text": "+rt"}.get(cfg.head, "") + (f"--{cfg.run_id_note}" if cfg.run_id_note else "")
     run_dir = cfg.run_root_dir / exp_id; adapter_dir = cfg.run_root_dir / "adapters" / exp_id; os.makedirs(run_dir, exist_ok=True); os.makedirs(adapter_dir, exist_ok=True)
     if state.is_main_process: print(f"[ctrl] {exp_id} -> {run_dir}", flush=True)
 
@@ -261,7 +269,7 @@ def finetune(cfg: Cfg) -> None:
     lora = LoraConfig(r=cfg.lora_rank, lora_alpha=min(cfg.lora_rank, 16), lora_dropout=cfg.lora_dropout, target_modules="all-linear",
                       init_lora_weights="gaussian", modules_to_save=None if cont else ["embed_tokens", "lm_head"])
     vla = get_peft_model(vla, lora); vla.print_trainable_parameters()
-    assert cfg.head in ("reg", "flow") and (cfg.head == "reg" or cont), (cfg.head, cfg.latent)
+    assert cfg.head in ("reg", "reg_text", "flow") and (cfg.head == "reg" or cont), (cfg.head, cfg.latent)
     model = WrappedModel(vla, cfg.window_size, n_tokens, continuous=cont, dz=dz, head=cfg.head,
                          flow_kw=dict(width=cfg.flow_width, layers=cfg.flow_layers, z_tok=cfg.flow_z_tok)).to(device_id)
     model = DDP(model, device_ids=[device_id], find_unused_parameters=True, gradient_as_bucket_view=True)

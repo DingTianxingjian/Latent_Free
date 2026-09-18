@@ -37,7 +37,7 @@ headroom: post-training on 10 % of the demonstrations.
 
 | id | content | status |
 |---|---|---|
-| **T1 (main)** | LIBERO success at **10 % demos**, 4 suites x {UniVLA latent, Ours}, avg; per-task in appendix | Spatial 84.2 vs **Ours 70.4**; Object 82.8 vs **Ours 78.2** — Ours LOSES (ledger 2026-09-18); Goal/Long ⏳ |
+| **T1 (main)** | LIBERO success at **10 % demos**, 4 suites x {UniVLA latent, Ours}, avg; per-task in appendix | UniVLA: Spatial 84.2, Object 82.8.  **LATP + legacy regression interface** (not LATP's downstream number): Spatial 70.4, Object 78.2, Goal 17.0.  Decisive rows ⏳: LATP + flow vs no-latent + flow (Spatial), LATP + flow (Goal, Object), LATP + reg_text (Goal, text-access control) |
 | T2 | Benchmark insensitivity: full-data Spatial UniVLA 94.8 vs ACDC-PQ 94.4 (per task); offline chain L1 best latent 0.421 vs no latent 0.433 | ✅ |
 | T3 | Latent content on OXE val (net / seg1 / prof / seq / distractor drop): UniVLA released (ref), UniVLA same-data 1 ep and 2 ep, pooled, old ACDC, tc_acdc, Ours | ✅ (`tc_acdc` 0.223 / 0.199 / 0.074 / 0.157 / 31.9 %, below `tc_cont`; ledger 2026-09-17) |
 | T4 | Spatial granularity 256 / 64 / 16 / 4 cells | ✅ (ledger 2026-09-16, corrected drop column); may become F3 instead |

@@ -81,10 +81,11 @@ def main():
                                                  trust_remote_code=True, attn_implementation="sdpa").to(dev).eval()
     vla.norm_stats = json.load(open(os.path.join(a.pretrained_checkpoint, "dataset_statistics.json")))
     flow = meta.get("head", "reg") == "flow"; fk = meta.get("flow", {})
-    heads = (FlowHeads(dz, W, width=fk["width"], layers=fk["layers"], z_tok=fk["z_tok"]) if flow else ContHeads(dz, W)).to(dev)
+    heads = (FlowHeads(dz, W, width=fk["width"], layers=fk["layers"], z_tok=fk["z_tok"]) if flow
+             else ContHeads(dz, W, text_direct=(meta.get("head") == "reg_text"))).to(dev)
     heads.load_state_dict(torch.load(os.path.join(a.pretrained_checkpoint, "action_decoder.pt"), map_location="cpu")); heads.eval()
     steps = int(a.flow_steps or fk.get("steps", 10)) if flow else 0
-    print(f"[cont-eval] head {'flow, ' + str(steps) + ' Euler steps' if flow else 'regression'}", flush=True)
+    print(f"[cont-eval] head {'flow, ' + str(steps) + ' Euler steps' if flow else 'regression, text_direct=' + str(meta.get('head') == 'reg_text')}", flush=True)
     n_patches = vla.vision_backbone.featurizer.patch_embed.num_patches
     unnorm_key = a.task_suite_name if a.task_suite_name in vla.norm_stats else f"{a.task_suite_name}_no_noops"
     stats = vla.get_action_stats(unnorm_key); mask = np.array(stats.get("mask", np.ones_like(stats["q01"], dtype=bool)))
