@@ -1,0 +1,32 @@
+{
+ "tag": "latp2_inv",
+ "n_windows": 50250,
+ "n_test": 10324,
+ "window": 12,
+ "stride": 3,
+ "pca": 256,
+ "state": {
+  "r2_z": 0.5479012160778953,
+  "r2_action": 0.5220644275690891,
+  "alpha_z": 1000.0,
+  "alpha_action": 100
+ },
+ "state+zpast": {
+  "r2_z": 0.57363137857209,
+  "r2_action": 0.5837483143850056,
+  "alpha_z": 100,
+  "alpha_action": 100
+ },
+ "zpast": {
+  "r2_z": 0.4757157633681804,
+  "r2_action": 0.4540782680724128,
+  "alpha_z": 100,
+  "alpha_action": 100
+ },
+ "state+dpast": {
+  "r2_z": 0.5771030802128971,
+  "r2_action": 0.5943953611137522,
+  "alpha_z": 1000.0,
+  "alpha_action": 1000.0
+ }
+}

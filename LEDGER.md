@@ -2987,6 +2987,31 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Merge fix.** The token evaluator names parts `EVAL-<suite>-openvla-<date>--t0_1--<note>.txt` (task tag before the
   note), so `eval_merge.py` found none; it now matches the tag anywhere in the name.
 
+### 2026-09-18 (17:00) — does the OBSERVED past recover the latent the VLA must predict?  Only a little, and no more than raw past motion
+
+- **Question (user).** The VLA sees one frame, so the temporal evidence in z is used only as a target.  Would giving the
+  policy the observed past (the latent of the past window [t-12, t], encoded by the same tokenizer) recover the part of
+  z(t) that the current frame cannot determine?
+- **Probe (`downstream/libero_history_probe.py`, CPU).** LIBERO-spatial hdf5 index, 500 episodes, 50,250 windows with
+  12 steps of past and future; the index's held-out episodes (10,324 windows) as test.  Target z(t) = `latp2_inv` code of
+  frames t..t+12 at stride 3 (the VLA label), standardised with its z-stats; also the 12-step action chunk.  Linear ridge,
+  alpha on an inner episode split.
+
+  | input | R2 z(t) | R2 action chunk |
+  |---|---|---|
+  | state = PCA-256 of the current frame's DINO grid + task one-hot | 0.548 | 0.522 |
+  | state + z_past (observed past window, same tokenizer) | 0.574 | 0.584 |
+  | z_past alone | 0.476 | 0.454 |
+  | state + raw past displacement (PCA-256 of F(t) - F(t-12)) | 0.577 | 0.594 |
+
+- **Reading.**  (i) On LIBERO the current state already determines ~55 % of z(t) — far more than the 0.22 measured on the
+  OXE mixture, as expected for 10 scripted tasks.  (ii) The observed past adds +0.026 on z and +0.062 on the action chunk.
+  (iii) Raw past motion gives the same (+0.029 / +0.072): the benefit is history per se, not our tokenizer's summary of it.
+  **So history input would help any policy about equally, including the no-latent control, and is not a place where the
+  temporal latent has an advantage.**  Not pursued before the deadline.  Caveats: linear readout on PCA-256 frame features
+  (the VLA's own features are far richer); spatial only; hdf5 frames rather than the RLDS frames the VLA trains on.
+- **Artifacts.** `acdc_la/results/history_probe_latp2_inv.json`.
+
 ## Registered next method: intervention first, real pairs second
 
 
