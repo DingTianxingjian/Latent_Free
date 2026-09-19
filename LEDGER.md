@@ -3216,6 +3216,14 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   h009, h017 (excluded).  (3) `eval_merge.py` refuses double counts and flags INCOMPLETE suites.  (4) Pending jobs'
   batch scripts are frozen at submission; Python modules are read at run time.
 
+### 2026-09-18 (23:00) — LATP + FLOW @ 10 % Object = 71.2 % (legacy regression 78.2 %, UniVLA 82.8 %)
+
+- 20817944-48, all five parts exit 0: **356/500 = 71.2 %**.  Per task 0.86, 0.34, 0.66, 0.56, 0.82, 0.48, 0.74, 0.80, 0.92,
+  0.94 (legacy regression 0.80, 0.54, 0.76, 0.68, 0.92, 0.64, 0.84, 0.84, 0.90, 0.90; UniVLA 0.34, 0.84, 0.82, 0.72, 0.94,
+  0.80, 0.98, 0.88, 1.00, 0.96).  With prompt pooling the flow head is below the legacy head on Spatial (66.0 vs 70.4),
+  Object (71.2 vs 78.2) and Goal (9.2 vs 17.0): the interface change as built does not help on any suite.  The
+  query-token runs (queued) are the test of the actual fix.
+
 ### 2026-09-19 (01:50) — workstation outage plan checked: as written it would OOM at ~3.6k steps; fixed (fresh tf.data iterator every 2500 batches) and all three arms smoke-tested
 
 - **Leak, characterised (workstation, 62 GB).** The RLDS tf.data pipeline alone (no model, no python transform, no

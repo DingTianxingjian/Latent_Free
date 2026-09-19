@@ -1,0 +1,58 @@
+{
+ "suite": "libero_object",
+ "note": "ours_fm_object_f10",
+ "kind": "cont",
+ "files": [
+  "cont_libero_object_ours_fm_object_f10_t0_1.json",
+  "cont_libero_object_ours_fm_object_f10_t2_3.json",
+  "cont_libero_object_ours_fm_object_f10_t4_5.json",
+  "cont_libero_object_ours_fm_object_f10_t6_7.json",
+  "cont_libero_object_ours_fm_object_f10_t8_9.json"
+ ],
+ "per_task": {
+  "pick up the alphabet soup and place it in the basket": {
+   "successes": 43,
+   "episodes": 50
+  },
+  "pick up the cream cheese and place it in the basket": {
+   "successes": 17,
+   "episodes": 50
+  },
+  "pick up the salad dressing and place it in the basket": {
+   "successes": 33,
+   "episodes": 50
+  },
+  "pick up the bbq sauce and place it in the basket": {
+   "successes": 28,
+   "episodes": 50
+  },
+  "pick up the ketchup and place it in the basket": {
+   "successes": 41,
+   "episodes": 50
+  },
+  "pick up the tomato sauce and place it in the basket": {
+   "successes": 24,
+   "episodes": 50
+  },
+  "pick up the butter and place it in the basket": {
+   "successes": 37,
+   "episodes": 50
+  },
+  "pick up the milk and place it in the basket": {
+   "successes": 40,
+   "episodes": 50
+  },
+  "pick up the chocolate pudding and place it in the basket": {
+   "successes": 46,
+   "episodes": 50
+  },
+  "pick up the orange juice and place it in the basket": {
+   "successes": 47,
+   "episodes": 50
+  }
+ },
+ "successes": 356,
+ "episodes": 500,
+ "success_rate": 0.712,
+ "complete": true
+}
