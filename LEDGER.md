@@ -3184,6 +3184,38 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   the instruction-blindness on Goal is not a train/test padding artefact.  Remaining account: the prompt-pooling
   interface itself; the query-token runs (20828151 Goal, 20828157 Spatial) test the fix.
 
+### 2026-09-18 (22:40) — HANDOVER before the Anvil maintenance (23:30 -> 2026-09-20 21:00); state of every cell and the queue
+
+- **Main table @ 10 % demos, results so far (500 episodes each).**
+
+  | suite | UniVLA (official recipe, released TI prior) | LATP + legacy regression | LATP + flow (prompt pooling) |
+  |---|---|---|---|
+  | Spatial | 84.2 | 70.4 | 66.0 |
+  | Object | 82.8 | 78.2 | trained 20820640, evals 20817944-48 pending |
+  | Goal | 86.6 | 17.0 | **9.2** (instruction-blind level) |
+  | Long | trained 20783080, evals 20820898-902 released | — | trained 20820873, evals 20820874-78 pending |
+
+- **Diagnosis so far.**  Interface, not padding: padded prompts change nothing (refuted); the language-bottleneck account
+  refuted as main cause (flow reads the text and Goal is still ~chance); the continuous heads that POOL PROMPT STATES do not
+  learn to use the instruction from 43 demos, while UniVLA's generated latent tokens force task identity into the positions
+  its decoder reads.  Fix under test: query-token interface (`--query_tokens 4`).
+- **Queued for after the maintenance (Anvil, 12-GPU user cap).**
+  LATP + flow + q4: Goal 20828151 -> evals 20828152-56; Spatial 20828157 -> 20828158-62.
+  UniVLA latent + flow + q4 (suspect 2 on the fixed interface): Goal 20828934 -> 20828935-39; Spatial 20828940 -> 20828941-45
+  (the prompt-pooling univla_cont runs 20827771 / 20827992 were cancelled and replaced by these).
+  UniVLA stage 2 with RANDOM-init TI codebook `s2mix_noinh_1ep` 20827810 -> probes 20827835 -> token VLA on four suites
+  20827811 / 17 / 23 / 29 -> five eval parts each.
+  q4 plumbing check 20828967 (spatial, 1 episode).  HELD (superseded / appendix): none + flow pooled 20820879, reg_text
+  Goal 20820885 — `scontrol release` only if still wanted.
+- **Workstation during the outage (user).**  `acdc_la/scripts/workstation_run.sh`: LATP q4 Goal, then UniVLA-cont q4 Goal,
+  then none q4 Goal; the other session found a CPU-RAM leak in the TF data pipeline (OOM near step 3600 on 62 GB) and is
+  testing an in-process iterator rebuild before a checkpoint + restart fix.  Anvil jobs (400 GB) are unaffected.
+- **Operational gotchas learned today.**  (1) Monitor loops outlive their Monitor and share one state file: kill
+  `scratchpad/jobwatch.sh` orphans before re-arming, or events vanish.  (2) Evaluations submitted before 18:55 exit 0 even
+  when MuJoCo/EGL aborts; the watcher reads the real code from the log.  Bad nodes for rendering: h001, h003, h004, h006,
+  h009, h017 (excluded).  (3) `eval_merge.py` refuses double counts and flags INCOMPLETE suites.  (4) Pending jobs'
+  batch scripts are frozen at submission; Python modules are read at run time.
+
 ### 2026-09-19 (01:50) — workstation outage plan checked: as written it would OOM at ~3.6k steps; fixed (fresh tf.data iterator every 2500 batches) and all three arms smoke-tested
 
 - **Leak, characterised (workstation, 62 GB).** The RLDS tf.data pipeline alone (no model, no python transform, no
