@@ -3,12 +3,13 @@
  "suite": "libero_goal",
  "trials": 50,
  "per_task": {
-  "put the wine bottle on top of the cabinet": 0.26
+  "put the wine bottle on top of the cabinet": 0.26,
+  "open the top drawer and put the bowl inside": 0.04
  },
  "task_ids": [
   2,
   3
  ],
  "pad_to": 27,
- "success": 0.26
+ "success": 0.15
 }

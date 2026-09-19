@@ -3177,6 +3177,13 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - Not yet run, cheap and would confirm the diagnosis directly: the same frame with the ten Goal instructions through the
   trained models; an instruction-blind head gives near-identical chunks.
 
+### 2026-09-18 (20:25) — padding mismatch REFUTED: training-like padded prompts change nothing on Goal
+
+- Goal tasks 0-3, successes out of 50, unpadded -> padded to 27 tokens: flow 0->0, 11->10, 14->13, 2->2 (20827790-91);
+  legacy regression 3->2, 19->22, 28->26, 4->4 (20827792-93).  The pad-state summaries are not what the heads depend on;
+  the instruction-blindness on Goal is not a train/test padding artefact.  Remaining account: the prompt-pooling
+  interface itself; the query-token runs (20828151 Goal, 20828157 Spatial) test the fix.
+
 ## Registered next method: intervention first, real pairs second
 
 
