@@ -3208,6 +3208,30 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Next.** The three outage cells (tc_cont / univla_cont / none, Goal @ 10 %) via `workstation_run.sh`: at 2.5 s/step
   ~10.5 h training each + eval.
 
+### 2026-09-19 (12:10) — workstation outage cell 1: LATP (`latp2_inv`) + FLOW head + 4 QUERY TOKENS @ 10 % Goal = **434/500 = 86.8 %** (same arm without query tokens 9.2 %; UniVLA token recipe 86.6 %)
+
+- **Config.** `workstation_run.sh LATENT=tc_cont SUITE=libero_goal NOTE=latp2inv_fmq4_frac10`: `--head flow --query_tokens 4
+  --tc_tag latp2_inv`, `LIBERO_TRAIN_FRAC=10` (train[:10%] = 43 Goal demos), openvla-7b + LoRA r32, 15k steps x 64
+  (2 GPUs x micro-batch 8 x accum 4 instead of Anvil's 4 x 8 x 2), one seed; workstation deviations: torch 2.7.1+cu128,
+  NCCL 2.31.2, fresh tf.data iterator every 2500 batches (data order re-drawn every ~625 steps).  Train 34,102 s
+  (2.27 s/step); final train-batch latent_r2 0.819, one-step action L1 0.030.  Eval: `run_libero_eval_cont`, 50 trials
+  x 10 tasks, tasks 0-4 / 5-9 on the two GPUs, ~40 min.
+- **Result.** 434/500 = 86.8 %.  Per task (in suite order): 43, 49, 49, 37, 44, 37, 42, 49, 45, 39 of 50; lowest "open
+  the top drawer and put the bowl inside" and "push the plate to the front of the stove" (0.74).
+- **Against.** Same latent + flow head WITHOUT query tokens (Anvil, 2026-09-18 20:00): 46/500 = 9.2 %; legacy regression
+  head 17.0 %; UniVLA's own token recipe @ 10 % Goal (Anvil 20783076): 433/500 = 86.6 %.  So the query-token interface
+  takes this arm from the instruction-blind level to UniVLA's level on Goal.
+- **Conclusion — provisional.** One seed; the comparison that isolates the latent under the SAME interface
+  (UniVLA's latent + flow + q4, cell 2) and the no-latent control (cell 3) are running next on the workstation.  The
+  86.8 vs 86.6 difference is 1 episode in 500 and is not evidence either way.  Anvil's queued twin of this cell
+  (after the maintenance) is a second seed.
+- **Artifacts.** `acdc_la/results/vla_eval/{cont_libero_goal_ws_latp2inv_fmq4_frac10_t0_1_2_3_4,..._t5_6_7_8_9,
+  merged_libero_goal_ws_latp2inv_fmq4_frac10}.json`; run dir `acdc_la/ckpt/vla_runs/tc_cont+libero_goal_no_noops+b32x2+
+  lr0.00035+r32+s15000+fm+q4--latp2inv_fmq4_frac10/` (`train_log.jsonl`, `ctrl_meta.json` committed; merged model local);
+  logs `acdc_la/logs/ws_{train,eval}_latp2inv_fmq4_frac10_*`.
+- **Next.** Cell 2 (`univla_cont`, started 12:07 UTC) and cell 3 (`none`); decision on whether the latent matters under
+  the query-token interface waits for both.
+
 ## Registered next method: intervention first, real pairs second
 
 
