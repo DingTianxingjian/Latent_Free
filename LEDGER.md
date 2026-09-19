@@ -3156,6 +3156,27 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   (after the maintenance; Spatial counterpart 20827771).  UniVLA-flow on Goal near 87 -> our latent / pipeline is the
   problem; near 9-17 -> the continuous interface cannot use this data regime, whatever the latent.
 
+### 2026-09-18 (20:15) — Goal 9.2 % = the instruction-blind level; fix: QUERY-TOKEN interface for the continuous arms (OpenVLA-OFT idea)
+
+- **Reading of the Goal numbers.**  All ten LIBERO-Goal tasks start from the same scene; only the instruction says which
+  one to do.  A policy that ignores it executes one default behaviour and succeeds only when that happens to match, so
+  its ten per-task rates sum to about 1.  LATP + flow sums to 0.92 (spread over bowl-on-stove 0.22, wine-on-cabinet 0.28,
+  turn-on-stove 0.14 ...); the legacy head to 1.70.  Both continuous arms behave as instruction-blind on Goal, while on
+  Spatial / Object the scene itself mostly identifies the task.  The LATP latent carries no instruction by design — neither
+  does UniVLA's — so this is about how the VLA interface exposes the instruction to the action head, not about the latent.
+- **Why the token arm does not suffer.**  UniVLA's VLA must GENERATE its latent tokens after the instruction under a
+  cross-entropy loss, which forces task identity into exactly the positions its action decoder reads.  Our continuous
+  heads pool prompt states and regress / denoise; with 43 demonstrations they evidently do not learn to use the text.
+- **Fix (user: solve it now).**  `--query_tokens n`: n placeholder tokens (<ACT_i>, embeddings trained, never predicted)
+  after the instruction; the continuous heads read their states instead of pooling the prompt.  Those positions see the
+  full image + instruction through every LLM layer, sit where openvla-7b emits its action tokens and where UniVLA's
+  decoder reads its latent tokens — the OpenVLA-OFT design (placeholder action tokens read by a continuous head), here
+  with n = 4 to match UniVLA's 4 latent tokens.  Training and evaluation select the positions by id > 32000.
+- **Jobs.**  Smoke 20828149 -> 1-episode Goal eval 20828150 (before 23:30).  LATP + flow + q4: Goal 20828151 -> evals
+  20828152-56; Spatial 20828157 -> evals 20828158-62 (after the maintenance, or on the workstation).
+- Not yet run, cheap and would confirm the diagnosis directly: the same frame with the ten Goal instructions through the
+  trained models; an instruction-blind head gives near-identical chunks.
+
 ## Registered next method: intervention first, real pairs second
 
 

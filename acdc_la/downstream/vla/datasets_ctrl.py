@@ -27,6 +27,7 @@ class RLDSBatchTransformCtrl:
     prompt_builder_fn: Type[PromptBuilder]
     window_size: int = 12
     predict_stop_token: bool = True
+    query_tokens: int = 0                                     # continuous arms: placeholder tokens after the instruction
 
     def tokens(self, imgs, ro):
         if self.latent == "none": return torch.zeros(1)
@@ -56,7 +57,8 @@ class RLDSBatchTransformCtrl:
             # no latent vocabulary: the prompt is the bare instruction and the whole label is ignored; the VLM's hidden
             # state feeds a regression head instead of the LM head (the history trick has no discrete token to carry)
             pb = self.prompt_builder_fn("openvla")
-            for turn in ({"from": "human", "value": f"What action should the robot take to {lang}?"}, {"from": "gpt", "value": ""}):
+            ph = "".join(f"<ACT_{i}>" for i in range(self.query_tokens))            # query-token interface (empty if 0)
+            for turn in ({"from": "human", "value": f"What action should the robot take to {lang}?"}, {"from": "gpt", "value": ph}):
                 pb.add_turn(turn["from"], turn["value"])
             input_ids = torch.tensor(self.base_tokenizer(pb.get_prompt(), add_special_tokens=True).input_ids)
             return dict(pixel_values=pixel_values, input_ids=input_ids, labels=torch.full_like(input_ids, IGNORE_INDEX),

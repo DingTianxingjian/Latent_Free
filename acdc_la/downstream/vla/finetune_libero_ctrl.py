@@ -151,8 +151,8 @@ class FlowHeads(nn.Module):
 
 
 class WrappedModel(nn.Module):
-    def __init__(self, vla, window_size=12, n_tokens=4, continuous=False, dz=0, head="reg", flow_kw=None):
-        super().__init__(); self.vla, self.window_size, self.continuous = vla, window_size, continuous
+    def __init__(self, vla, window_size=12, n_tokens=4, continuous=False, dz=0, head="reg", flow_kw=None, query_tokens=0):
+        super().__init__(); self.vla, self.window_size, self.continuous, self.nq = vla, window_size, continuous, query_tokens
         self.flow = continuous and head == "flow"
         if self.flow: self.heads = FlowHeads(dz, window_size, **(flow_kw or {}))
         elif continuous: self.heads = ContHeads(dz, window_size, text_direct=(head == "reg_text"))
@@ -164,6 +164,13 @@ class WrappedModel(nn.Module):
                            labels=None if self.continuous else batch["labels"], output_hidden_states=True)
         n_patches = self.vla.vision_backbone.featurizer.patch_embed.num_patches
         visual_embed = out.hidden_states[-1][:, :n_patches].to(torch.float); latent_tokens = out.hidden_states[-1][:, n_patches:]
+        if self.continuous and self.nq:
+            # QUERY-TOKEN interface (2026-09-18, the OpenVLA-OFT idea): the heads read the states of nq placeholder tokens
+            # placed AFTER the instruction (where OpenVLA emits its action tokens and UniVLA its latent tokens), instead of
+            # pooling the prompt.  Index j of `latent_tokens` is input token j (j >= 1), the alignment the token arm uses.
+            m = batch["input_ids"] > LATENT_TOKEN_BASE
+            latent_tokens = torch.stack([latent_tokens[i][m[i]] for i in range(len(latent_tokens))])
+            assert latent_tokens.shape[1] == self.nq, latent_tokens.shape
         if self.flow:                                                   # flow-matching head: p_oracle has no role
             z_star = batch["latent_action_idx"].to(torch.float) if self.heads.dz else None
             la, lz, l1, r2 = self.heads.loss(visual_embed, latent_tokens.to(torch.float), batch["actions"].to(torch.float), z_star)
@@ -197,6 +204,7 @@ class Cfg:
     curriculum_frac: float = 0.6                           # oracle -> predicted anneal, as in downstream/libero_policy.py
     head: str = "reg"                                      # continuous arms: reg (ContHeads) | reg_text (+ direct text) | flow (FlowHeads)
     flow_width: int = 512; flow_layers: int = 4; flow_z_tok: int = 32; flow_steps: int = 10   # flow head; steps used at evaluation
+    query_tokens: int = 0                                  # continuous arms: 0 = pool the prompt; n = read n placeholder tokens after it
     vla_path: str = os.path.join(LF, "cache", "vla", "openvla-7b")
     lam_path: str = os.path.join(LF, "claude_survey", "ckpt", "s2mix_1ep.pt")      # univla arm: their Stage-2 recipe on our data
     acdc_tag: str = "s1_acdc_1ep"; acdc_codebook: str = "vq_s1_acdc_1ep_K64.npz"    # acdc arm
@@ -258,7 +266,7 @@ def finetune(cfg: Cfg) -> None:
     if ov_d: print(f"[ctrl] OVERRIDE {ov}: {ov_d}", flush=True)
     assert torch.cuda.is_available(); assert cfg.latent in ("univla", "univla_cont", "acdc", "acdc_cont", "none", "tc_cont", "tc_vq")
     state = PartialState(); torch.cuda.set_device(device_id := state.local_process_index); torch.cuda.empty_cache()
-    exp_id = f"{cfg.latent}+{cfg.dataset_name}+b{cfg.batch_size * cfg.grad_accumulation_steps}x{state.num_processes}+lr{cfg.learning_rate}+r{cfg.lora_rank}+s{cfg.max_steps}" + {"flow": "+fm", "reg_text": "+rt"}.get(cfg.head, "") + (f"--{cfg.run_id_note}" if cfg.run_id_note else "")
+    exp_id = f"{cfg.latent}+{cfg.dataset_name}+b{cfg.batch_size * cfg.grad_accumulation_steps}x{state.num_processes}+lr{cfg.learning_rate}+r{cfg.lora_rank}+s{cfg.max_steps}" + {"flow": "+fm", "reg_text": "+rt"}.get(cfg.head, "") + (f"+q{cfg.query_tokens}" if cfg.query_tokens else "") + (f"--{cfg.run_id_note}" if cfg.run_id_note else "")
     run_dir = cfg.run_root_dir / exp_id; adapter_dir = cfg.run_root_dir / "adapters" / exp_id; os.makedirs(run_dir, exist_ok=True); os.makedirs(adapter_dir, exist_ok=True)
     if state.is_main_process: print(f"[ctrl] {exp_id} -> {run_dir}", flush=True)
 
@@ -270,24 +278,27 @@ def finetune(cfg: Cfg) -> None:
 
     labeller, n_tokens, codebook_size = build_labeller(cfg, device_id)
     cont = cfg.latent in ("acdc_cont", "none", "tc_cont", "univla_cont"); dz = getattr(labeller, "dz", 0) if cfg.latent in ("acdc_cont", "tc_cont", "univla_cont") else 0
-    if not cont:
-        # the latent vocabulary: <ACT_0..K-1> appended after <PAD> (32000) -> ids 32001..; embeddings + lm_head rows are trained
+    nq = cfg.query_tokens if cont else 0
+    if not cont or nq:
+        # the latent vocabulary: <ACT_0..K-1> appended after <PAD> (32000) -> ids 32001..; embeddings + lm_head rows are trained.
+        # Continuous arms with query tokens reuse the same ids as nq PLACEHOLDERS: never predicted, their embeddings trained.
         assert len(processor.tokenizer) == LATENT_TOKEN_BASE + 1, len(processor.tokenizer)
-        processor.tokenizer.add_special_tokens({"additional_special_tokens": [f"<ACT_{i}>" for i in range(codebook_size)]})
+        processor.tokenizer.add_special_tokens({"additional_special_tokens": [f"<ACT_{i}>" for i in range(nq or codebook_size)]})
         vla.resize_token_embeddings(len(processor.tokenizer))
     vla = vla.to(device_id)
     lora = LoraConfig(r=cfg.lora_rank, lora_alpha=min(cfg.lora_rank, 16), lora_dropout=cfg.lora_dropout, target_modules="all-linear",
-                      init_lora_weights="gaussian", modules_to_save=None if cont else ["embed_tokens", "lm_head"])
+                      init_lora_weights="gaussian", modules_to_save=(["embed_tokens"] if nq else None) if cont else ["embed_tokens", "lm_head"])
     vla = get_peft_model(vla, lora); vla.print_trainable_parameters()
     assert cfg.head in ("reg", "reg_text", "flow") and (cfg.head == "reg" or cont), (cfg.head, cfg.latent)
     model = WrappedModel(vla, cfg.window_size, n_tokens, continuous=cont, dz=dz, head=cfg.head,
-                         flow_kw=dict(width=cfg.flow_width, layers=cfg.flow_layers, z_tok=cfg.flow_z_tok)).to(device_id)
+                         flow_kw=dict(width=cfg.flow_width, layers=cfg.flow_layers, z_tok=cfg.flow_z_tok), query_tokens=nq).to(device_id)
     model = DDP(model, device_ids=[device_id], find_unused_parameters=True, gradient_as_bucket_view=True)
     opt = AdamW([p for p in model.parameters() if p.requires_grad], lr=cfg.learning_rate)
     sched = torch.optim.lr_scheduler.StepLR(opt, step_size=int(cfg.max_steps * 0.8), gamma=0.1)
 
     transform = RLDSBatchTransformCtrl(labeller, cfg.latent, processor.tokenizer, image_transform=processor.image_processor.apply_transform,
-                                       image_transform_lam=transforms.ToTensor(), prompt_builder_fn=PurePromptBuilder, window_size=cfg.window_size)
+                                       image_transform_lam=transforms.ToTensor(), prompt_builder_fn=PurePromptBuilder, window_size=cfg.window_size,
+                                       query_tokens=nq)
     ds = RLDSDataset(cfg.data_root_dir, cfg.dataset_name, transform, resize_resolution=tuple(model.module.vla.config.image_sizes), shuffle_buffer_size=cfg.shuffle_buffer_size,
                      image_aug=cfg.image_aug, window_size=cfg.window_size + 2, training_phase="post-training")
     if state.is_main_process: save_dataset_statistics(ds.dataset_statistics, run_dir); processor.save_pretrained(run_dir)
@@ -325,14 +336,14 @@ def finetune(cfg: Cfg) -> None:
                     torch.save((model.module.heads if cont else model.module.action_decoder).state_dict(), run_dir / "action_decoder.pt")
                     json.dump(dict(latent=cfg.latent, n_tokens=n_tokens, codebook_size=codebook_size, dz=dz, window_size=cfg.window_size, step=step + 1, vla_path=cfg.vla_path,
                                    lam_path=cfg.lam_path, acdc_tag=cfg.acdc_tag, acdc_codebook=cfg.acdc_codebook, tc_tag=cfg.tc_tag, dataset_name=cfg.dataset_name,
-                                   train_frac=os.environ.get("LIBERO_TRAIN_FRAC"), override=ov_d, head=cfg.head,
+                                   train_frac=os.environ.get("LIBERO_TRAIN_FRAC"), override=ov_d, head=cfg.head, query_tokens=nq,
                                    flow=dict(width=cfg.flow_width, layers=cfg.flow_layers, z_tok=cfg.flow_z_tok, steps=cfg.flow_steps)), open(run_dir / "ctrl_meta.json", "w"), indent=1)
                     print(f"[ctrl] saved adapter + decoder at step {step + 1}", flush=True)
                 dist.barrier()
             if step + 1 >= cfg.max_steps: break
     if state.is_main_process:                                       # merge LoRA into a standalone checkpoint for the evaluator
         base = AutoModelForVision2Seq.from_pretrained(cfg.vla_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True)
-        if not cont: base.resize_token_embeddings(len(processor.tokenizer))
+        if not cont or nq: base.resize_token_embeddings(len(processor.tokenizer))
         merged = PeftModel.from_pretrained(base, adapter_dir).merge_and_unload(); merged.save_pretrained(run_dir)
         print(f"[ctrl-done] merged checkpoint at {run_dir} ({int(time.time() - t0)}s)", flush=True)
     dist.barrier()

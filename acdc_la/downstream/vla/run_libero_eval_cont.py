@@ -117,7 +117,9 @@ def main():
     for ti in ids:
         task = suite.get_task(ti); inits = suite.get_task_init_states(ti)
         env, desc = get_libero_env(task, "openvla", resolution=256)
-        pb0 = PurePromptBuilder("openvla"); pb0.add_turn("human", f"What action should the robot take to {desc.lower()}?"); pb0.add_turn("gpt", "")
+        nq = int(meta.get("query_tokens") or 0)
+        pb0 = PurePromptBuilder("openvla"); pb0.add_turn("human", f"What action should the robot take to {desc.lower()}?")
+        pb0.add_turn("gpt", "".join(f"<ACT_{i}>" for i in range(nq)))                  # same placeholders as training
         prompt = pb0.get_prompt()
         tsucc = 0
         for ep in range(a.num_trials_per_task):
@@ -136,6 +138,8 @@ def main():
                 with torch.no_grad():
                     h = vla(**inputs, output_hidden_states=True).hidden_states[-1]
                     vis, txt = h[:, :n_patches].float(), h[:, n_patches:].float()
+                    if nq:                                                             # read the query-token states
+                        qm = inputs["input_ids"][0] > 32000; txt = txt[:, qm]; assert txt.shape[1] == nq, txt.shape
                     chunk = (heads.sample(vis, txt, steps, gen) if flow else heads(vis, txt))[0].reshape(W, 7).cpu().numpy()
                 act = ens(chunk, mask, low, high)
                 act = invert_gripper_action(normalize_gripper_action(act, binarize=True))
