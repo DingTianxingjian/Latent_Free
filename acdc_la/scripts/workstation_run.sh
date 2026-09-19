@@ -10,6 +10,7 @@ PY=${PY:-envs/univla_vla/bin/python}
 export PYTHONPATH=$PWD:$PWD/third_party/UniVLA WANDB_MODE=disabled TOKENIZERS_PARALLELISM=false TORCH_HOME=$PWD/cache/torch \
        PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
 export LIBERO_TRAIN_FRAC=${FRAC:-10} CTRL_STAGGER_SEC=${CTRL_STAGGER_SEC:-90}
+export CTRL_REITER_BATCHES=${CTRL_REITER_BATCHES:-2500}   # fresh tf.data iterator every 2500 batches: the RLDS pipeline leaks ~250 MB / 1000 samples (62 GB host)
 : "${LATENT:?set LATENT}" "${SUITE:?set SUITE}" "${NOTE:?set NOTE}"
 DS=${SUITE}_no_noops
 EXTRA="--head flow --query_tokens ${QT:-4}"; [ "$LATENT" = tc_cont ] && EXTRA="$EXTRA --tc_tag ${TC_TAG:-latp2_inv}"

@@ -3184,6 +3184,30 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   the instruction-blindness on Goal is not a train/test padding artefact.  Remaining account: the prompt-pooling
   interface itself; the query-token runs (20828151 Goal, 20828157 Spatial) test the fix.
 
+### 2026-09-19 (01:50) — workstation outage plan checked: as written it would OOM at ~3.6k steps; fixed (fresh tf.data iterator every 2500 batches) and all three arms smoke-tested
+
+- **Leak, characterised (workstation, 62 GB).** The RLDS tf.data pipeline alone (no model, no python transform, no
+  labeller) grows ~250-265 MB per 1000 samples: +21.5 GB per process at 100k samples, slowing only slowly after ~60k.
+  Identical with autotune off, image aug off, jemalloc, and at `LIBERO_TRAIN_FRAC=10` on Goal (so it is per consumed
+  sample, not per distinct demo).  This is what killed the 2026-09-14 univla run at step 3625 (~116k samples/rank).
+  **Dropping the iterator returns the memory**: 3 segments of 40k samples with a fresh `as_numpy_iterator()` each ->
+  17 GB at segment end, 4.5-5 GB after `del` + `gc.collect()`, no carry-over.  Anvil nodes never see it (RAM).
+- **Fix (default off, Anvil unchanged).** `finetune_libero_ctrl.batches(dl, every)`: a fresh DataLoader/tf.data
+  iterator every `CTRL_REITER_BATCHES` batches, and the iterator is released before the in-process merge.
+  `workstation_run.sh` sets 2500 (20k samples/rank per iterator).  The shuffle buffer refills at each restart, i.e.
+  data order is re-drawn every ~625 steps; at 10 % data that is ~4 passes over the demos per iterator.
+- **Also required on a fresh host, not done by `workstation_run.sh`:** the vendored-UniVLA patch
+  (`acdc_la/patches/univla_rlds_train_frac.patch`) was corrupt (hunk header 6 lines, 2 present; `git apply` refused),
+  so `LIBERO_TRAIN_FRAC` would have been silently ignored (= 95 % of the demos).  Regenerated from the applied tree.
+  Artifacts: `ckpt_20260917/` (latp2_*, tc_*, z_stats_*) from the HF mirror; `s2mix_1ep.pt` md5-identical to the local
+  copy; LIBERO-Goal RLDS downloaded.
+- **Smoke (Goal, FRAC=10, flow head, 4 query tokens, 2 GPUs, `CTRL_REITER_BATCHES=20`).** `tc_cont` (latp2_inv) 30 steps:
+  2.5 s/step, merge ok, peak RSS of both ranks 40 GB (at merge), host MemAvailable never below 8 GB; continuous
+  evaluator on both GPUs (tasks 0 / 5, 1 trial) and `eval_merge` run.  `univla_cont` and `none` 10 steps each: train +
+  merge ok.  Code path only; smoke checkpoints deleted.  **Confirmed (infrastructure).**
+- **Next.** The three outage cells (tc_cont / univla_cont / none, Goal @ 10 %) via `workstation_run.sh`: at 2.5 s/step
+  ~10.5 h training each + eval.
+
 ## Registered next method: intervention first, real pairs second
 
 

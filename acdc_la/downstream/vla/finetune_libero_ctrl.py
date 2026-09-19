@@ -7,7 +7,7 @@ W&B is replaced by a jsonl log (compute nodes have no network).
 
   torchrun --standalone --nproc-per-node 4 -m acdc_la.downstream.vla.finetune_libero_ctrl --latent acdc --max_steps 15000
 """
-import os, sys, json, time, math
+import os, sys, gc, json, time, math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -253,6 +253,19 @@ def build_labeller(cfg, device_id):
     return t, t.n_tokens, t.codebook_size
 
 
+def batches(dl, every):
+    """Batches of `dl`, starting a fresh iterator every `every` batches (0 = one iterator, the original behaviour).
+    The RLDS tf.data pipeline grows ~250 MB per 1000 samples inside its iterator (~27 GB per rank by 3.6k steps, which
+    killed the 2-GPU run on the 62 GB workstation 2026-09-14); dropping the iterator returns it (measured 2026-09-19:
+    17 GB -> 5 GB after 40k samples), so small-RAM hosts set CTRL_REITER_BATCHES."""
+    while True:
+        it = iter(dl)
+        for i, b in enumerate(it):
+            yield b
+            if every and i + 1 >= every: break
+        del it; gc.collect()
+
+
 @draccus.wrap()
 def finetune(cfg: Cfg) -> None:
     # Per-job re-targeting (2026-09-16).  Slurm freezes a pending job's environment and `scontrol top` is denied to users
@@ -308,7 +321,7 @@ def finetune(cfg: Cfg) -> None:
     log = open(run_dir / "train_log.jsonl", "a") if state.is_main_process else None; t0 = time.time(); acc_buf, l1_buf, loss_buf = [], [], []
 
     model.train(); opt.zero_grad()
-    for bi, batch in enumerate(dl):
+    for bi, batch in enumerate(batches(dl, int(os.environ.get("CTRL_REITER_BATCHES", "0")))):
         for k in ("input_ids", "attention_mask", "labels", "actions", "latent_action_idx"): batch[k] = batch[k].to(device_id)
         batch["pixel_values"] = batch["pixel_values"].to(torch.bfloat16).to(device_id)
         p_or = max(0.0, 1.0 - (bi // cfg.grad_accumulation_steps) / (cfg.curriculum_frac * cfg.max_steps)) if model.module.continuous else 0.0
@@ -341,6 +354,7 @@ def finetune(cfg: Cfg) -> None:
                     print(f"[ctrl] saved adapter + decoder at step {step + 1}", flush=True)
                 dist.barrier()
             if step + 1 >= cfg.max_steps: break
+    del batch; gc.collect()                                         # release the data iterator's memory before the merge reloads the 7B base
     if state.is_main_process:                                       # merge LoRA into a standalone checkpoint for the evaluator
         base = AutoModelForVision2Seq.from_pretrained(cfg.vla_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True)
         if not cont or nq: base.resize_token_embeddings(len(processor.tokenizer))

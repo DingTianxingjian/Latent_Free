@@ -1,12 +1,18 @@
+diff --git a/prismatic/vla/datasets/rlds/dataset.py b/prismatic/vla/datasets/rlds/dataset.py
+index 2b2ff47..138e06f 100644
 --- a/prismatic/vla/datasets/rlds/dataset.py
 +++ b/prismatic/vla/datasets/rlds/dataset.py
-@@ -6,6 +6,7 @@
+@@ -5,6 +5,7 @@ Core interface script for configuring and initializing RLDS datasets.
+ """
+ 
  import copy
 +import os
  import inspect
  import json
  import random
-@@ -248,7 +249,13 @@
+@@ -247,7 +248,12 @@ def make_dataset_from_rlds(
+ 
+     # construct the dataset
      if "val" not in builder.info.splits:
 -        split = "train[:95%]" if train else "train[95%:]"
 +        # LIBERO_TRAIN_FRAC (acdc_la, 2026-09-15): fraction of the train split to fine-tune on, for data-efficiency
@@ -17,3 +23,4 @@
 +        split = (f"train[:{_f}%]" if _f else "train[:95%]") if train else "train[95%:]"
      else:
          split = "train" if train else "val"
+ 
