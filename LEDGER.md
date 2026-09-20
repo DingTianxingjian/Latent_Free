@@ -3259,6 +3259,34 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   merged_libero_goal_ws_univlacont_fmq4_frac10}.json`; `train_log.jsonl` + `ctrl_meta.json` of the run dir; logs
   `acdc_la/logs/ws_{train,eval}_univlacont_fmq4_frac10_*`.
 
+### 2026-09-20 (01:45) — the "does LATP's own prior transfer to LIBERO?" probe cannot be run on these weights: the prior head was NEVER TRAINED in any surviving checkpoint
+
+- **Question (user, 2026-09-20).** Cheap first layer before any new VLA run: freeze the LATP prior, and on held-out
+  LIBERO measure R2(p(z | o_t, g), z*) against the posterior target, next to the VLA query predictor's R2(z_VLA, z*).
+  If the built-in prior is already close to the VLA's, it is worth exploiting; if it collapses off OXE, it is an
+  OXE-domain prior.
+- **Probe built.** `acdc_la/downstream/vla/prior_gate.py`: one pass over the HELD-OUT split (`train=False` ->
+  `train[95%:]`, the side no arm trains on) of `libero_goal_no_noops`, ro fixed to 0, computing on the same rows
+  z* = `pre_quant(f0, dF)` (standardised by z_stats, exactly the VLA's label), z_prior = `prior_code(f0, c)` with
+  c = masked-mean pooled frozen t5-base (the `langvec` convention of `oxe_mix` / `claude_survey/lang_cache.py`), and
+  optionally z_VLA = the trained arm's query-token prediction, flow-sampled with the deployment Euler steps.
+- **Result on `latp2_inv`, Goal, n = 200: R2(prior, z*) = -67.0** (per token -43.6 / -60.3 / -73.1 / -91.1), prior RMS
+  5.35 against the target's 0.87 — the signature of an untrained random head, not of a domain shift.
+- **Cause, checked in the code and the checkpoints, not inferred.** `stage2_tc/train.py:39` only builds the prior
+  term `if a.lam_prior > 0`, and every surviving tokenizer carries `lam_prior = 0.0` (`tc_cont`, `tc_acdc`,
+  `tc_cont_plus15k`); LATP v2 (`stage3_transport/train_v2.py`, which produced `latp2_inv` / `latp2_anchor`) has no
+  prior term at all, so it only inherited the random-init head.  The one run that did train it, `tc_cont_prior`, was
+  killed at 18k steps for gaming the variance-normalised form (ledger 2026-09-15) and then cancelled; `--code-norm`
+  is the fix in the code but no checkpoint was ever trained with it.
+- **Conclusion — the question is open, not answered: there is no trained deployment prior to measure.**  Nothing in the
+  VLA comparison used one either (both arms' labels are posterior codes and the VLA re-learns the mapping), so no
+  earlier result is invalidated.
+- **Artifacts.** `acdc_la/results/prior_gate_latp2_inv_libero_goal_n200.json`, `acdc_la/downstream/vla/prior_gate.py`.
+- **Next, cheapest first.** (i) The same probe with `--vla <run dir>` gives R2(z_VLA, z*) held-out (the VLA's own
+  deployment mapping, today only known as a train-batch 0.819); (ii) a ridge / small MLP from (f0, T5 lang) -> z* fitted
+  on the 10 % train split and read out held-out prices how learnable the deployment mapping is AT ALL on LIBERO,
+  with no tokenizer retraining; (iii) only if (ii) is high does a `--lam-prior --code-norm` tokenizer earn its compute.
+
 ## Registered next method: intervention first, real pairs second
 
 
