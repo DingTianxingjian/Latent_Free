@@ -3287,6 +3287,41 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   on the 10 % train split and read out held-out prices how learnable the deployment mapping is AT ALL on LIBERO,
   with no tokenizer retraining; (iii) only if (ii) is high does a `--lam-prior --code-norm` tokenizer earn its compute.
 
+### 2026-09-20 (11:00) — workstation outage cell 3, THE CONTROL THAT MATTERS: **no latent at all = 443/500 = 88.6 %** on Goal @ 10 %, i.e. NEITHER latent contributes anything through this interface
+
+- **Config.** Identical to cells 1 and 2 except `--latent none` (`FlowHeads` with dz = 0: the same flow head, the same
+  4 query tokens, the same prompt, no latent input and no latent loss).  Train 31,756 s (2.11 s/step), 15k x 64,
+  one seed, same host and code as the other two cells.
+- **The three cells, same interface, same 43 Goal demos, same budget, 500 episodes each.**
+
+  | arm | success | vs no-latent |
+  |---|---|---|
+  | UniVLA latent (`univla_cont`, s2mix_1ep) | 447/500 = 89.4 % | +0.8 pp |
+  | **no latent (`none`)** | **443/500 = 88.6 %** | — |
+  | our latent (`tc_cont` = `latp2_inv`) | 434/500 = 86.8 % | -1.8 pp |
+
+  Spread 13 episodes in 500; the largest pairwise gap (ours vs UniVLA) is ~1.3 sigma, ours vs no-latent ~0.9 sigma.
+  Per task the three interleave (no-latent wins 4 of 10 tasks outright).  Train-batch action L1 tracked together all
+  the way (step 1850: 0.0786 / 0.0873 / 0.0784).
+- **Conclusion — negative, and it applies to BOTH latents.**  On LIBERO-Goal at 10 % demos, through the query-token
+  flow interface, **the latent channel is decorative**: a policy with no latent input matches the best latent arm.
+  The 09-18 "Goal 9.2 %" collapse was an interface failure, and repairing the interface did not create a latent
+  effect -- it revealed that the action head reads what it needs from the visual features alone in this regime.
+  Consequence for the paper: no claim of the form "our latent action beats UniVLA's downstream" can rest on this
+  cell, and neither can "latent actions help", since the matched no-latent control is inside the noise band.  This is
+  the same pattern as the 2026-09-13 toy closed-loop (every arm in one band) but now at full-VLA scale with 500
+  episodes per arm and a proper matched control.
+- **What it does NOT say.**  Nothing about suites/regimes where the visual features are insufficient (Long/libero_10,
+  or fewer than 43 demos), and nothing about the posterior latent's CONTENT: the probe advantage (`latp2_inv` action
+  R2 0.329 vs same-data UniVLA 0.236) is measured on the oracle code, while the policy only ever sees its own
+  prediction (train latent_r2 ours 0.819 vs theirs 0.964 -- our latent carries more and is predicted worse).
+- **Artifacts.** `acdc_la/results/vla_eval/{cont_libero_goal_ws_none_fmq4_frac10_t*,merged_libero_goal_ws_none_fmq4_frac10}.json`,
+  run dir `train_log.jsonl` + `ctrl_meta.json`, logs `acdc_la/logs/ws_{train,eval}_none_fmq4_frac10_*`.
+- **Next (cheap, eval-only, no retraining).** (i) Feed the ORACLE posterior z* into the trained heads at evaluation and
+  compare with the sampled z: if oracle z* does not raise success either, the latent is useless here regardless of
+  predictability; if it does, predictability is the bottleneck and the deployment prior becomes the live question.
+  (ii) R2(z_VLA, z*) held-out via `prior_gate.py --vla`.  (iii) A regime where the control is not saturated.
+
 ## Registered next method: intervention first, real pairs second
 
 

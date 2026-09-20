@@ -1,0 +1,20 @@
+{
+ "checkpoint": "acdc_la/ckpt/vla_runs/none+libero_goal_no_noops+b32x2+lr0.00035+r32+s15000+fm+q4--none_fmq4_frac10",
+ "suite": "libero_goal",
+ "trials": 50,
+ "per_task": {
+  "open the middle drawer of the cabinet": 0.9,
+  "put the bowl on the stove": 0.96,
+  "put the wine bottle on top of the cabinet": 1.0,
+  "open the top drawer and put the bowl inside": 0.88,
+  "put the bowl on top of the cabinet": 0.78
+ },
+ "task_ids": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "success": 0.904
+}
