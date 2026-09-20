@@ -1,0 +1,20 @@
+{
+ "checkpoint": "acdc_la/ckpt/vla_runs/univla_cont+libero_goal_no_noops+b32x2+lr0.00035+r32+s15000+fm+q4--univlacont_fmq4_frac10",
+ "suite": "libero_goal",
+ "trials": 50,
+ "per_task": {
+  "push the plate to the front of the stove": 0.9,
+  "put the cream cheese in the bowl": 0.84,
+  "turn on the stove": 1.0,
+  "put the bowl on the plate": 0.94,
+  "put the wine bottle on the rack": 0.76
+ },
+ "task_ids": [
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "success": 0.888
+}

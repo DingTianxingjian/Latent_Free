@@ -1,0 +1,55 @@
+{
+ "suite": "libero_goal",
+ "note": "ws_univlacont_fmq4_frac10",
+ "kind": "cont",
+ "files": [
+  "cont_libero_goal_ws_univlacont_fmq4_frac10_t0_1_2_3_4.json",
+  "cont_libero_goal_ws_univlacont_fmq4_frac10_t5_6_7_8_9.json"
+ ],
+ "per_task": {
+  "open the middle drawer of the cabinet": {
+   "successes": 39,
+   "episodes": 50
+  },
+  "put the bowl on the stove": {
+   "successes": 49,
+   "episodes": 50
+  },
+  "put the wine bottle on top of the cabinet": {
+   "successes": 50,
+   "episodes": 50
+  },
+  "open the top drawer and put the bowl inside": {
+   "successes": 47,
+   "episodes": 50
+  },
+  "put the bowl on top of the cabinet": {
+   "successes": 40,
+   "episodes": 50
+  },
+  "push the plate to the front of the stove": {
+   "successes": 45,
+   "episodes": 50
+  },
+  "put the cream cheese in the bowl": {
+   "successes": 42,
+   "episodes": 50
+  },
+  "turn on the stove": {
+   "successes": 50,
+   "episodes": 50
+  },
+  "put the bowl on the plate": {
+   "successes": 47,
+   "episodes": 50
+  },
+  "put the wine bottle on the rack": {
+   "successes": 38,
+   "episodes": 50
+  }
+ },
+ "successes": 447,
+ "episodes": 500,
+ "success_rate": 0.894,
+ "complete": true
+}

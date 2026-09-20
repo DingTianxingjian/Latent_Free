@@ -3232,6 +3232,33 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Next.** Cell 2 (`univla_cont`, started 12:07 UTC) and cell 3 (`none`); decision on whether the latent matters under
   the query-token interface waits for both.
 
+### 2026-09-20 (01:25) — workstation outage cell 2, SUSPECT 2 ANSWERED: UniVLA's latent through OUR interface @ 10 % Goal = **447/500 = 89.4 %** vs our latent 86.8 % — the interface was the Goal failure, and our latent is not better than theirs
+
+- **Config.** Identical to cell 1 except the labeller: `LATENT=univla_cont` (their deployed latent, `s2mix_1ep`) with the
+  same `--head flow --query_tokens 4`, same 43 Goal demos, same 15k x 64 budget, same host, one seed.  Train 45,058 s
+  (3.0 s/step; their LAM labeller is heavier than ours); final train-batch latent_r2 0.964, one-step action L1 0.031
+  (ours: 0.819 / 0.030).  Eval 50 x 10, ~35 min.
+- **Result, same-interface comparison (the control cell 1 lacked).**
+
+  | Goal @ 10 % demos, flow head + 4 query tokens | success |
+  |---|---|
+  | UniVLA latent (`univla_cont`, s2mix_1ep) | **447/500 = 89.4 %** |
+  | our latent (`tc_cont`, latp2_inv) | 434/500 = 86.8 % |
+
+  Per task (suite order), ours vs theirs: 43/39, 49/49, 49/50, **37/47**, 44/40, **37/45**, 42/42, 49/50, 45/47, 39/38.
+  The gap is carried by two tasks ("open the top drawer and put the bowl inside", "push the plate to the front of the
+  stove"); ours is ahead on "open the middle drawer" and "put the bowl on top of the cabinet".
+- **Reading.** 13 episodes in 500, ~1.3 sigma on a binomial with these rates: **not a significant difference**, one seed
+  each.  What it does settle: the 9.2 % Goal collapse was the INTERFACE, not our latent (both latents reach ~87-89 %
+  through the query-token interface), and **our latent buys nothing over UniVLA's here** -- if anything it is behind.
+  Their latent is also easier for the VLA to predict (train latent_r2 0.964 vs 0.819).
+- **Conclusion — provisional (single seed each).**  Cell 3 (`none`, no latent, same interface; started 01:24 UTC,
+  result ~12:00 UTC) decides whether either latent contributes at all; if `none` also lands near 87-89 %, the latent
+  channel is decorative in this data regime and the paper claim cannot rest on Goal.
+- **Artifacts.** `acdc_la/results/vla_eval/{cont_libero_goal_ws_univlacont_fmq4_frac10_t0_1_2_3_4,..._t5_6_7_8_9,
+  merged_libero_goal_ws_univlacont_fmq4_frac10}.json`; `train_log.jsonl` + `ctrl_meta.json` of the run dir; logs
+  `acdc_la/logs/ws_{train,eval}_univlacont_fmq4_frac10_*`.
+
 ## Registered next method: intervention first, real pairs second
 
 
