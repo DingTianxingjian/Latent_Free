@@ -201,6 +201,14 @@ class WrappedModel(nn.Module):
 class Cfg:
     latent: str = "acdc"                                   # univla | acdc | acdc_cont
     lam_z: float = 1.0                                     # weight of the latent regression loss (continuous arm)
+    # PHASE-2 (latent-action policy pretraining, 2026-09-20).  UniVLA's second stage trains the policy to predict
+    # LATENT actions on the cross-embodiment mixture -- no action head, because those sources have no common action
+    # space -- and only then post-trains on the target robot.  Our controlled comparison skipped it, which is why a
+    # latent that is a deterministic function of (o_t, l) could not pay for itself downstream (ledger 2026-09-20).
+    lam_a: float = 1.0                                     # weight of the action loss; 0 = latent-only pretraining
+    init_from_run: Optional[str] = None                    # start from this run dir's adapter + heads (post-training a phase-2 arm)
+    resume: bool = False                                   # continue this exp_id from its last save (Slurm walltime chunks)
+    merge: bool = True                                     # merge LoRA into a standalone checkpoint at the end
     curriculum_frac: float = 0.6                           # oracle -> predicted anneal, as in downstream/libero_policy.py
     head: str = "reg"                                      # continuous arms: reg (ContHeads) | reg_text (+ direct text) | flow (FlowHeads)
     flow_width: int = 512; flow_layers: int = 4; flow_z_tok: int = 32; flow_steps: int = 10   # flow head; steps used at evaluation
@@ -301,13 +309,37 @@ def finetune(cfg: Cfg) -> None:
     vla = vla.to(device_id)
     lora = LoraConfig(r=cfg.lora_rank, lora_alpha=min(cfg.lora_rank, 16), lora_dropout=cfg.lora_dropout, target_modules="all-linear",
                       init_lora_weights="gaussian", modules_to_save=(["embed_tokens"] if nq else None) if cont else ["embed_tokens", "lm_head"])
-    vla = get_peft_model(vla, lora); vla.print_trainable_parameters()
+    # Where this run's weights start: its own last save (--resume, for Slurm walltime chunks), else another run's
+    # (--init-from-run <run dir>: how a phase-2 pretrained arm is post-trained).  A run dir holds the heads
+    # (action_decoder.pt); its adapter sits next to it under adapters/<exp_id>.
+    src_run = str(run_dir) if (cfg.resume and os.path.exists(run_dir / "action_decoder.pt")) else cfg.init_from_run
+    src_ad = (str(adapter_dir) if src_run == str(run_dir) else
+              os.path.join(cfg.run_root_dir, "adapters", os.path.basename(str(src_run).rstrip("/")))) if src_run else None
+    if src_ad and os.path.exists(os.path.join(src_ad, "adapter_config.json")):
+        vla = PeftModel.from_pretrained(vla, src_ad, is_trainable=True)
+        if state.is_main_process: print(f"[ctrl] LoRA from {src_ad}", flush=True)
+    else:
+        assert not src_run, f"no adapter at {src_ad}"
+        vla = get_peft_model(vla, lora)
+    vla.print_trainable_parameters()
     assert cfg.head in ("reg", "reg_text", "flow") and (cfg.head == "reg" or cont), (cfg.head, cfg.latent)
     model = WrappedModel(vla, cfg.window_size, n_tokens, continuous=cont, dz=dz, head=cfg.head,
                          flow_kw=dict(width=cfg.flow_width, layers=cfg.flow_layers, z_tok=cfg.flow_z_tok), query_tokens=nq).to(device_id)
+    if src_run:                                                     # the heads travel with the adapter
+        hp = os.path.join(src_run, "action_decoder.pt")
+        (model.heads if cont else model.action_decoder).load_state_dict(torch.load(hp, map_location="cpu"), strict=False)
+        if state.is_main_process: print(f"[ctrl] heads from {hp}", flush=True)
     model = DDP(model, device_ids=[device_id], find_unused_parameters=True, gradient_as_bucket_view=True)
     opt = AdamW([p for p in model.parameters() if p.requires_grad], lr=cfg.learning_rate)
     sched = torch.optim.lr_scheduler.StepLR(opt, step_size=int(cfg.max_steps * 0.8), gamma=0.1)
+    step0, tstate = 0, run_dir / "trainer_state.pt"                 # --resume: optimiser, schedule and step count
+    if cfg.resume and not tstate.exists() and state.is_main_process:
+        # exp_id carries max_steps: a chunked run must pass the SAME --max_steps every time, or it resumes nothing.
+        print(f"[ctrl] --resume: no {tstate}, starting from scratch", flush=True)
+    if cfg.resume and tstate.exists():
+        st = torch.load(tstate, map_location="cpu")
+        opt.load_state_dict(st["opt"]); sched.load_state_dict(st["sched"]); step0 = int(st["step"])
+        if state.is_main_process: print(f"[ctrl] resumed at step {step0}", flush=True)
 
     transform = RLDSBatchTransformCtrl(labeller, cfg.latent, processor.tokenizer, image_transform=processor.image_processor.apply_transform,
                                        image_transform_lam=transforms.ToTensor(), prompt_builder_fn=PurePromptBuilder, window_size=cfg.window_size,
@@ -324,9 +356,9 @@ def finetune(cfg: Cfg) -> None:
     for bi, batch in enumerate(batches(dl, int(os.environ.get("CTRL_REITER_BATCHES", "0")))):
         for k in ("input_ids", "attention_mask", "labels", "actions", "latent_action_idx"): batch[k] = batch[k].to(device_id)
         batch["pixel_values"] = batch["pixel_values"].to(torch.bfloat16).to(device_id)
-        p_or = max(0.0, 1.0 - (bi // cfg.grad_accumulation_steps) / (cfg.curriculum_frac * cfg.max_steps)) if model.module.continuous else 0.0
+        p_or = max(0.0, 1.0 - (step0 + bi // cfg.grad_accumulation_steps) / (cfg.curriculum_frac * cfg.max_steps)) if model.module.continuous else 0.0
         out, act_loss, loss_1, lat_loss, lat_r2 = model(batch, p_oracle=p_or)
-        loss = act_loss + (cfg.lam_z * lat_loss if model.module.continuous else out.loss)
+        loss = cfg.lam_a * act_loss + (cfg.lam_z * lat_loss if model.module.continuous else out.loss)   # lam_a = 0: phase-2 latent-only
         (loss / cfg.grad_accumulation_steps).backward()
         with torch.no_grad():
             if model.module.continuous: acc_buf.append(float(lat_r2)); loss_buf.append(float(lat_loss))
@@ -334,7 +366,7 @@ def finetune(cfg: Cfg) -> None:
                 preds = out.logits[:, n_patches:-1].argmax(2); gt = batch["labels"][:, 1:]; m = gt > LATENT_TOKEN_BASE
                 acc_buf.append(float(((preds == gt) & m).sum() / m.sum())); loss_buf.append(float(out.loss))
             l1_buf.append(float(loss_1 if cfg.head == "flow" else act_loss))   # flow: one-step action L1, not the flow loss
-        step = bi // cfg.grad_accumulation_steps
+        step = step0 + bi // cfg.grad_accumulation_steps
         if (bi + 1) % cfg.grad_accumulation_steps == 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step(); opt.zero_grad(); sched.step()
             if state.is_main_process and (step + 1) % cfg.log_every == 0:
@@ -351,11 +383,12 @@ def finetune(cfg: Cfg) -> None:
                                    lam_path=cfg.lam_path, acdc_tag=cfg.acdc_tag, acdc_codebook=cfg.acdc_codebook, tc_tag=cfg.tc_tag, dataset_name=cfg.dataset_name,
                                    train_frac=os.environ.get("LIBERO_TRAIN_FRAC"), override=ov_d, head=cfg.head, query_tokens=nq,
                                    flow=dict(width=cfg.flow_width, layers=cfg.flow_layers, z_tok=cfg.flow_z_tok, steps=cfg.flow_steps)), open(run_dir / "ctrl_meta.json", "w"), indent=1)
+                    torch.save(dict(opt=opt.state_dict(), sched=sched.state_dict(), step=step + 1), tstate)
                     print(f"[ctrl] saved adapter + decoder at step {step + 1}", flush=True)
                 dist.barrier()
             if step + 1 >= cfg.max_steps: break
     del batch; gc.collect()                                         # release the data iterator's memory before the merge reloads the 7B base
-    if state.is_main_process:                                       # merge LoRA into a standalone checkpoint for the evaluator
+    if cfg.merge and state.is_main_process:                         # merge LoRA into a standalone checkpoint for the evaluator
         base = AutoModelForVision2Seq.from_pretrained(cfg.vla_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True)
         if not cont or nq: base.resize_token_embeddings(len(processor.tokenizer))
         merged = PeftModel.from_pretrained(base, adapter_dir).merge_and_unload(); merged.save_pretrained(run_dir)

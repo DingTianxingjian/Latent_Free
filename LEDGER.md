@@ -3322,6 +3322,44 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   predictability; if it does, predictability is the bottleneck and the deployment prior becomes the live question.
   (ii) R2(z_VLA, z*) held-out via `prior_gate.py --vla`.  (iii) A regime where the control is not saturated.
 
+### 2026-09-20 (15:30) — REGISTERED (not yet run): phase 2 restored — latent-action pretraining of the policy, the stage our comparison skipped
+
+- **Why (user, 2026-09-20).** The 09-19/20 cells show the latent channel is decorative on Goal @ 10 %.  The structural
+  reason: with only post-training, the deployment latent is a deterministic function of (o_t, l), and the same action
+  head already reads o_t and the prompt, so the latent adds no information (UniVLA's own arm reaches train latent_r2
+  0.964 and still only matches the no-latent control).  UniVLA's README has three stages -- latent action model,
+  **pretraining of the generalist policy on latent-action pseudo-labels over the cross-embodiment collection**, then
+  post-training -- and we ran only the first and third, from `openvla-7b` (pretrained on real discretised actions).
+  The claim "a better latent action space transfers better" lives in stage 2, so stage 2 is what has to be run.
+- **Design (both arms identical except the labeller, as before).**
+
+  | arm | phase 2 (OXE mixture, latent-only) | post-training (Goal @ 10 %) | status |
+  |---|---|---|---|
+  | ours | `tc_cont` / `latp2_inv` labels | from that checkpoint | to run |
+  | UniVLA | `univla_cont` / `s2mix_1ep` labels | from that checkpoint | to run |
+  | no phase 2 (both latents) | -- | 2026-09-19/20 workstation cells | **done** (86.8 / 89.4) |
+  | no latent at all | -- | workstation cell 3 | **done** (88.6) |
+
+  So the existing cells are the matched no-phase-2 controls; the new runs price stage 2 itself.
+- **Budget.** `--max_steps 30000` x 64 = 1.9M clips, ~1/100 of their pretraining: a MATCHED-budget comparison between
+  the two latents, to be reported as such and never as a reproduction of UniVLA's scale.  4 x H100 at ~1.1 s/step
+  ~ 9 h per arm = two 8 h chunks; then 15k-step post-training (~5 h) and the standard 50 x 10 evaluation per arm.
+- **Code (built and smoke-tested on the workstation today, defaults unchanged so every earlier run is reproducible).**
+  `finetune_libero_ctrl.py`: `--lam_a 0` (latent-only: OXE has no common action space), `--merge False`,
+  `--resume True` (optimiser + schedule + step in `trainer_state.pt`; a chunked run must pass the SAME `--max_steps`,
+  because `exp_id` carries it), `--init_from_run <run dir>` (post-train from a phase-2 arm: LoRA from its adapter,
+  heads from its `action_decoder.pt`).  Scripts `acdc_la/scripts/run_vla_phase2.sh` and `run_vla_post2.sh`.
+  Smokes (Goal, 2 GPUs): latent-only trains with the action L1 frozen at 0.555 as it must; a killed chunk resumes at
+  its last save and the loss continues; `--init_from_run` loads both adapter and heads.
+- **Vendored-UniVLA patch extended** (`acdc_la/patches/univla_rlds_acdc.patch`, renamed): `UNIVLA_FIXED_WINDOW=1`
+  disables their per-frequency window override, which sets the post-training window to 3 frames for 7 of the mixture's
+  sources -- shorter than the 14 frames both labellers need (ours reads 0,3,6,9,12).  Our tokenizer labels native
+  frames at a fixed T=5 / stride 4 regardless of source frequency, and both arms get identical windows.
+- **Untested until Anvil returns.** Nothing has run against `data/oxe_raw` / `omni_magic_soup_plus_plus`: the FIRST
+  job must be a ~20-step smoke of each arm on the mixture (labeller on OXE frames, the fixed-window patch, memory),
+  before the 30k-step chunks.  Risks: whole-node queue wait (1-3 days historically) against the 09-24 deadline, and
+  the mixture's per-source window/aspect assumptions.
+
 ## Registered next method: intervention first, real pairs second
 
 
