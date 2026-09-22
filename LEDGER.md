@@ -3400,6 +3400,20 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   before the 30k-step chunks.  Risks: whole-node queue wait (1-3 days historically) against the 09-24 deadline, and
   the mixture's per-source window/aspect assumptions.
 
+### 2026-09-22 (00:40) — Anvil after the maintenance: Long @ 10 % (prompt-pooling flow) 50.8 %; UniVLA Long 53.6 % on 371/500 so far; merged the workstation branch
+
+- **Ours, LATP + flow (prompt pooling) @ 10 % libero_10** (20820873 -> 20820874-78, all exit 0): **254/500 = 50.8 %**.
+  Per task 0.20, 0.72, 0.58, 0.64, 0.32, 0.72, 0.64, 0.50, 0.14, 0.62.
+- **UniVLA token recipe @ 10 % libero_10** (20783080 -> 20820898-902): parts 0-3 done, 4-9 running: **199/371 = 53.6 %**
+  so far (per task 0.38, 0.84, 0.20, 0.40, 0.52, then partial).  Long is the one suite where the prompt-pooling arm is not
+  far behind; whether the query-token interface / no-latent control also land here is not measured.
+- **Running / queued on Anvil.**  LATP + flow + q4 Goal (Anvil twin = seed 2 of workstation cell 1): trained 20828151
+  (train-batch latent_r2 0.819), evals 20828152-56 running/queued.  UniVLA stage 2 with random TI codebook 20827810:
+  7.5 h of ~14 h.  Queued: LATP + flow + q4 Spatial 20828157; UniVLA-latent + flow + q4 Goal 20828934 / Spatial 20828940;
+  q4 plumbing check 20828967; UniVLA-noinh four-suite chain.
+- **Repository.**  The workstation's 6 commits (cells 1-3, prior_gate, phase-2 code, RLDS-leak fix) were merged by rebase;
+  both ledger blocks kept in chronological order.
+
 ## Registered next method: intervention first, real pairs second
 
 

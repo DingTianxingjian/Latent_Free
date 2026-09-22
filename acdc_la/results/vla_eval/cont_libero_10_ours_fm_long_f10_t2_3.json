@@ -1,0 +1,14 @@
+{
+ "checkpoint": "/anvil/scratch/x-tding2/latent_free/acdc_la/ckpt/vla_runs/tc_cont+libero_10_no_noops+b16x4+lr0.00035+r32+s15000+fm--latp2inv_fm_frac10",
+ "suite": "libero_10",
+ "trials": 50,
+ "per_task": {
+  "turn on the stove and put the moka pot on it": 0.58,
+  "put the black bowl in the bottom drawer of the cabinet and close it": 0.64
+ },
+ "task_ids": [
+  2,
+  3
+ ],
+ "success": 0.61
+}

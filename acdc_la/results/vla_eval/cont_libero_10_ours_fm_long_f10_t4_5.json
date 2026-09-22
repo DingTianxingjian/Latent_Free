@@ -1,0 +1,14 @@
+{
+ "checkpoint": "/anvil/scratch/x-tding2/latent_free/acdc_la/ckpt/vla_runs/tc_cont+libero_10_no_noops+b16x4+lr0.00035+r32+s15000+fm--latp2inv_fm_frac10",
+ "suite": "libero_10",
+ "trials": 50,
+ "per_task": {
+  "put the white mug on the left plate and put the yellow and white mug on the right plate": 0.32,
+  "pick up the book and place it in the back compartment of the caddy": 0.72
+ },
+ "task_ids": [
+  4,
+  5
+ ],
+ "success": 0.52
+}

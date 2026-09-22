@@ -1,0 +1,224 @@
+Task suite: libero_10
+Tested Ckpt': univla+libero_10_no_noops+b16x4+lr0.00035+r32+s15000--frac10 
+
+Task: put both moka pots on the stove
+Starting episode 1...
+Success: False steps: 560
+# episodes completed so far: 1
+# successes: 0 (0.0%)
+
+Task: put both moka pots on the stove
+Starting episode 2...
+Success: True steps: 426
+# episodes completed so far: 2
+# successes: 1 (50.0%)
+
+Task: put both moka pots on the stove
+Starting episode 3...
+Success: False steps: 560
+# episodes completed so far: 3
+# successes: 1 (33.3%)
+
+Task: put both moka pots on the stove
+Starting episode 4...
+Success: False steps: 560
+# episodes completed so far: 4
+# successes: 1 (25.0%)
+
+Task: put both moka pots on the stove
+Starting episode 5...
+Success: False steps: 560
+# episodes completed so far: 5
+# successes: 1 (20.0%)
+
+Task: put both moka pots on the stove
+Starting episode 6...
+Success: True steps: 394
+# episodes completed so far: 6
+# successes: 2 (33.3%)
+
+Task: put both moka pots on the stove
+Starting episode 7...
+Success: True steps: 457
+# episodes completed so far: 7
+# successes: 3 (42.9%)
+
+Task: put both moka pots on the stove
+Starting episode 8...
+Success: False steps: 560
+# episodes completed so far: 8
+# successes: 3 (37.5%)
+
+Task: put both moka pots on the stove
+Starting episode 9...
+Success: False steps: 560
+# episodes completed so far: 9
+# successes: 3 (33.3%)
+
+Task: put both moka pots on the stove
+Starting episode 10...
+Success: False steps: 560
+# episodes completed so far: 10
+# successes: 3 (30.0%)
+
+Task: put both moka pots on the stove
+Starting episode 11...
+Success: False steps: 560
+# episodes completed so far: 11
+# successes: 3 (27.3%)
+
+Task: put both moka pots on the stove
+Starting episode 12...
+Success: True steps: 393
+# episodes completed so far: 12
+# successes: 4 (33.3%)
+
+Task: put both moka pots on the stove
+Starting episode 13...
+Success: False steps: 560
+# episodes completed so far: 13
+# successes: 4 (30.8%)
+
+Task: put both moka pots on the stove
+Starting episode 14...
+Success: True steps: 447
+# episodes completed so far: 14
+# successes: 5 (35.7%)
+
+Task: put both moka pots on the stove
+Starting episode 15...
+Success: True steps: 419
+# episodes completed so far: 15
+# successes: 6 (40.0%)
+
+Task: put both moka pots on the stove
+Starting episode 16...
+Success: False steps: 560
+# episodes completed so far: 16
+# successes: 6 (37.5%)
+
+Task: put both moka pots on the stove
+Starting episode 17...
+Success: False steps: 560
+# episodes completed so far: 17
+# successes: 6 (35.3%)
+
+Task: put both moka pots on the stove
+Starting episode 18...
+Success: True steps: 515
+# episodes completed so far: 18
+# successes: 7 (38.9%)
+
+Task: put both moka pots on the stove
+Starting episode 19...
+Success: True steps: 430
+# episodes completed so far: 19
+# successes: 8 (42.1%)
+
+Task: put both moka pots on the stove
+Starting episode 20...
+Success: True steps: 543
+# episodes completed so far: 20
+# successes: 9 (45.0%)
+
+Task: put both moka pots on the stove
+Starting episode 21...
+Success: False steps: 560
+# episodes completed so far: 21
+# successes: 9 (42.9%)
+
+Task: put both moka pots on the stove
+Starting episode 22...
+Success: True steps: 473
+# episodes completed so far: 22
+# successes: 10 (45.5%)
+
+Task: put both moka pots on the stove
+Starting episode 23...
+Success: True steps: 457
+# episodes completed so far: 23
+# successes: 11 (47.8%)
+
+Task: put both moka pots on the stove
+Starting episode 24...
+Success: True steps: 441
+# episodes completed so far: 24
+# successes: 12 (50.0%)
+
+Task: put both moka pots on the stove
+Starting episode 25...
+Success: False steps: 560
+# episodes completed so far: 25
+# successes: 12 (48.0%)
+
+Task: put both moka pots on the stove
+Starting episode 26...
+Success: False steps: 560
+# episodes completed so far: 26
+# successes: 12 (46.2%)
+
+Task: put both moka pots on the stove
+Starting episode 27...
+Success: True steps: 407
+# episodes completed so far: 27
+# successes: 13 (48.1%)
+
+Task: put both moka pots on the stove
+Starting episode 28...
+Success: False steps: 560
+# episodes completed so far: 28
+# successes: 13 (46.4%)
+
+Task: put both moka pots on the stove
+Starting episode 29...
+Success: True steps: 415
+# episodes completed so far: 29
+# successes: 14 (48.3%)
+
+Task: put both moka pots on the stove
+Starting episode 30...
+Success: True steps: 397
+# episodes completed so far: 30
+# successes: 15 (50.0%)
+
+Task: put both moka pots on the stove
+Starting episode 31...
+Success: False steps: 560
+# episodes completed so far: 31
+# successes: 15 (48.4%)
+
+Task: put both moka pots on the stove
+Starting episode 32...
+Success: True steps: 365
+# episodes completed so far: 32
+# successes: 16 (50.0%)
+
+Task: put both moka pots on the stove
+Starting episode 33...
+Success: True steps: 465
+# episodes completed so far: 33
+# successes: 17 (51.5%)
+
+Task: put both moka pots on the stove
+Starting episode 34...
+Success: True steps: 460
+# episodes completed so far: 34
+# successes: 18 (52.9%)
+
+Task: put both moka pots on the stove
+Starting episode 35...
+Success: True steps: 379
+# episodes completed so far: 35
+# successes: 19 (54.3%)
+
+Task: put both moka pots on the stove
+Starting episode 36...
+Success: True steps: 375
+# episodes completed so far: 36
+# successes: 20 (55.6%)
+
+Task: put both moka pots on the stove
+Starting episode 37...
+Success: True steps: 378
+# episodes completed so far: 37
+# successes: 21 (56.8%)
