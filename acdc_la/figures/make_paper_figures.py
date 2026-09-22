@@ -219,9 +219,17 @@ def representation_comparison(out, closed_loop=True):
     fig.savefig(out + ".pdf"); fig.savefig(out + ".png"); plt.close(fig)
 
 
-def representation_ablation(out):
-    """Fig. 2 -- our tokenizer only: what the temporal factorisation buys.  No external method appears."""
-    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.5), gridspec_kw={"width_ratios": [1.0, 1.45, 1.0], "wspace": 0.72})
+def representation_ablation(out, compact=True):
+    """Our tokenizer only: what the temporal factorisation buys.  No external method appears.
+
+    compact=True drops the action-alignment panel, which the comparison figure already carries, so the
+    main text spends half the column height on the two panels that carry the claim.
+    """
+    if compact:
+        fig, axes = plt.subplots(1, 2, figsize=(5.6, 2.2), gridspec_kw={"width_ratios": [1.45, 1.0], "wspace": 0.52})
+        axes = [None, axes[0], axes[1]]
+    else:
+        fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.5), gridspec_kw={"width_ratios": [1.0, 1.45, 1.0], "wspace": 0.72})
     labs = list(ABLATE)
     short = {"Endpoint-only (frame pair)": "Endpoint-only\n(frame pair)", "Cell-wise (earlier)": "Cell-wise\n(earlier)",
              "TERRA (ours)": "TERRA (ours)"}
@@ -229,20 +237,23 @@ def representation_ablation(out):
     ramp = RAMP if len(labs) == 3 else [RAMP[0], RAMP[2]]
     nohatch = [""] * len(labs)
 
-    panel_tag(axes[0], "a", "Action alignment")
-    dots(axes[0], short, [ABL_NMSE[l] for l in labs], ramp, nohatch, "{:.3f}", "action probe NMSE", "lower is better")
+    if not compact:
+        panel_tag(axes[0], "a", "Action alignment")
+        dots(axes[0], short, [ABL_NMSE[l] for l in labs], ramp, nohatch, "{:.3f}", "action probe NMSE",
+             "lower is better")
 
-    panel_tag(axes[1], "b", "Linear temporal readouts")
+    panel_tag(axes[1], "a" if compact else "b", "Linear temporal readouts")
     grouped(axes[1], TARGETS, [(l, list(ABLATE[l][:4]), RAMP[i], "") for i, l in enumerate(labs)],
             r"probe $R^2$", ylim=(0, 0.40), legend=False, label_last=True)
     axes[1].set_xlabel("(higher is better)", labelpad=2)
 
-    panel_tag(axes[2], "c", "Nuisance robustness")
+    panel_tag(axes[2], "b" if compact else "c", "Nuisance robustness")
     hbars(axes[2], short, [ABLATE[l][4] for l in labs], ramp, nohatch, "{:.1f}%",
           r"Net $R^2$ lost to the distractor", "lower is better", xmax=42)
 
     handles = [Patch(facecolor=ramp[i], edgecolor="white", label=l) for i, l in enumerate(labs)]
-    fig.legend(handles=handles, ncol=len(labs), frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.10),
+    fig.legend(handles=handles, ncol=len(labs), frameon=False, loc="upper center",
+               bbox_to_anchor=(0.5, 1.14 if compact else 1.10),
                handlelength=1.1, handleheight=0.9, columnspacing=1.6, borderpad=0.2)
     fig.savefig(out + ".pdf"); fig.savefig(out + ".png"); plt.close(fig)
 
