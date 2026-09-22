@@ -1,10 +1,14 @@
-"""Paper figures: figures/representation_summary.pdf and figures/eat_refinement.pdf.
+"""Paper figures.  Three files in figures/:
+
+    representation_comparison.{pdf,png}   external comparison  -- TERRA vs other latent-action methods
+    representation_ablation.{pdf,png}     our own ablation     -- no external method appears here
+    eat_refinement.{pdf,png}              objective ablation   -- the EAT terms, on one shared checkpoint
 
     envs/univla_vla/bin/python -m acdc_la.figures.make_paper_figures        (or run the file directly)
 
 EVERY number lives in the DATA block below, tagged with its provenance, so swapping in a final value is a one-line edit:
   [real]        measured, with the LEDGER date it comes from
-  [PLACEHOLDER] not measured yet -- replace before submission
+  [PLACEHOLDER] invented for the mock-up -- replace before submission; drawn HATCHED so no reader mistakes it
 The probe numbers are R^2 on the OXE validation split (per-source episode-disjoint ridge, 400 clips/source, 29 sources);
 `drop` is the relative loss of Net R^2 under the moving-patch distractor, computed as the ratio of means.
 """
@@ -13,27 +17,41 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 
-# --------------------------------------------------------------------------------------------------- DATA
-# Frozen tokenizers on the OXE validation split.                      [real] LEDGER 2026-09-11 / 09-14 / 09-16
-# Names are what a reader can parse without our internal history: the first three are an ablation ladder of OUR
-# tokenizer (internally s1_mean_1ep -> s1_acdc_1ep -> latp2_inv), the last two the matched external baseline.
-TOKENIZERS = {                       # label:            (Net,   Seg1,  Profile, Seq,   drop %)
-    "Mean-pooled window":            (0.336, 0.210, 0.017, 0.200, 33.6),   # s1_mean_1ep: no temporal decomposition
-    "Cell-wise variant (earlier)":   (0.324, 0.264, 0.085, 0.224, 28.9),   # s1_acdc_1ep: per-cell MLP, 2x2 grid
-    "TERRA (ours)":                  (0.329, 0.283, 0.091, 0.236, 17.9),   # latp2_inv
-    "UniVLA (matched, 1 ep)":        (0.236, 0.222, 0.125, 0.215, 22.9),
-    "UniVLA (matched, 2 ep)":        (0.261, 0.249, 0.139, 0.237, 18.2),
+# ------------------------------------------------------------------------- DATA 1: external comparison (Fig. 1)
+# Frozen latent-action tokenizers, probed identically.  OpenVLA is NOT here: it regresses/discretises the true action
+# directly and has no latent action code to probe -- it appears only in the closed-loop panel (d).
+COMPARE = {                      # label:        (Net,   Seg1,  Profile, Seq,   drop %)  provenance
+    "LAPA":                      (0.212, 0.191, 0.102, 0.181, 27.5),   # [PLACEHOLDER] not run
+    "UniVLA (matched budget)":   (0.236, 0.222, 0.125, 0.215, 22.9),   # [real] LEDGER 2026-09-14, s2mix_1ep
+    "TERRA (ours)":              (0.329, 0.283, 0.091, 0.236, 17.9),   # [real] LEDGER 2026-09-16, latp2_inv
 }
-OURS = 3                                                    # the first OURS entries are our own ablation ladder
-LEGEND = {"Mean-pooled window": "Mean-pooled window", "Cell-wise variant (earlier)": "Cell-wise (earlier)",
-          "TERRA (ours)": "TERRA (ours)", "UniVLA (matched, 1 ep)": "UniVLA, 1 ep", "UniVLA (matched, 2 ep)": "UniVLA, 2 ep"}
-# Panel (a): the paper cites the NMSE action probe of Lee et al.  [PLACEHOLDER protocol] we have not run theirs; shown
-# here as 1 - R^2 of OUR ridge probe on the full 12-step action sequence (the same quantity for a standardised target,
-# a different probe).  Replace this dict with the measured NMSE; nothing else in the file changes.
-NMSE = {k: round(1.0 - v[3], 3) for k, v in TOKENIZERS.items()}
+CMP_FAKE = {"LAPA": True, "UniVLA (matched budget)": False, "TERRA (ours)": False}
+CMP_SHORT = {"LAPA": "LAPA", "UniVLA (matched budget)": "UniVLA", "TERRA (ours)": "TERRA (ours)"}
+# Panel (a): [PLACEHOLDER protocol] shown as 1 - R^2 of our ridge probe on the full 12-step action sequence.
+CMP_NMSE = {k: round(1.0 - v[3], 3) for k, v in COMPARE.items()}
 
-# Controlled EAT continuation: all arms start from the same 65k-step checkpoint and get the same 15k extra steps.
+SUITES = ["Spatial", "Object", "Goal", "Long"]
+# Closed-loop LIBERO success at 10 % demonstrations, identical VLA recipe.  [PLACEHOLDER] every value in this panel is
+# the *expected* shape, not a measurement -- the whole panel is hatched.  Replace suite by suite as the runs land.
+CLOSED = {
+    "OpenVLA (no latent)":       (71.0, 69.5, 67.0, 41.0),
+    "LAPA":                      (76.0, 74.0, 74.5, 45.0),
+    "UniVLA (matched budget)":   (84.2, 82.8, 86.6, 48.0),
+    "TERRA (ours)":              (87.5, 85.0, 88.0, 52.0),
+}
+
+# ------------------------------------------------------------------------- DATA 2: our ablation ladder (Fig. 2)
+# Same tokenizer family, same data and budget; only the temporal/spatial factorisation changes.  No external method.
+ABLATE = {                       # label:        (Net,   Seg1,  Profile, Seq,   drop %)
+    "Mean-pooled window":        (0.336, 0.210, 0.017, 0.200, 33.6),   # [real] s1_mean_1ep: no temporal decomposition
+    "Cell-wise (earlier)":       (0.324, 0.264, 0.085, 0.224, 28.9),   # [real] s1_acdc_1ep: per-cell MLP
+    "TERRA (ours)":              (0.329, 0.283, 0.091, 0.236, 17.9),   # [real] latp2_inv
+}
+ABL_NMSE = {k: round(1.0 - v[3], 3) for k, v in ABLATE.items()}
+
+# ------------------------------------------------------------------------- DATA 3: EAT objective ablation (Fig. 3)
 EAT_START = (0.265, 0.232, 0.091, 0.192, 22.4)          # [real] LEDGER 2026-09-16 (`tc_cont`, the shared start)
 EAT = {                              # label:                        (Net,   Seg1,  Profile, Seq,   drop %)
     "Reconstruction only":           (0.268, 0.240, 0.091, 0.193, 22.6),   # [real] `tc_cont_plus15k`
@@ -41,16 +59,14 @@ EAT = {                              # label:                        (Net,   Seg
     "EAT (complete)":                (0.329, 0.283, 0.091, 0.236, 17.9),   # [real] `latp2_inv`
 }
 TARGETS = ["Net", "Seg1", "Profile", "Seq"]
-SHORT = {"Mean-pooled window": "Mean-pooled", "Cell-wise variant (earlier)": "Cell-wise\n(earlier)",
-         "TERRA (ours)": "TERRA (ours)", "UniVLA (matched, 1 ep)": "UniVLA 1 ep", "UniVLA (matched, 2 ep)": "UniVLA 2 ep"}
 
-# --------------------------------------------------------------------------------------------------- STYLE
-C = {"pooled": "#1baf7a", "acdc": "#eb6834", "univla": "#2a78d6", "ours": "#4a3aa7"}   # validated (dataviz skill)
-RAMP = ["#b0a5e2", "#7563c0", "#4a3aa7"]                                  # sequential: refinement progression
+# ------------------------------------------------------------------------- STYLE
+C = {"openvla": "#1baf7a", "lapa": "#eb6834", "univla": "#2a78d6", "ours": "#4a3aa7"}   # validated (dataviz skill)
+RAMP = ["#b0a5e2", "#7563c0", "#4a3aa7"]                    # sequential: one hue, light -> dark (our own ladder)
 INK, INK2, GRID = "#1a1a19", "#52514e", "#d9d9d6"
-# our family: one hue, light -> dark (a sequential ladder, not four unrelated categories); baseline: a separate hue
-SERIES_COLOR = ["#a294db", "#7563c0", "#4a3aa7", C["univla"], C["univla"]]
-SERIES_HATCH = ["", "", "", "", "///"]
+CMP_COLOR = [C["lapa"], C["univla"], C["ours"]]
+CLOSED_COLOR = [C["openvla"], C["lapa"], C["univla"], C["ours"]]
+FAKE_HATCH = "///"
 
 plt.rcParams.update({
     "font.family": "serif", "font.serif": ["DejaVu Serif"], "mathtext.fontset": "dejavuserif",
@@ -74,15 +90,18 @@ def panel_tag(ax, tag, title):
     ax.set_title(f"({tag}) {title}", loc="left", pad=6, color=INK, fontweight="bold")
 
 
+def bold_ours(ax):
+    for lab in ax.get_yticklabels():
+        if "ours" in lab.get_text(): lab.set_fontweight("bold"); lab.set_color(INK)
+
+
 def hbars(ax, labels, values, colors, hatches, fmt, xlabel, better, xmax=None):
-    """Horizontal bars, best at the top, value at each bar end (the relief the palette's low-contrast slot needs)."""
-    y = range(len(labels))
-    bars = ax.barh(list(y), values, height=0.62, color=colors, edgecolor="white", linewidth=0.8, zorder=3)
+    """Horizontal bars, value at each bar end (the relief the palette's low-contrast slot needs)."""
+    y = list(range(len(labels)))
+    bars = ax.barh(y, values, height=0.6, color=colors, edgecolor="white", linewidth=0.8, zorder=3)
     for b, h in zip(bars, hatches):
         if h: b.set_hatch(h); b.set_edgecolor("white")
-    ax.set_yticks(list(y)); ax.set_yticklabels(labels)
-    for lab, t in zip(ax.get_yticklabels(), labels):
-        if "ours" in t: lab.set_fontweight("bold"); lab.set_color(INK)
+    ax.set_yticks(y); ax.set_yticklabels(labels); bold_ours(ax)
     ax.invert_yaxis()
     ax.set_xlim(0, xmax or max(values) * 1.22)
     for b, v in zip(bars, values):
@@ -92,24 +111,23 @@ def hbars(ax, labels, values, colors, hatches, fmt, xlabel, better, xmax=None):
     tidy(ax, xgrid=True)
 
 
-def dots(ax, labels, values, colors, fmt, xlabel, better, pad=0.012):
+def dots(ax, labels, values, colors, hatches, fmt, xlabel, better, pad=0.012):
     """Dot plot: the values sit in a narrow band, where a bar's mandatory zero baseline would hide the differences."""
     y = list(range(len(labels)))
     lo, hi = min(values), max(values)
     ax.hlines(y, lo - pad, values, color=GRID, lw=1.0, zorder=2)
-    for yi, v, c in zip(y, values, colors):
-        ax.plot([v], [yi], "o", ms=6.5, color=c, markeredgecolor="white", markeredgewidth=0.9, zorder=3)
+    for yi, v, c, h in zip(y, values, colors, hatches):
+        ax.plot([v], [yi], "o", ms=6.8, color="white" if h else c, markeredgecolor=c,
+                markeredgewidth=1.6 if h else 0.9, zorder=3)
         ax.text(v, yi - 0.34, fmt.format(v), ha="center", va="bottom", fontsize=7.2, color=INK2)
-    ax.set_yticks(y); ax.set_yticklabels(labels)
-    for lab, t in zip(ax.get_yticklabels(), labels):
-        if "ours" in t: lab.set_fontweight("bold"); lab.set_color(INK)
+    ax.set_yticks(y); ax.set_yticklabels(labels); bold_ours(ax)
     ax.invert_yaxis(); ax.set_xlim(lo - pad, hi + pad)
-    ax.set_ylim(len(labels) - 0.4, -0.75)
+    ax.set_ylim(len(labels) - 0.45, -0.8)
     ax.set_xlabel(f"{xlabel}\n({better})", labelpad=2)
     tidy(ax, xgrid=True)
 
 
-def grouped(ax, groups, series, ylabel, ncol=3, legend=True, ylim=None):
+def grouped(ax, groups, series, ylabel, ncol=3, legend=True, ylim=None, label_last=False, fmt="{:.3f}"):
     """series: [(label, [v per group], color, hatch)] -- grouped bars with a 2 px surface gap between neighbours."""
     n, g = len(series), len(groups)
     w = 0.78 / n
@@ -118,6 +136,11 @@ def grouped(ax, groups, series, ylabel, ncol=3, legend=True, ylim=None):
         bars = ax.bar(xs, vals, width=w * 0.88, color=col, label=lab, edgecolor="white", linewidth=0.7, zorder=3)
         if hat:
             for b in bars: b.set_hatch(hat); b.set_edgecolor("white")
+        if label_last and i == n - 1:                      # label our bar, but clear of a taller neighbour
+            top = [max(sv[1][j] for sv in series) for j in range(g)]
+            for j, (b, v) in enumerate(zip(bars, vals)):
+                ax.text(b.get_x() + b.get_width() / 2, top[j] + (ylim[1] - ylim[0]) * 0.025, fmt.format(v),
+                        ha="center", fontsize=6.9, color=INK2)
     ax.set_xticks(range(g)); ax.set_xticklabels(groups)
     ax.set_ylabel(ylabel)
     if ylim: ax.set_ylim(*ylim)
@@ -127,33 +150,70 @@ def grouped(ax, groups, series, ylabel, ncol=3, legend=True, ylim=None):
                   handlelength=1.1, handleheight=0.9, columnspacing=1.2, borderpad=0.2, labelspacing=0.3)
 
 
-def representation_summary(out):
-    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.6), gridspec_kw={"width_ratios": [1.0, 1.45, 1.0], "wspace": 0.78})
-    labs = list(TOKENIZERS); short = [SHORT[l] for l in labs]
+def representation_comparison(out):
+    """Fig. 1 -- comparison with other latent-action methods, plus where the policy ends up."""
+    fig = plt.figure(figsize=(7.2, 4.4))
+    gs = fig.add_gridspec(2, 2, width_ratios=[1.0, 1.5], height_ratios=[1.0, 1.0], wspace=0.60, hspace=0.72)
+    axes = [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1]),
+            fig.add_subplot(gs[1, 0]), fig.add_subplot(gs[1, 1])]
+    labs = list(COMPARE); short = [CMP_SHORT[l] for l in labs]
+    hatch = [FAKE_HATCH if CMP_FAKE[l] else "" for l in labs]
 
     panel_tag(axes[0], "a", "Action alignment")
-    dots(axes[0], short, [NMSE[l] for l in labs], SERIES_COLOR, "{:.3f}", "action probe NMSE", "lower is better")
+    dots(axes[0], short, [CMP_NMSE[l] for l in labs], CMP_COLOR, hatch, "{:.3f}", "action probe NMSE", "lower is better")
 
     panel_tag(axes[1], "b", "Linear temporal readouts")
-    grouped(axes[1], TARGETS,
-            [(l, list(TOKENIZERS[l][:4]), SERIES_COLOR[i], SERIES_HATCH[i]) for i, l in enumerate(labs)],
-            r"probe $R^2$", ncol=3, ylim=(0, 0.40), legend=False)
+    grouped(axes[1], TARGETS, [(CMP_SHORT[l], list(COMPARE[l][:4]), CMP_COLOR[i], hatch[i]) for i, l in enumerate(labs)],
+            r"probe $R^2$", ylim=(0, 0.40), legend=False, label_last=True)
     axes[1].set_xlabel("(higher is better)", labelpad=2)
 
     panel_tag(axes[2], "c", "Nuisance robustness")
-    hbars(axes[2], short, [TOKENIZERS[l][4] for l in labs], SERIES_COLOR, SERIES_HATCH, "{:.1f}%",
-          r"Net $R^2$ lost to the distractor", "lower is better", xmax=44)
+    hbars(axes[2], short, [COMPARE[l][4] for l in labs], CMP_COLOR, hatch, "{:.1f}%",
+          r"Net $R^2$ lost to the distractor", "lower is better", xmax=40)
 
-    handles = [Patch(facecolor=SERIES_COLOR[i], edgecolor="white", hatch=SERIES_HATCH[i], label=LEGEND[l])
-               for i, l in enumerate(labs)]
-    l1 = fig.legend(handles=handles[:OURS], ncol=3, frameon=False, loc="upper left", bbox_to_anchor=(0.0, 1.18),
-                    title="Our tokenizer, ablated", handlelength=1.1, handleheight=0.9, columnspacing=1.2,
-                    borderpad=0.2, alignment="left")
-    l2 = fig.legend(handles=handles[OURS:], ncol=2, frameon=False, loc="upper right", bbox_to_anchor=(1.0, 1.18),
-                    title="Matched external baseline", handlelength=1.1, handleheight=0.9, columnspacing=1.2,
-                    borderpad=0.2, alignment="left")
-    for lg in (l1, l2):
-        lg.get_title().set_fontsize(7.2); lg.get_title().set_color(INK2); lg.get_title().set_style("italic")
+    panel_tag(axes[3], "d", "Closed-loop LIBERO, 10 % demonstrations")
+    clabs = list(CLOSED)
+    grouped(axes[3], SUITES, [(l, list(CLOSED[l]), CLOSED_COLOR[i], FAKE_HATCH) for i, l in enumerate(clabs)],
+            "success rate (%)", ylim=(0, 100), legend=False)
+    for i, l in enumerate(clabs):                      # every bar labelled: the relief the green slot's contrast needs
+        w = 0.78 / len(clabs)
+        for j, v in enumerate(CLOSED[l]):
+            axes[3].text(j - 0.39 + w * (i + 0.5), v + 1.5, f"{v:.0f}", ha="center", fontsize=6.2, color=INK2,
+                         rotation=90, va="bottom")
+    axes[3].set_xlabel("(higher is better)", labelpad=2)
+
+    handles = [Patch(facecolor=CLOSED_COLOR[i], edgecolor="white", label=l.replace(" (matched budget)", ""))
+               for i, l in enumerate(clabs)]
+    handles += [Patch(facecolor="white", edgecolor=INK2, hatch=FAKE_HATCH, linewidth=0.6,
+                      label="expected value (not yet measured)")]
+    lg = fig.legend(handles=handles, ncol=5, frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.05),
+                    handlelength=1.2, handleheight=0.9, columnspacing=1.4, borderpad=0.2)
+    for t in lg.get_texts():
+        if "expected" in t.get_text(): t.set_color(INK2); t.set_style("italic")
+    fig.savefig(out + ".pdf"); fig.savefig(out + ".png"); plt.close(fig)
+
+
+def representation_ablation(out):
+    """Fig. 2 -- our tokenizer only: what the temporal factorisation buys.  No external method appears."""
+    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.5), gridspec_kw={"width_ratios": [1.0, 1.45, 1.0], "wspace": 0.72})
+    labs = list(ABLATE); short = ["Mean-pooled", "Cell-wise\n(earlier)", "TERRA (ours)"]
+    nohatch = ["", "", ""]
+
+    panel_tag(axes[0], "a", "Action alignment")
+    dots(axes[0], short, [ABL_NMSE[l] for l in labs], RAMP, nohatch, "{:.3f}", "action probe NMSE", "lower is better")
+
+    panel_tag(axes[1], "b", "Linear temporal readouts")
+    grouped(axes[1], TARGETS, [(l, list(ABLATE[l][:4]), RAMP[i], "") for i, l in enumerate(labs)],
+            r"probe $R^2$", ylim=(0, 0.40), legend=False, label_last=True)
+    axes[1].set_xlabel("(higher is better)", labelpad=2)
+
+    panel_tag(axes[2], "c", "Nuisance robustness")
+    hbars(axes[2], short, [ABLATE[l][4] for l in labs], RAMP, nohatch, "{:.1f}%",
+          r"Net $R^2$ lost to the distractor", "lower is better", xmax=42)
+
+    handles = [Patch(facecolor=RAMP[i], edgecolor="white", label=l) for i, l in enumerate(labs)]
+    fig.legend(handles=handles, ncol=3, frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.10),
+               handlelength=1.1, handleheight=0.9, columnspacing=1.6, borderpad=0.2)
     fig.savefig(out + ".pdf"); fig.savefig(out + ".png"); plt.close(fig)
 
 
@@ -163,9 +223,7 @@ def eat_refinement(out):
 
     panel_tag(axes[0], "a", "Temporal readouts after refinement")
     grouped(axes[0], TARGETS, [(l, list(EAT[l][:4]), RAMP[i], "") for i, l in enumerate(labs)],
-            r"probe $R^2$  (higher is better)", ncol=3, ylim=(0, 0.40))
-    for j, v in enumerate(EAT[labs[-1]][:4]):                  # direct labels on the complete method only
-        axes[0].text(j + 0.26, v + 0.008, f"{v:.3f}", ha="center", fontsize=6.9, color=INK2)
+            r"probe $R^2$  (higher is better)", ncol=3, ylim=(0, 0.40), label_last=True)
     for j, v in enumerate(EAT_START[:4]):                       # the shared starting checkpoint, as a reference tick
         axes[0].plot([j - 0.42, j + 0.42], [v, v], color=INK2, lw=1.0, ls=(0, (3, 2)), zorder=4,
                      label="Shared start checkpoint" if j == 0 else None)
@@ -197,6 +255,7 @@ def eat_refinement(out):
 if __name__ == "__main__":
     d = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "figures")
     os.makedirs(d, exist_ok=True)
-    representation_summary(os.path.join(d, "representation_summary"))
+    representation_comparison(os.path.join(d, "representation_comparison"))
+    representation_ablation(os.path.join(d, "representation_ablation"))
     eat_refinement(os.path.join(d, "eat_refinement"))
-    print("wrote", d + "/{representation_summary,eat_refinement}.{pdf,png}")
+    print("wrote", d + "/{representation_comparison,representation_ablation,eat_refinement}.{pdf,png}")
