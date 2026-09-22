@@ -44,11 +44,14 @@ CLOSED = {
 
 # ------------------------------------------------------------------------- DATA 2: our ablation ladder (Fig. 2)
 # Same tokenizer family, same data and budget; only the temporal/spatial factorisation changes.  No external method.
+SHOW_CELLWISE = False            # the earlier cell-wise tokenizer is cut from the paper; True restores the middle rung
 ABLATE = {                       # label:        (Net,   Seg1,  Profile, Seq,   drop %)
     "Mean-pooled window":        (0.336, 0.210, 0.017, 0.200, 33.6),   # [real] s1_mean_1ep: no temporal decomposition
-    "Cell-wise (earlier)":       (0.324, 0.264, 0.085, 0.224, 28.9),   # [real] s1_acdc_1ep: per-cell MLP
+    "Cell-wise (earlier)":       (0.324, 0.264, 0.085, 0.224, 28.9),   # [real] s1_acdc_1ep: per-cell MLP  -- cut
     "TERRA (ours)":              (0.329, 0.283, 0.091, 0.236, 17.9),   # [real] latp2_inv
 }
+if not SHOW_CELLWISE:
+    ABLATE.pop("Cell-wise (earlier)")
 ABL_NMSE = {k: round(1.0 - v[3], 3) for k, v in ABLATE.items()}
 
 # ------------------------------------------------------------------------- DATA 3: EAT objective ablation (Fig. 3)
@@ -216,11 +219,15 @@ def representation_comparison(out, closed_loop=True):
 def representation_ablation(out):
     """Fig. 2 -- our tokenizer only: what the temporal factorisation buys.  No external method appears."""
     fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.5), gridspec_kw={"width_ratios": [1.0, 1.45, 1.0], "wspace": 0.72})
-    labs = list(ABLATE); short = ["Mean-pooled", "Cell-wise\n(earlier)", "TERRA (ours)"]
-    nohatch = ["", "", ""]
+    labs = list(ABLATE)
+    short = {"Mean-pooled window": "Mean-pooled", "Cell-wise (earlier)": "Cell-wise\n(earlier)",
+             "TERRA (ours)": "TERRA (ours)"}
+    short = [short[l] for l in labs]
+    ramp = RAMP if len(labs) == 3 else [RAMP[0], RAMP[2]]
+    nohatch = [""] * len(labs)
 
     panel_tag(axes[0], "a", "Action alignment")
-    dots(axes[0], short, [ABL_NMSE[l] for l in labs], RAMP, nohatch, "{:.3f}", "action probe NMSE", "lower is better")
+    dots(axes[0], short, [ABL_NMSE[l] for l in labs], ramp, nohatch, "{:.3f}", "action probe NMSE", "lower is better")
 
     panel_tag(axes[1], "b", "Linear temporal readouts")
     grouped(axes[1], TARGETS, [(l, list(ABLATE[l][:4]), RAMP[i], "") for i, l in enumerate(labs)],
@@ -228,11 +235,11 @@ def representation_ablation(out):
     axes[1].set_xlabel("(higher is better)", labelpad=2)
 
     panel_tag(axes[2], "c", "Nuisance robustness")
-    hbars(axes[2], short, [ABLATE[l][4] for l in labs], RAMP, nohatch, "{:.1f}%",
+    hbars(axes[2], short, [ABLATE[l][4] for l in labs], ramp, nohatch, "{:.1f}%",
           r"Net $R^2$ lost to the distractor", "lower is better", xmax=42)
 
-    handles = [Patch(facecolor=RAMP[i], edgecolor="white", label=l) for i, l in enumerate(labs)]
-    fig.legend(handles=handles, ncol=3, frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.10),
+    handles = [Patch(facecolor=ramp[i], edgecolor="white", label=l) for i, l in enumerate(labs)]
+    fig.legend(handles=handles, ncol=len(labs), frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.10),
                handlelength=1.1, handleheight=0.9, columnspacing=1.6, borderpad=0.2)
     fig.savefig(out + ".pdf"); fig.savefig(out + ".png"); plt.close(fig)
 
