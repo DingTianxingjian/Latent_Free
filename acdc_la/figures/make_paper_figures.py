@@ -16,13 +16,18 @@ from matplotlib.patches import Patch
 
 # --------------------------------------------------------------------------------------------------- DATA
 # Frozen tokenizers on the OXE validation split.                      [real] LEDGER 2026-09-11 / 09-14 / 09-16
+# Names are what a reader can parse without our internal history: the first three are an ablation ladder of OUR
+# tokenizer (internally s1_mean_1ep -> s1_acdc_1ep -> latp2_inv), the last two the matched external baseline.
 TOKENIZERS = {                       # label:            (Net,   Seg1,  Profile, Seq,   drop %)
-    "Pooled temporal":               (0.336, 0.210, 0.017, 0.200, 33.6),
-    "ACDC (earlier tokenizer)":      (0.324, 0.264, 0.085, 0.224, 28.9),
+    "Mean-pooled window":            (0.336, 0.210, 0.017, 0.200, 33.6),   # s1_mean_1ep: no temporal decomposition
+    "Cell-wise variant (earlier)":   (0.324, 0.264, 0.085, 0.224, 28.9),   # s1_acdc_1ep: per-cell MLP, 2x2 grid
+    "TERRA (ours)":                  (0.329, 0.283, 0.091, 0.236, 17.9),   # latp2_inv
     "UniVLA (matched, 1 ep)":        (0.236, 0.222, 0.125, 0.215, 22.9),
     "UniVLA (matched, 2 ep)":        (0.261, 0.249, 0.139, 0.237, 18.2),
-    "TERRA (ours)":                  (0.329, 0.283, 0.091, 0.236, 17.9),
 }
+OURS = 3                                                    # the first OURS entries are our own ablation ladder
+LEGEND = {"Mean-pooled window": "Mean-pooled window", "Cell-wise variant (earlier)": "Cell-wise (earlier)",
+          "TERRA (ours)": "TERRA (ours)", "UniVLA (matched, 1 ep)": "UniVLA, 1 ep", "UniVLA (matched, 2 ep)": "UniVLA, 2 ep"}
 # Panel (a): the paper cites the NMSE action probe of Lee et al.  [PLACEHOLDER protocol] we have not run theirs; shown
 # here as 1 - R^2 of OUR ridge probe on the full 12-step action sequence (the same quantity for a standardised target,
 # a different probe).  Replace this dict with the measured NMSE; nothing else in the file changes.
@@ -36,15 +41,16 @@ EAT = {                              # label:                        (Net,   Seg
     "EAT (complete)":                (0.329, 0.283, 0.091, 0.236, 17.9),   # [real] `latp2_inv`
 }
 TARGETS = ["Net", "Seg1", "Profile", "Seq"]
-SHORT = {"Pooled temporal": "Pooled", "ACDC (earlier tokenizer)": "ACDC", "UniVLA (matched, 1 ep)": "UniVLA 1 ep",
-         "UniVLA (matched, 2 ep)": "UniVLA 2 ep", "TERRA (ours)": "TERRA (ours)"}
+SHORT = {"Mean-pooled window": "Mean-pooled", "Cell-wise variant (earlier)": "Cell-wise\n(earlier)",
+         "TERRA (ours)": "TERRA (ours)", "UniVLA (matched, 1 ep)": "UniVLA 1 ep", "UniVLA (matched, 2 ep)": "UniVLA 2 ep"}
 
 # --------------------------------------------------------------------------------------------------- STYLE
 C = {"pooled": "#1baf7a", "acdc": "#eb6834", "univla": "#2a78d6", "ours": "#4a3aa7"}   # validated (dataviz skill)
 RAMP = ["#b0a5e2", "#7563c0", "#4a3aa7"]                                  # sequential: refinement progression
 INK, INK2, GRID = "#1a1a19", "#52514e", "#d9d9d6"
-SERIES_COLOR = [C["pooled"], C["acdc"], C["univla"], C["univla"], C["ours"]]
-SERIES_HATCH = ["", "", "", "///", ""]
+# our family: one hue, light -> dark (a sequential ladder, not four unrelated categories); baseline: a separate hue
+SERIES_COLOR = ["#a294db", "#7563c0", "#4a3aa7", C["univla"], C["univla"]]
+SERIES_HATCH = ["", "", "", "", "///"]
 
 plt.rcParams.update({
     "font.family": "serif", "font.serif": ["DejaVu Serif"], "mathtext.fontset": "dejavuserif",
@@ -138,10 +144,16 @@ def representation_summary(out):
     hbars(axes[2], short, [TOKENIZERS[l][4] for l in labs], SERIES_COLOR, SERIES_HATCH, "{:.1f}%",
           r"Net $R^2$ lost to the distractor", "lower is better", xmax=44)
 
-    handles = [Patch(facecolor=SERIES_COLOR[i], edgecolor="white", hatch=SERIES_HATCH[i], label=l)
+    handles = [Patch(facecolor=SERIES_COLOR[i], edgecolor="white", hatch=SERIES_HATCH[i], label=LEGEND[l])
                for i, l in enumerate(labs)]
-    fig.legend(handles=handles, ncol=5, frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.10),
-               handlelength=1.1, handleheight=0.9, columnspacing=1.4, borderpad=0.2)
+    l1 = fig.legend(handles=handles[:OURS], ncol=3, frameon=False, loc="upper left", bbox_to_anchor=(0.0, 1.18),
+                    title="Our tokenizer, ablated", handlelength=1.1, handleheight=0.9, columnspacing=1.2,
+                    borderpad=0.2, alignment="left")
+    l2 = fig.legend(handles=handles[OURS:], ncol=2, frameon=False, loc="upper right", bbox_to_anchor=(1.0, 1.18),
+                    title="Matched external baseline", handlelength=1.1, handleheight=0.9, columnspacing=1.2,
+                    borderpad=0.2, alignment="left")
+    for lg in (l1, l2):
+        lg.get_title().set_fontsize(7.2); lg.get_title().set_color(INK2); lg.get_title().set_style("italic")
     fig.savefig(out + ".pdf"); fig.savefig(out + ".png"); plt.close(fig)
 
 
