@@ -150,12 +150,20 @@ def grouped(ax, groups, series, ylabel, ncol=3, legend=True, ylim=None, label_la
                   handlelength=1.1, handleheight=0.9, columnspacing=1.2, borderpad=0.2, labelspacing=0.3)
 
 
-def representation_comparison(out):
-    """Fig. 1 -- comparison with other latent-action methods, plus where the policy ends up."""
-    fig = plt.figure(figsize=(7.2, 4.4))
-    gs = fig.add_gridspec(2, 2, width_ratios=[1.0, 1.5], height_ratios=[1.0, 1.0], wspace=0.60, hspace=0.72)
-    axes = [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1]),
-            fig.add_subplot(gs[1, 0]), fig.add_subplot(gs[1, 1])]
+def representation_comparison(out, closed_loop=True):
+    """Comparison with other latent-action methods.
+
+    closed_loop=False -> panels (a-c) only: the main-text figure, where Table 1 already carries the success rates.
+    closed_loop=True  -> adds panel (d), the policy-level view; for the teaser slot or a talk, not next to Table 1.
+    """
+    if closed_loop:
+        fig = plt.figure(figsize=(7.2, 4.4))
+        gs = fig.add_gridspec(2, 2, width_ratios=[1.0, 1.5], height_ratios=[1.0, 1.0], wspace=0.60, hspace=0.72)
+        axes = [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1]),
+                fig.add_subplot(gs[1, 0]), fig.add_subplot(gs[1, 1])]
+    else:
+        fig, axs = plt.subplots(1, 3, figsize=(7.2, 2.5), gridspec_kw={"width_ratios": [1.0, 1.45, 1.0], "wspace": 0.72})
+        axes = list(axs)
     labs = list(COMPARE); short = [CMP_SHORT[l] for l in labs]
     hatch = [FAKE_HATCH if CMP_FAKE[l] else "" for l in labs]
 
@@ -171,8 +179,20 @@ def representation_comparison(out):
     hbars(axes[2], short, [COMPARE[l][4] for l in labs], CMP_COLOR, hatch, "{:.1f}%",
           r"Net $R^2$ lost to the distractor", "lower is better", xmax=40)
 
-    panel_tag(axes[3], "d", "Closed-loop LIBERO, 10 % demonstrations")
     clabs = list(CLOSED)
+    if not closed_loop:                       # main text: legend of the three probed tokenizers, no policy panel
+        handles = [Patch(facecolor=CMP_COLOR[i], edgecolor="white", hatch=FAKE_HATCH if CMP_FAKE[l] else "",
+                         label=CMP_SHORT[l]) for i, l in enumerate(labs)]
+        handles += [Patch(facecolor="white", edgecolor=INK2, hatch=FAKE_HATCH, linewidth=0.6,
+                          label="expected value (not yet measured)")]
+        lg = fig.legend(handles=handles, ncol=4, frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.10),
+                        handlelength=1.2, handleheight=0.9, columnspacing=1.4, borderpad=0.2)
+        for t in lg.get_texts():
+            if "expected" in t.get_text(): t.set_color(INK2); t.set_style("italic")
+        fig.savefig(out + ".pdf"); fig.savefig(out + ".png"); plt.close(fig)
+        return
+
+    panel_tag(axes[3], "d", "Closed-loop LIBERO, 10 % demonstrations")
     grouped(axes[3], SUITES, [(l, list(CLOSED[l]), CLOSED_COLOR[i], FAKE_HATCH) for i, l in enumerate(clabs)],
             "success rate (%)", ylim=(0, 100), legend=False)
     for i, l in enumerate(clabs):                      # every bar labelled: the relief the green slot's contrast needs
@@ -255,7 +275,9 @@ def eat_refinement(out):
 if __name__ == "__main__":
     d = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "figures")
     os.makedirs(d, exist_ok=True)
-    representation_comparison(os.path.join(d, "representation_comparison"))
+    representation_comparison(os.path.join(d, "representation_comparison"), closed_loop=False)
+    representation_comparison(os.path.join(d, "representation_comparison_with_policy"), closed_loop=True)
     representation_ablation(os.path.join(d, "representation_ablation"))
     eat_refinement(os.path.join(d, "eat_refinement"))
-    print("wrote", d + "/{representation_comparison,representation_ablation,eat_refinement}.{pdf,png}")
+    print("wrote", d + "/{representation_comparison,representation_comparison_with_policy,"
+          "representation_ablation,eat_refinement}.{pdf,png}")
