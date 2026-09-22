@@ -45,8 +45,11 @@ CLOSED = {
 # ------------------------------------------------------------------------- DATA 2: our ablation ladder (Fig. 2)
 # Same tokenizer family, same data and budget; only the temporal/spatial factorisation changes.  No external method.
 SHOW_CELLWISE = False            # the earlier cell-wise tokenizer is cut from the paper; True restores the middle rung
+# "Endpoint-only" is not an invented control: mean-pooling the within-window differences IS the endpoint difference,
+# K^-1 sum_k dF_k = (F_T - F_0)/K  (common/features.py::pooled_cells), i.e. exactly what a frame-pair latent action
+# model reads from the window.  s1_mean and s1_dc agree within 0.01 on every probe target (LEDGER 2026-09-09).
 ABLATE = {                       # label:        (Net,   Seg1,  Profile, Seq,   drop %)
-    "Mean-pooled window":        (0.336, 0.210, 0.017, 0.200, 33.6),   # [real] s1_mean_1ep: no temporal decomposition
+    "Endpoint-only (frame pair)": (0.336, 0.210, 0.017, 0.200, 33.6),  # [real] s1_mean_1ep: window read as a pair
     "Cell-wise (earlier)":       (0.324, 0.264, 0.085, 0.224, 28.9),   # [real] s1_acdc_1ep: per-cell MLP  -- cut
     "TERRA (ours)":              (0.329, 0.283, 0.091, 0.236, 17.9),   # [real] latp2_inv
 }
@@ -220,7 +223,7 @@ def representation_ablation(out):
     """Fig. 2 -- our tokenizer only: what the temporal factorisation buys.  No external method appears."""
     fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.5), gridspec_kw={"width_ratios": [1.0, 1.45, 1.0], "wspace": 0.72})
     labs = list(ABLATE)
-    short = {"Mean-pooled window": "Mean-pooled", "Cell-wise (earlier)": "Cell-wise\n(earlier)",
+    short = {"Endpoint-only (frame pair)": "Endpoint-only\n(frame pair)", "Cell-wise (earlier)": "Cell-wise\n(earlier)",
              "TERRA (ours)": "TERRA (ours)"}
     short = [short[l] for l in labs]
     ramp = RAMP if len(labs) == 3 else [RAMP[0], RAMP[2]]
