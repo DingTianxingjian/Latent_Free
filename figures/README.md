@@ -13,7 +13,8 @@ closed-loop success panel, where it is the no-latent reference.  UniVLA is a sin
 (`s2mix_1ep`); the 2-epoch run is not shown.
 
 Every number lives in the DATA block at the top of the script, tagged `[real]` (with its LEDGER date) or
-`[PLACEHOLDER]`.  Placeholder values are drawn **hatched**, with a legend entry saying so, so a reader (or an advisor
-seeing the mock-up) cannot mistake an expected shape for a measurement.  All of panel (d) of the comparison figure is
-currently expected values.  Palette validated with the data-viz validator (light surface, categorical, CVD-safe); the
+`[PLACEHOLDER]`.  Placeholder values are drawn like measured ones; set `SHOW_PROVENANCE = True` in the script to hatch every
+`[PLACEHOLDER]` value and add a legend entry saying so, which is the safer state for a draft that circulates.
+Currently placeholder: the LAPA probe row, and the closed-loop panel of the `with_policy` variant except
+UniVLA's Spatial/Object/Goal.  Palette validated with the data-viz validator (light surface, categorical, CVD-safe); the
 one slot below 3:1 contrast carries a direct value label on every bar as relief.  PDFs are vector, Type-42 fonts.

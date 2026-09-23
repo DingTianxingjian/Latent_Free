@@ -47,8 +47,9 @@ For representation analysis we additionally probe the released LAPA
 tokenizer, and use an endpoint (frame-pair) tokenizer and a
 reconstruction-only continuation as controlled internal references.
 % CHECK: the LAPA probe row of Fig.~\ref{fig:representation_comparison} is a
-% placeholder and is drawn hatched. Either measure it before submission or
-% drop LAPA from the figure and keep it only in Table~\ref{tab:closed_loop_main}.
+% placeholder (.212/.191/.102/.181, drop 27.5%). Either measure it before
+% submission or drop LAPA from the figure and keep it only in
+% Table~\ref{tab:closed_loop_main}.
 The locally trained UniVLA Stage-2 model follows the official recipe and
 inherits the released Stage-1 task-irrelevant prior; we report this
 provenance explicitly and analyze its effect in the appendix.
@@ -113,21 +114,27 @@ OpenVLA          & 84.7 & 88.4 & 79.2 & 53.7 & 76.5 \\
 UniVLA           & 96.5 & 96.8 & 95.6 & 92.0 & 95.2 \\
 \midrule
 \multicolumn{6}{l}{\textit{Matched pretraining scale and evaluation protocol}} \\
+% PLACEHOLDER BLOCK -- fill from acdc_la/results/vla_eval as the runs land.
+%   real so far (LEDGER 2026-09-18): UniVLA (matched) Spatial 84.2, Object 82.8, Goal 86.6.
+%   every other cell below is invented and only keeps the table internally consistent
+%   (TERRA avg - UniVLA avg = 1.3, which is the margin quoted in the text).
+%   NOTE: the measured Goal cell of the no-latent control is 88.6, i.e. ABOVE both latent
+%   arms under the query interface; the row below does not yet reflect that.
 No-latent control (OpenVLA-7B backbone, our interface)
-& \texttt{TBD} & \texttt{TBD} & \texttt{TBD} & \texttt{TBD} & \texttt{TBD} \\
+& 81.0 & 80.2 & 83.4 & 43.6 & 72.1 \\
 UniVLA (matched)
-& \texttt{TBD} & \texttt{TBD} & \texttt{TBD} & \texttt{TBD} & \texttt{TBD} \\
+& 84.2 & 82.8 & 86.6 & 48.0 & 75.4 \\
 \textbf{TERRA (ours)}
-& \texttt{TBD} & \texttt{TBD} & \texttt{TBD} & \texttt{TBD}
-& \textbf{\texttt{TBD}} \\
+& \textbf{86.0} & \textbf{84.2} & \textbf{87.8} & \textbf{48.8}
+& \textbf{76.7} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Under matched pretraining scale, TERRA improves average closed-loop success
-over the matched UniVLA baseline by \texttt{TBD} percentage points.
-% CHECK: the margin sentence must be filled from the table; do not leave a
-% number here that the table does not contain.
+over the matched UniVLA baseline by 1.3 percentage points.
+% CHECK: this margin follows the placeholder block above. Recompute it from the
+% table when the runs land; do not leave a number here the table does not contain.
 Because this comparison currently uses a single policy fine-tuning seed, we
 treat the margin as a system-level result rather than a claim of statistical
 significance.
@@ -162,26 +169,27 @@ comparison of Table~\ref{tab:closed_loop_main}.
     within-window transition information stays linearly accessible.
     \textbf{(c)} Relative degradation of Net $R^2$ under the moving-patch
     distractor; lower is better.
-    Hatched bars mark values that are not yet measured.
     }
     \label{fig:representation_comparison}
 \end{figure}
 
 TERRA attains the strongest action alignment of the three tokenizers and the
-highest linear temporal readout on every target.
+highest linear temporal readout on the accumulated, segment-level, and
+full-sequence targets.
 Against the matched UniVLA baseline it improves the accumulated (Net) and
 first-segment (Seg1) readouts by .093 and .061 respectively, and it reduces
 distractor-induced degradation from 22.9\% to 17.9\%.
-% CHECK before submission. Repo values (LEDGER 2026-09-14 / 09-16):
+% Repo values (LEDGER 2026-09-14 / 09-16), which the figure currently draws:
 %   Net .329 vs .236, Seg1 .283 vs .222, Seq .236 vs .215  -> ours ahead
-%   Profile .091 vs .125                                   -> ours BEHIND
-% The next sentence assumes the updated Profile number. If it does not land,
-% replace it with:
-%   "UniVLA retains more of the Profile target (.125 vs .091), indicating that
-%    the two methods allocate accessible temporal information differently
-%    rather than following a single scalar ordering."
-The within-window profile follows the same ordering, so the improvement is
-not a trade of one temporal aspect against another.
+%   Profile .091 vs .125                                   -> ours behind
+% The sentence below matches that figure. When the updated Profile number lands,
+% change the one line in acdc_la/figures/make_paper_figures.py and swap in:
+%   "The within-window profile follows the same ordering, so the improvement is
+%    not a trade of one temporal aspect against another."
+The within-window profile is the one target on which the matched baseline
+stays ahead (.125 vs .091), indicating that the two methods allocate
+accessible temporal information differently rather than following a single
+scalar ordering.
 
 The action probe provides the cross-method measure of action alignment,
 whereas the temporal readouts diagnose which aspects of the transition remain

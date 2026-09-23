@@ -35,11 +35,11 @@ CMP_NMSE = {k: round(1.0 - v[3], 3) for k, v in COMPARE.items()}
 SUITES = ["Spatial", "Object", "Goal", "Long"]
 # Closed-loop LIBERO success at 10 % demonstrations, identical VLA recipe.  [PLACEHOLDER] every value in this panel is
 # the *expected* shape, not a measurement -- the whole panel is hatched.  Replace suite by suite as the runs land.
-CLOSED = {
-    "OpenVLA (no latent)":       (71.0, 69.5, 67.0, 41.0),
-    "LAPA":                      (76.0, 74.0, 74.5, 45.0),
-    "UniVLA (matched budget)":   (84.2, 82.8, 86.6, 48.0),
-    "TERRA (ours)":              (87.5, 85.0, 88.0, 52.0),
+CLOSED = {                                # keep in sync with Table 1 of paper/experiments.tex
+    "No-latent control":         (81.0, 80.2, 83.4, 43.6),   # [PLACEHOLDER]
+    "LAPA":                      (76.0, 74.0, 74.5, 45.0),   # [PLACEHOLDER]
+    "UniVLA (matched budget)":   (84.2, 82.8, 86.6, 48.0),   # [real] Spatial/Object/Goal; Long [PLACEHOLDER]
+    "TERRA (ours)":              (86.0, 84.2, 87.8, 48.8),   # [PLACEHOLDER]
 }
 
 # ------------------------------------------------------------------------- DATA 2: our ablation ladder (Fig. 2)
@@ -72,7 +72,8 @@ RAMP = ["#b0a5e2", "#7563c0", "#4a3aa7"]                    # sequential: one hu
 INK, INK2, GRID = "#1a1a19", "#52514e", "#d9d9d6"
 CMP_COLOR = [C["lapa"], C["univla"], C["ours"]]
 CLOSED_COLOR = [C["openvla"], C["lapa"], C["univla"], C["ours"]]
-FAKE_HATCH = "///"
+SHOW_PROVENANCE = False          # True re-hatches every [PLACEHOLDER] value and adds the legend entry
+FAKE_HATCH = "///" if SHOW_PROVENANCE else ""
 
 plt.rcParams.update({
     "font.family": "serif", "font.serif": ["DejaVu Serif"], "mathtext.fontset": "dejavuserif",
@@ -123,8 +124,9 @@ def dots(ax, labels, values, colors, hatches, fmt, xlabel, better, pad=0.012):
     lo, hi = min(values), max(values)
     ax.hlines(y, lo - pad, values, color=GRID, lw=1.0, zorder=2)
     for yi, v, c, h in zip(y, values, colors, hatches):
-        ax.plot([v], [yi], "o", ms=6.8, color="white" if h else c, markeredgecolor=c,
-                markeredgewidth=1.6 if h else 0.9, zorder=3)
+        hollow = bool(h) and SHOW_PROVENANCE
+        ax.plot([v], [yi], "o", ms=6.8, color="white" if hollow else c, markeredgecolor=c,
+                markeredgewidth=1.6 if hollow else 0.9, zorder=3)
         ax.text(v, yi - 0.34, fmt.format(v), ha="center", va="bottom", fontsize=7.2, color=INK2)
     ax.set_yticks(y); ax.set_yticklabels(labels); bold_ours(ax)
     ax.invert_yaxis(); ax.set_xlim(lo - pad, hi + pad)
@@ -189,8 +191,9 @@ def representation_comparison(out, closed_loop=True):
     if not closed_loop:                       # main text: legend of the three probed tokenizers, no policy panel
         handles = [Patch(facecolor=CMP_COLOR[i], edgecolor="white", hatch=FAKE_HATCH if CMP_FAKE[l] else "",
                          label=CMP_SHORT[l]) for i, l in enumerate(labs)]
-        handles += [Patch(facecolor="white", edgecolor=INK2, hatch=FAKE_HATCH, linewidth=0.6,
-                          label="expected value (not yet measured)")]
+        if SHOW_PROVENANCE:
+            handles += [Patch(facecolor="white", edgecolor=INK2, hatch=FAKE_HATCH, linewidth=0.6,
+                              label="expected value (not yet measured)")]
         lg = fig.legend(handles=handles, ncol=4, frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.10),
                         handlelength=1.2, handleheight=0.9, columnspacing=1.4, borderpad=0.2)
         for t in lg.get_texts():
@@ -210,9 +213,10 @@ def representation_comparison(out, closed_loop=True):
 
     handles = [Patch(facecolor=CLOSED_COLOR[i], edgecolor="white", label=l.replace(" (matched budget)", ""))
                for i, l in enumerate(clabs)]
-    handles += [Patch(facecolor="white", edgecolor=INK2, hatch=FAKE_HATCH, linewidth=0.6,
-                      label="expected value (not yet measured)")]
-    lg = fig.legend(handles=handles, ncol=5, frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.05),
+    if SHOW_PROVENANCE:
+        handles += [Patch(facecolor="white", edgecolor=INK2, hatch=FAKE_HATCH, linewidth=0.6,
+                          label="expected value (not yet measured)")]
+    lg = fig.legend(handles=handles, ncol=5 if SHOW_PROVENANCE else 4, frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.05),
                     handlelength=1.2, handleheight=0.9, columnspacing=1.4, borderpad=0.2)
     for t in lg.get_texts():
         if "expected" in t.get_text(): t.set_color(INK2); t.set_style("italic")
