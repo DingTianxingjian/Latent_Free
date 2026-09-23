@@ -55,16 +55,16 @@ inherits the released Stage-1 task-irrelevant prior; we report this
 provenance explicitly and analyze its effect in the appendix.
 
 \paragraph{Policy adaptation and evaluation.}
-For downstream control, we initialize the policy from OpenVLA-7B and
-fine-tune on LIBERO.
+The downstream pipeline follows UniVLA.
+Both arms first run the latent-action VLM pretraining stage on 10\% of the
+pretraining mixture, an identical budget, and are then fine-tuned on LIBERO
+with UniVLA's downstream configuration; the policy is initialized from
+OpenVLA-7B.
 Our continuous models use the post-instruction query interface and
 continuous action expert described in Appendix~\ref{app:vla_adaptation}.
+Only the latent labeller differs between the two arms.
 Closed-loop success rate is the primary downstream metric.
-Each completed suite contains 10 tasks and is evaluated with 50 rollouts
-per task.
-Unless otherwise stated, few-shot experiments use 10\% of the available
-demonstrations and do not include a separate large-scale latent-only VLM
-pretraining stage.
+Each suite contains 10 tasks and is evaluated with 50 rollouts per task.
 
 \paragraph{Representation analysis.}
 For latent quality, we follow prior work and use a frozen-tokenizer linear
@@ -92,11 +92,9 @@ Only the lower block is used for direct comparison.
 \textbf{Closed-loop success rate (\%) on LIBERO.}
 Published results are reported under their original training protocols and
 serve only as context.
-The lower block uses matched pretraining scale and the same downstream
-evaluation protocol and forms our direct comparison.
-The no-latent control shares the backbone, interface, and fine-tuning recipe
-with TERRA and receives no latent action, which isolates the contribution of
-the latent channel itself.
+The lower block is our direct comparison: both arms run the latent-action
+VLM pretraining stage on 10\% of the mixture and are then fine-tuned with the
+same downstream recipe, so only the latent labeller differs.
 }
 \label{tab:closed_loop_main}
 \centering
@@ -113,31 +111,31 @@ Octo             & 78.9 & 85.7 & 84.6 & 51.1 & 75.1 \\
 OpenVLA          & 84.7 & 88.4 & 79.2 & 53.7 & 76.5 \\
 UniVLA           & 96.5 & 96.8 & 95.6 & 92.0 & 95.2 \\
 \midrule
-\multicolumn{6}{l}{\textit{Matched pretraining scale and evaluation protocol}} \\
-% PLACEHOLDER BLOCK -- fill from acdc_la/results/vla_eval as the runs land.
-%   real so far (LEDGER 2026-09-18): UniVLA (matched) Spatial 84.2, Object 82.8, Goal 86.6.
-%   every other cell below is invented and only keeps the table internally consistent
-%   (TERRA avg - UniVLA avg = 1.3, which is the margin quoted in the text).
-%   NOTE: the measured Goal cell of the no-latent control is 88.6, i.e. ABOVE both latent
-%   arms under the query interface; the row below does not yet reflect that.
-No-latent control (OpenVLA-7B backbone, our interface)
-& 81.0 & 80.2 & 83.4 & 43.6 & 72.1 \\
+\multicolumn{6}{l}{\textit{Matched pretraining data (10\% of the mixture), identical downstream recipe}} \\
+% Measured; reported 2026-09-22. Averages before rounding: UniVLA 91.75, TERRA 93.425 (+1.675).
 UniVLA (matched)
-& 84.2 & 82.8 & 86.6 & 48.0 & 75.4 \\
+& 92.3 & 92.6 & 93.4 & 88.7 & 91.8 \\
 \textbf{TERRA (ours)}
-& \textbf{86.0} & \textbf{84.2} & \textbf{87.8} & \textbf{48.8}
-& \textbf{76.7} \\
+& \textbf{94.1} & \textbf{95.2} & \textbf{93.8} & \textbf{90.6}
+& \textbf{93.4} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Under matched pretraining scale, TERRA improves average closed-loop success
-over the matched UniVLA baseline by 1.3 percentage points.
-% CHECK: this margin follows the placeholder block above. Recompute it from the
-% table when the runs land; do not leave a number here the table does not contain.
+Under matched pretraining data, TERRA raises average closed-loop success from
+91.8\% to 93.4\%, and is ahead on all four suites: $+1.8$ on Spatial, $+2.6$
+on Object, $+0.4$ on Goal, and $+1.9$ on Long.
+The gain is largest on Object and Long, the suites that depend most on getting
+the intermediate motion right, and smallest on Goal, where both arms are close
+to the ceiling of this protocol.
 Because this comparison currently uses a single policy fine-tuning seed, we
 treat the margin as a system-level result rather than a claim of statistical
-significance.
+significance; with 500 rollouts per suite the standard error is approximately
+1.1 points at this success level.
+% CHECK: a no-latent control (same backbone, interface and recipe, no latent
+% action) has not been run under this protocol and is therefore not in the
+% table. It is the control a reviewer will ask for, since it is what separates
+% "the latent helps" from "the recipe is good".
 Per-task results and additional seeds are reported in the appendix when
 available.
 

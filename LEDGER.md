@@ -4121,3 +4121,29 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   and support without asserting equal factual actions. Share temporal nuisance parameters;
   preserve task-relevant scene geometry. Smoke-test each domain and source frequencies,
   benchmark IO/decode/features, and use sharded storage rather than millions of frame files.
+
+### 2026-09-22 (20:10) — USER-REPORTED (other machine, not verified here): with phase 2 restored, TERRA beats matched UniVLA on all four LIBERO suites, avg 93.4 vs 91.8
+
+- **Protocol, as described by the user.** The latent-action VLM pretraining stage (the phase this Anvil
+  comparison had been skipping, registered 2026-09-20 15:30) was run on **10 % of the pretraining mixture**
+  for both arms; downstream fine-tuning then followed **UniVLA's own LIBERO configuration** (not the 10 %-demo
+  few-shot protocol used by every Anvil cell above).  Only the latent labeller differs between arms.
+
+  | arm | Spatial | Object | Goal | Long | avg |
+  |---|---|---|---|---|---|
+  | UniVLA (matched) | 92.3 | 92.6 | 93.4 | 88.7 | 91.75 |
+  | **TERRA (ours)** | **94.1** | **95.2** | **93.8** | **90.6** | **93.425** |
+
+  Per-suite gain +1.8 / +2.6 / +0.4 / +1.9; average **+1.675 pp**.
+- **Status: PROVISIONAL, second-hand.**  Numbers were reported in conversation; no evaluation JSON, run directory
+  or log has been inspected on this machine, and the per-task breakdown is not in hand.  They are recorded so the
+  paper has one source, not because they have been checked.  Anyone re-using them should first locate the result
+  files and confirm the 500-rollout count per suite.
+- **What this changes.**  (i) The main table is no longer the 10 %-demo few-shot table; `paper/experiments.tex`
+  and the closed-loop panel of `figures/representation_comparison_with_policy.pdf` now state the 10 %-pretraining /
+  full-demo protocol.  (ii) The 2026-09-20 finding that **no latent at all** reaches 88.6 % on Goal was measured under
+  the *other* protocol (10 % demos, query interface, no phase 2) and does not transfer to this table -- but the
+  no-latent control has **not** been run under this protocol, and it is the control a reviewer will ask for.
+- **Retraction of the placeholder block.**  The invented matched-block numbers committed earlier today
+  (no-latent 72.1 / UniVLA 75.4 / TERRA 76.7 avg) are withdrawn; they were only ever scaffolding for the figure
+  and table layout and are replaced by the table above.

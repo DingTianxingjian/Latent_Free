@@ -35,11 +35,12 @@ CMP_NMSE = {k: round(1.0 - v[3], 3) for k, v in COMPARE.items()}
 SUITES = ["Spatial", "Object", "Goal", "Long"]
 # Closed-loop LIBERO success at 10 % demonstrations, identical VLA recipe.  [PLACEHOLDER] every value in this panel is
 # the *expected* shape, not a measurement -- the whole panel is hatched.  Replace suite by suite as the runs land.
-CLOSED = {                                # keep in sync with Table 1 of paper/experiments.tex
-    "No-latent control":         (81.0, 80.2, 83.4, 43.6),   # [PLACEHOLDER]
-    "LAPA":                      (76.0, 74.0, 74.5, 45.0),   # [PLACEHOLDER]
-    "UniVLA (matched budget)":   (84.2, 82.8, 86.6, 48.0),   # [real] Spatial/Object/Goal; Long [PLACEHOLDER]
-    "TERRA (ours)":              (86.0, 84.2, 87.8, 48.8),   # [PLACEHOLDER]
+# Latent-action VLM pretraining on 10 % of the mixture for both arms, then the UniVLA downstream recipe.
+# [real] reported by the user from the workstation runs, 2026-09-22; keep in sync with Table 1 of
+# paper/experiments.tex.  Averages: UniVLA 91.75, TERRA 93.425 (+1.675).
+CLOSED = {
+    "UniVLA (matched budget)":   (92.3, 92.6, 93.4, 88.7),
+    "TERRA (ours)":              (94.1, 95.2, 93.8, 90.6),
 }
 
 # ------------------------------------------------------------------------- DATA 2: our ablation ladder (Fig. 2)
@@ -71,7 +72,7 @@ C = {"openvla": "#1baf7a", "lapa": "#eb6834", "univla": "#2a78d6", "ours": "#4a3
 RAMP = ["#b0a5e2", "#7563c0", "#4a3aa7"]                    # sequential: one hue, light -> dark (our own ladder)
 INK, INK2, GRID = "#1a1a19", "#52514e", "#d9d9d6"
 CMP_COLOR = [C["lapa"], C["univla"], C["ours"]]
-CLOSED_COLOR = [C["openvla"], C["lapa"], C["univla"], C["ours"]]
+CLOSED_COLOR = [C["univla"], C["ours"]]
 SHOW_PROVENANCE = False          # True re-hatches every [PLACEHOLDER] value and adds the legend entry
 FAKE_HATCH = "///" if SHOW_PROVENANCE else ""
 
@@ -201,18 +202,22 @@ def representation_comparison(out, closed_loop=True):
         fig.savefig(out + ".pdf"); fig.savefig(out + ".png"); plt.close(fig)
         return
 
-    panel_tag(axes[3], "d", "Closed-loop LIBERO, 10 % demonstrations")
-    grouped(axes[3], SUITES, [(l, list(CLOSED[l]), CLOSED_COLOR[i], FAKE_HATCH) for i, l in enumerate(clabs)],
-            "success rate (%)", ylim=(0, 100), legend=False)
-    for i, l in enumerate(clabs):                      # every bar labelled: the relief the green slot's contrast needs
-        w = 0.78 / len(clabs)
-        for j, v in enumerate(CLOSED[l]):
-            axes[3].text(j - 0.39 + w * (i + 0.5), v + 1.5, f"{v:.0f}", ha="center", fontsize=6.2, color=INK2,
-                         rotation=90, va="bottom")
-    axes[3].set_xlabel("(higher is better)", labelpad=2)
+    panel_tag(axes[3], "d", "Closed-loop LIBERO success")
+    ax = axes[3]                                       # dumbbell: the arms sit in a 6-point band, where bars would
+    for j in range(len(SUITES)):                       # need a zero baseline and hide every difference
+        a, b = CLOSED[clabs[0]][j], CLOSED[clabs[1]][j]
+        ax.plot([j, j], [a, b], color=GRID, lw=2.2, zorder=2, solid_capstyle="round")
+        for v, c in ((a, CLOSED_COLOR[0]), (b, CLOSED_COLOR[1])):
+            ax.plot([j], [v], "o", ms=7, color=c, markeredgecolor="white", markeredgewidth=0.9, zorder=3)
+        ax.text(j + 0.17, b, f"{b:.1f}", fontsize=6.9, color=INK2, va="center", ha="left")
+        ax.text(j - 0.17, a, f"{a:.1f}", fontsize=6.9, color=INK2, va="center", ha="right")
+    ax.set_xticks(range(len(SUITES))); ax.set_xticklabels(SUITES)
+    ax.set_xlim(-0.6, len(SUITES) - 0.35); ax.set_ylim(86.5, 97)
+    ax.set_ylabel("success rate (%)")
+    ax.set_xlabel("(higher is better)", labelpad=2)
+    tidy(ax, ygrid=True)
 
-    handles = [Patch(facecolor=CLOSED_COLOR[i], edgecolor="white", label=l.replace(" (matched budget)", ""))
-               for i, l in enumerate(clabs)]
+    handles = [Patch(facecolor=CMP_COLOR[i], edgecolor="white", label=CMP_SHORT[l]) for i, l in enumerate(labs)]
     if SHOW_PROVENANCE:
         handles += [Patch(facecolor="white", edgecolor=INK2, hatch=FAKE_HATCH, linewidth=0.6,
                           label="expected value (not yet measured)")]
