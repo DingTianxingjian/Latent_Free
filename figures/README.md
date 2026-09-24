@@ -41,3 +41,11 @@ the same episode, so the "failure" row is simply truncated -- the labels under t
 the figure is meant to show, not observed ones.  When real rollouts exist, put their frames in
 `figures/rollout_frames/` with the same names, set `MOCK = False` in `acdc_la/figures/make_rollout_figure.py`, and
 uncomment the figure block in `paper/experiments.tex`.
+
+`nuisance_examples` renders the two perturbations the project actually measures, on real LIBERO observations, with
+the project's own code: the moving-patch distractor (`acdc_la/data/distractor.py`, a 64x64 natural-video crop
+travelling the frame border, the intervention behind every "drop" number) and one fixed draw of the invariance
+term's brightness/contrast family (`stage3_transport/train_v2.py::_jitter`, brightness 0.80 x contrast 1.20).
+The bar panel is measured on OXE validation.  Scene-level perturbations (a real light source moved in MuJoCo, an
+extra object added to the BDDL scene, as in LIBERO-Plus) are NOT what this figure shows and would need a GPU node
+plus scene edits.
