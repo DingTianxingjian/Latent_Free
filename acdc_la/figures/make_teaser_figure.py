@@ -21,7 +21,7 @@ PROFILE_NMSE = {"endpoint only": 0.983, "+ $A_1$": 0.909}          # [real]
 QUART = {"reconstruction only": (0.80, 1.06), "EAT": (0.77, 0.86)}  # [USER-SUPPLIED]
 
 plt.rcParams.update({
-    "font.family": "serif", "font.serif": ["DejaVu Serif"], "mathtext.fontset": "dejavuserif",
+    "font.family": "serif", "font.serif": ["Nimbus Roman", "DejaVu Serif"], "mathtext.fontset": "stix",
     "font.size": 7.6, "figure.dpi": 160, "savefig.dpi": 300, "pdf.fonttype": 42, "ps.fonttype": 42,
     "savefig.bbox": "tight", "text.color": INK,
 })

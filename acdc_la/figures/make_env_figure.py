@@ -26,7 +26,7 @@ ORDER = ["libero_spatial", "libero_object", "libero_goal", "libero_10"]
 # legible at single-column width.  Every instruction is in figures/libero_frames/frames.json.
 
 plt.rcParams.update({
-    "font.family": "serif", "font.serif": ["DejaVu Serif"], "font.size": 7.6,
+    "font.family": "serif", "font.serif": ["Nimbus Roman", "DejaVu Serif"], "font.size": 7.6,
     "figure.dpi": 160, "savefig.dpi": 300, "pdf.fonttype": 42, "ps.fonttype": 42,
     "savefig.bbox": "tight", "text.color": INK,
 })

@@ -33,7 +33,7 @@ BLOCKS = [("libero_object", "LIBERO-Object"), ("libero_10", "LIBERO-Long")]
 EP = 7                       # episode id: seeds the patch trajectory, so the patch moves coherently
 
 plt.rcParams.update({
-    "font.family": "serif", "font.serif": ["DejaVu Serif"], "mathtext.fontset": "dejavuserif",
+    "font.family": "serif", "font.serif": ["Nimbus Roman", "DejaVu Serif"], "mathtext.fontset": "stix",
     "font.size": 7.4, "figure.dpi": 160, "savefig.dpi": 300, "pdf.fonttype": 42, "ps.fonttype": 42,
     "savefig.bbox": "tight", "text.color": INK,
 })

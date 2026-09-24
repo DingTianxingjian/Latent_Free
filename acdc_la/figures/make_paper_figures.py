@@ -77,7 +77,7 @@ SHOW_PROVENANCE = False          # True re-hatches every [PLACEHOLDER] value and
 FAKE_HATCH = "///" if SHOW_PROVENANCE else ""
 
 plt.rcParams.update({
-    "font.family": "serif", "font.serif": ["DejaVu Serif"], "mathtext.fontset": "dejavuserif",
+    "font.family": "serif", "font.serif": ["Nimbus Roman", "DejaVu Serif"], "mathtext.fontset": "stix",
     "font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8, "legend.fontsize": 7.2,
     "xtick.labelsize": 7.4, "ytick.labelsize": 7.4, "axes.linewidth": 0.6,
     "xtick.major.width": 0.6, "ytick.major.width": 0.6, "xtick.major.size": 2.5, "ytick.major.size": 2.5,

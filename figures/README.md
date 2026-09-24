@@ -34,16 +34,18 @@ numbers.  The profile NMSE inset is measured (`1 - R^2(profile)`: endpoint-only 
 from `latp2_inv`).  **The Q1/Q4 effect-error inset (.80 -> 1.06 recon-only, .77 -> .86 EAT) is quoted from the
 manuscript's Fig. 3(a) and has not been recomputed here** -- no such measurement exists in this repository.
 
-`rollout_compare` is the qualitative comparison (two tasks, UniVLA* above TERRA, red frame on the failure step,
-green frame + check on completion), with the paper's own nuisance intervention applied to BOTH rows of a block so
-the two arms see the same perturbed scene: the moving patch on LIBERO-Object, the photometric shift on
-LIBERO-Long.  **It is a layout mock-up** and the figure prints a footer saying so.  The frames are demonstration
-observations from `data/libero_rlds`, not policy rollouts; the Object failure row is a *different* demonstration
-(a different target object) standing in for "grasps the wrong object", and the Long failure row is the same
-demonstration truncated.  Two consequences for the real version: both rows must come from **one** episode and one
-seed, and the labels under the red frames must be failure modes that were observed, not chosen.  When real rollouts exist, put their frames in
-`figures/rollout_frames/` with the same names, set `MOCK = False` in `acdc_la/figures/make_rollout_figure.py`, and
-uncomment the figure block in `paper/experiments.tex`.
+`rollout_compare` is the qualitative comparison: two tasks, UniVLA* (blue, the hue it has in every other figure)
+above TERRA (violet), four frames each with their real step numbers, a red frame + cross + boxed-and-magnified
+region on the failure step and the same in green on the completed step, a thin time axis per task, and the paper's
+own nuisance intervention applied to BOTH rows so the arms see one perturbed scene.  The dark square in the
+LIBERO-Object frames is that intervention -- the moving patch -- not a wrist camera; the header names it.
+
+**It is a layout mock-up.**  The frames are demonstration observations from `data/libero_rlds`, not policy
+rollouts, and the figure prints a footer saying so.  Both rows of a task come from one clip, so $t=0$ is
+pixel-identical, but for the same reason the failure row does not yet *look* different from the success row: only
+real rollouts can show that.  The ROI boxes are placed by eye and the labels under the red frames are the failure
+modes the figure argues for, not observed ones.  For the real version: one episode and one seed for both rows,
+ROIs where the failure actually is, observed failure labels, and `MOCK = False`.
 
 `nuisance_examples` renders the two perturbations the project actually measures, on real LIBERO observations, with
 the project's own code: the moving-patch distractor (`acdc_la/data/distractor.py`, a 64x64 natural-video crop
