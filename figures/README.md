@@ -27,3 +27,9 @@ observation of a demonstration**, read straight from the RLDS shards in `data/li
 images the policy is trained and evaluated on.  `acdc_la/figures/grab_libero_frames.py` renders equivalent frames
 from the simulator instead (`set_init_state` + the evaluator's 10 no-op settle), but MuJoCo needs EGL and this
 cluster has no OSMesa, so it only runs on a GPU node via `acdc_la/scripts/run_libero_frames.sh`.
+
+`teaser` is the page-1 figure: (a) two windows with the same endpoint and opposite first dynamics mode, (b) one
+latent decoded into a near and a far recipient state.  The large marks are schematic; the two inset charts are
+numbers.  The profile NMSE inset is measured (`1 - R^2(profile)`: endpoint-only .983 from `s1_mean_1ep`, ours .909
+from `latp2_inv`).  **The Q1/Q4 effect-error inset (.80 -> 1.06 recon-only, .77 -> .86 EAT) is quoted from the
+manuscript's Fig. 3(a) and has not been recomputed here** -- no such measurement exists in this repository.
