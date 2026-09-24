@@ -57,7 +57,10 @@ measured drops (endpoint-only 33.6 %, UniVLA 22.9 %, ours 17.9 %) belong in the 
 extra object added to the BDDL scene, as in LIBERO-Plus) are NOT what this figure shows and would need a GPU node
 plus scene edits.
 
-`teaser` panel (a) is **measured, not drawn**.  One real pair of OXE validation clips from source 18
+`teaser` panel (a) is **measured, not drawn**, and shows the two clips' own frames.  They are fetched by
+rebuilding the deterministic val split on CPU (`MixDS(..., "val")` + `stratified_pair_indices(200, seed=123)`,
+rows 7247 / 7444 -> dataset indices 582934 / 582940), cached as `figures/teaser_clip_{i,j}.npy`; the action
+labels read back from there match the dump exactly, which is what confirms the row alignment.  One real pair of OXE validation clips from source 18
 (clips 7247 / 7444) with cos(N) = 0.86 and cos(A1) = -0.46: the two curves are those clips' own action
 labels, interpolated uniformly in time so dot spacing is speed, and the two squares are a 2-D PCA of that
 source's 400 latents under each tokenizer with the pair marked (centred cosine 0.90 under the endpoint-only
