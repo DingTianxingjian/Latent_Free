@@ -12,7 +12,7 @@
 %   figures/representation_comparison.pdf
 %   figures/representation_ablation.pdf
 %   figures/eat_refinement.pdf
-%   figures/libero_suites.pdf            (environment strip; libero_suites_grid.pdf is the 2-row variant)
+%   figures/libero_suites.pdf            (2x2, suite names only; _strip and _grid are the wider variants)
 % Not used in the main text: figures/representation_comparison_with_policy.pdf
 %   (same probe panels plus a closed-loop panel; kept for a teaser slot or a talk,
 %    where it does not sit next to Table~\ref{tab:closed_loop_main}).
@@ -71,16 +71,20 @@ Figure~\ref{fig:libero_suites} shows the four suites; they share the robot and
 the camera and differ in what is varied across tasks, from object layout
 (Spatial) to long-horizon compositions of two subtasks (Long).
 
+% Compact 2x2; it is sized for a half-width slot, so it can also go inside a
+% minipage beside Table~\ref{tab:closed_loop_main} or a block of text.
+% figures/libero_suites_strip.pdf is the full-width row of four, with each
+% suite's shortest instruction under its frame.
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\textwidth]{figures/libero_suites.pdf}
+    \includegraphics[width=0.52\textwidth]{figures/libero_suites.pdf}
     \caption{
     \textbf{The four LIBERO suites we evaluate on.}
     One task per suite at its initial state, as the policy sees it (agent-view
-    observation), with that task's instruction.
-    Each suite holds ten such tasks and varies one factor across them: object
-    layout (Spatial), object identity (Object), the goal in a fixed scene
-    (Goal), and two-stage long-horizon composition (Long).
+    observation).
+    Each suite holds ten tasks and varies one factor across them: object layout
+    (Spatial), object identity (Object), the goal in a fixed scene (Goal), and
+    two-stage long-horizon composition (Long).
     }
     \label{fig:libero_suites}
 \end{figure}

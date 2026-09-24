@@ -4,7 +4,8 @@
 
 Reads the frames rendered by acdc_la/figures/grab_libero_frames.py (run on a GPU node through
 acdc_la/scripts/run_libero_frames.sh) plus their instructions, and lays them out two ways:
-  libero_suites       one frame per suite, a compact full-width strip
+  libero_suites       2 x 2, suite names only -- the compact form for a half-width slot
+  libero_suites_strip one row of four, with each suite's shortest instruction
   libero_suites_grid  two tasks per suite, when there is room for it
 Both are real renders of the initial state the policy sees, not illustrations.
 """
@@ -45,6 +46,16 @@ def _show(ax, d, rec):
         s.set_color("#c9c9c6"); s.set_linewidth(0.6)
 
 
+def square(frames, d, out, row=None):
+    """2 x 2, suite names only: the compact form, for a half-width slot beside other content."""
+    fig, axes = plt.subplots(2, 2, figsize=(3.4, 3.7), gridspec_kw={"wspace": 0.06, "hspace": 0.22})
+    for ax, s in zip(axes.ravel(), ORDER):
+        recs = [r for r in frames if r["suite"] == s]
+        _show(ax, d, recs[row if row is not None else 0])
+        ax.set_title(TITLES[s], fontsize=8.0, fontweight="bold", pad=3.5, color=INK)
+    fig.savefig(out + ".pdf"); fig.savefig(out + ".png"); plt.close(fig)
+
+
 def strip(frames, d, out, row=None):
     fig, axes = plt.subplots(1, 4, figsize=(7.2, 2.45), gridspec_kw={"wspace": 0.08})
     for ax, s in zip(axes, ORDER):
@@ -75,7 +86,8 @@ if __name__ == "__main__":
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     d = os.path.join(root, "figures", "libero_frames")
     frames = json.load(open(os.path.join(d, "frames.json")))
-    strip(frames, d, os.path.join(root, "figures", "libero_suites"))
+    square(frames, d, os.path.join(root, "figures", "libero_suites"))
+    strip(frames, d, os.path.join(root, "figures", "libero_suites_strip"))
     if min(len([r for r in frames if r["suite"] == s]) for s in ORDER) >= 2:
         grid(frames, d, os.path.join(root, "figures", "libero_suites_grid"))
-    print("wrote", os.path.join(root, "figures") + "/libero_suites{,_grid}.{pdf,png}")
+    print("wrote", os.path.join(root, "figures") + "/libero_suites{,_strip,_grid}.{pdf,png}")
