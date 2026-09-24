@@ -73,3 +73,10 @@ Panel (b) is still a schematic of the transport setting.
 baseline, i.e. UniVLA separates these pairs better than we do -- consistent with its higher profile R^2
 (.125 vs .091).  Panel (a) is therefore an ablation of our own descriptor (N vs N+A1), not a claim against
 UniVLA, and the caption must not imply otherwise.
+
+The LIBERO-Long perturbation is a **directional** illumination gradient (0.55x to 1.25x across the frame), not the
+global brightness/contrast draw the invariance term trains on (`_jitter`, U(0.8,1.2) scalars).  Testing with the
+augmentation family itself would put the perturbation inside our training distribution and outside the baseline's,
+which is a fair objection; the gradient is spatial and no arm sees it during training.  The moving patch stays --
+it is the intervention every probe number in the paper is measured under -- and the figure now names it with a
+dashed box, since it otherwise reads as a wrist-camera inset.

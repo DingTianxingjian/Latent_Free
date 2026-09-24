@@ -38,11 +38,11 @@ EP = 7                                     # episode id: seeds the patch traject
 # placed by eye on demonstration frames; with real rollouts they go where the failure actually is.
 BLOCKS = [
     {"tag": "libero_object", "title": "LIBERO-Object", "perturb": "distractor",
-     "nuisance": "moving-patch distractor",
+     "nuisance": "moving-patch distractor (dashed box)",
      "base": {"idx": [0, 2, 3, 4], "note": "grasps the wrong object", "roi": (0.40, 0.34, 0.68, 0.66)},
      "ours": {"idx": [0, 3, 5, 7], "roi": (0.06, 0.34, 0.38, 0.72)}},
     {"tag": "libero_10", "title": "LIBERO-Long", "perturb": "lighting",
-     "nuisance": "brightness / contrast shift",
+     "nuisance": "directional lighting (0.55\u20131.25$\\times$ across the frame)",
      "base": {"idx": [0, 2, 3, 4], "note": "releases before the second stage", "roi": (0.16, 0.44, 0.46, 0.80)},
      "ours": {"idx": [0, 3, 5, 7], "roi": (0.52, 0.44, 0.86, 0.82)}},
 ]
@@ -63,9 +63,12 @@ def _clip(d, tag, n=8):
 def _perturb(clip, kind, dis):
     if kind == "distractor":
         return dis.render(clip, torch.tensor([EP]))
-    if kind == "lighting":                                   # brightness 0.80 x contrast 1.20, one draw per clip
-        x = clip * 0.80
-        return ((x - x.mean(dim=(-1, -2), keepdim=True)) * 1.20 + x.mean(dim=(-1, -2), keepdim=True)).clamp(0, 1)
+    if kind == "lighting":
+        # A DIRECTIONAL illumination gradient, 0.55x on one side to 1.25x on the other.  Deliberately NOT the
+        # invariance term's family: that is a global brightness/contrast scalar (U(0.8,1.2)), so testing with it
+        # would put the perturbation inside our own training distribution and outside the baseline's.
+        w = torch.linspace(0.55, 1.25, clip.shape[-1]).view(1, 1, 1, 1, -1)
+        return (clip * w).clamp(0, 1)
     return clip
 
 
@@ -120,6 +123,10 @@ def rollout_compare(out):
                 last = ci == nf - 1
                 edge, lw = (BAD, 1.6) if (last and key == "base") else ((OK, 1.6) if last else (GRID, 0.6))
                 _show(ax, clip[0, fi], edge, lw)
+                if ci == 0 and ri == 0 and blk["perturb"] == "distractor":     # name the patch: it reads as a
+                    ax.add_patch(Rectangle((3, IMG - 67), 64, 64, fill=False, edgecolor=INK2,  # camera window otherwise
+                                           linewidth=0.8, linestyle=(0, (2, 1.6)), zorder=6))
+                    ax.text(35, IMG - 72, "distractor", fontsize=5.8, color=INK2, ha="center", va="bottom", zorder=6)
                 if last:
                     _mark(ax, clip[0, fi], spec["roi"], BAD if key == "base" else OK)
                     (_cross if key == "base" else _check)(ax)
