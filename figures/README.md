@@ -46,6 +46,8 @@ uncomment the figure block in `paper/experiments.tex`.
 the project's own code: the moving-patch distractor (`acdc_la/data/distractor.py`, a 64x64 natural-video crop
 travelling the frame border, the intervention behind every "drop" number) and one fixed draw of the invariance
 term's brightness/contrast family (`stage3_transport/train_v2.py::_jitter`, brightness 0.80 x contrast 1.20).
-The bar panel is measured on OXE validation.  Scene-level perturbations (a real light source moved in MuJoCo, an
+It is laid out like `rollout_compare` (left colour bar, rotated row name, block titles) and carries no chart: the
+measured drops (endpoint-only 33.6 %, UniVLA 22.9 %, ours 17.9 %) belong in the caption, and
+`representation_comparison`(c) already plots them.  Scene-level perturbations (a real light source moved in MuJoCo, an
 extra object added to the BDDL scene, as in LIBERO-Plus) are NOT what this figure shows and would need a GPU node
 plus scene edits.
