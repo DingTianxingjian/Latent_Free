@@ -21,6 +21,11 @@ INK, INK2 = "#1a1a19", "#52514e"
 TITLES = {"libero_spatial": "LIBERO-Spatial", "libero_object": "LIBERO-Object",
           "libero_goal": "LIBERO-Goal", "libero_10": "LIBERO-Long"}
 ORDER = ["libero_spatial", "libero_object", "libero_goal", "libero_10"]
+# What varies across the tasks of each suite.  The strip carries these instead of one task's instruction:
+# at single-column width a full instruction has to shrink past legibility, and one sampled instruction does
+# not describe the suite anyway.  The instructions stay in figures/libero_frames/frames.json.
+WHAT_VARIES = {"libero_spatial": "spatial relation", "libero_object": "object identity",
+               "libero_goal": "goal variation", "libero_10": "long-horizon"}
 
 plt.rcParams.update({
     "font.family": "serif", "font.serif": ["DejaVu Serif"], "font.size": 7.6,
@@ -44,12 +49,12 @@ def _show(ax, d, rec):
 
 
 def strip(frames, d, out, row=0):
-    fig, axes = plt.subplots(1, 4, figsize=(7.2, 2.35), gridspec_kw={"wspace": 0.10})
+    fig, axes = plt.subplots(1, 4, figsize=(7.2, 2.15), gridspec_kw={"wspace": 0.08})
     for ax, s in zip(axes, ORDER):
         rec = [r for r in frames if r["suite"] == s][row]
         _show(ax, d, rec)
-        ax.set_title(TITLES[s], fontsize=8.2, fontweight="bold", pad=4, color=INK)
-        _cap(ax, rec["instruction"])
+        ax.set_title(TITLES[s], fontsize=8.6, fontweight="bold", pad=4, color=INK)
+        ax.set_xlabel(WHAT_VARIES[s], fontsize=8.0, color=INK2, labelpad=4, style="italic")
     fig.savefig(out + ".pdf"); fig.savefig(out + ".png"); plt.close(fig)
 
 
