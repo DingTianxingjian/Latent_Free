@@ -39,12 +39,12 @@ EP = 7                                     # episode id: seeds the patch traject
 BLOCKS = [
     {"tag": "libero_object", "title": "LIBERO-Object", "perturb": "distractor",
      "nuisance": "moving-patch distractor (dashed box)",
-     "base": {"idx": [0, 2, 3, 4], "note": "grasps the wrong object", "roi": (0.40, 0.34, 0.68, 0.66)},
-     "ours": {"idx": [0, 3, 5, 7], "roi": (0.06, 0.34, 0.38, 0.72)}},
+     "base": {"idx": [0, 2, 3, 4], "note": "grasps the wrong object", "roi": (0.40, 0.22, 0.58, 0.50)},
+     "ours": {"idx": [0, 3, 5, 7], "roi": (0.02, 0.30, 0.24, 0.68)}},
     {"tag": "libero_10", "title": "LIBERO-Long", "perturb": "lighting",
      "nuisance": "directional lighting (0.55\u20131.25$\\times$ across the frame)",
-     "base": {"idx": [0, 2, 3, 4], "note": "releases before the second stage", "roi": (0.16, 0.44, 0.46, 0.80)},
-     "ours": {"idx": [0, 3, 5, 7], "roi": (0.52, 0.44, 0.86, 0.82)}},
+     "base": {"idx": [0, 2, 3, 4], "note": "releases before the second stage", "roi": (0.04, 0.34, 0.24, 0.68)},
+     "ours": {"idx": [0, 3, 5, 7], "roi": (0.52, 0.44, 0.84, 0.82)}},
 ]
 ROWS = [("UniVLA$^*$", BASE, "base"), ("TERRA", OURS, "ours")]
 
@@ -139,8 +139,8 @@ def rollout_compare(out):
                         color=INK, va="top", ha="left", zorder=6,       # per FRAME: the two rows are sampled at
                         bbox=dict(facecolor="white", alpha=0.72, pad=1.0, edgecolor="none"))   # different steps
                 if last and key == "base":
-                    ax.text(0.5, -0.045, spec["note"], transform=ax.transAxes, fontsize=6.8, color=BAD,
-                            ha="center", va="top")
+                    ax.text(1.0, -0.045, spec["note"], transform=ax.transAxes, fontsize=6.8, color=BAD,
+                            ha="right", va="top")
         # task header: title, full instruction, and which nuisance both rows are under
         bb = [axs[0][c].get_position() for c in range(nf)]
         x0, x1 = bb[0].x0, bb[-1].x1
