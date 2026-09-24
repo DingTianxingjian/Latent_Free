@@ -21,6 +21,55 @@
   "source": "rlds first frame"
  },
  {
+  "suite": "libero_spatial",
+  "task": 3,
+  "instruction": "pick up the black bowl on the stove and place it on the plate",
+  "file": "libero_spatial_t3.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_spatial",
+  "task": 4,
+  "instruction": "pick up the black bowl between the plate and the ramekin and place it on the plate",
+  "file": "libero_spatial_t4.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_spatial",
+  "task": 5,
+  "instruction": "pick up the black bowl on the cookie box and place it on the plate",
+  "file": "libero_spatial_t5.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_spatial",
+  "task": 6,
+  "instruction": "pick up the black bowl next to the plate and place it on the plate",
+  "file": "libero_spatial_t6.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_spatial",
+  "task": 7,
+  "instruction": "pick up the black bowl next to the ramekin and place it on the plate",
+  "file": "libero_spatial_t7.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_spatial",
+  "task": 8,
+  "instruction": "pick up the black bowl from table center and place it on the plate",
+  "file": "libero_spatial_t8.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_spatial",
+  "task": 9,
+  "instruction": "pick up the black bowl on the wooden cabinet and place it on the plate",
+  "file": "libero_spatial_t9.png",
+  "source": "rlds first frame"
+ },
+ {
   "suite": "libero_object",
   "task": 0,
   "instruction": "pick up the orange juice and place it in the basket",
@@ -39,6 +88,55 @@
   "task": 2,
   "instruction": "pick up the cream cheese and place it in the basket",
   "file": "libero_object_t2.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_object",
+  "task": 3,
+  "instruction": "pick up the bbq sauce and place it in the basket",
+  "file": "libero_object_t3.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_object",
+  "task": 4,
+  "instruction": "pick up the alphabet soup and place it in the basket",
+  "file": "libero_object_t4.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_object",
+  "task": 5,
+  "instruction": "pick up the milk and place it in the basket",
+  "file": "libero_object_t5.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_object",
+  "task": 6,
+  "instruction": "pick up the salad dressing and place it in the basket",
+  "file": "libero_object_t6.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_object",
+  "task": 7,
+  "instruction": "pick up the butter and place it in the basket",
+  "file": "libero_object_t7.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_object",
+  "task": 8,
+  "instruction": "pick up the tomato sauce and place it in the basket",
+  "file": "libero_object_t8.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_object",
+  "task": 9,
+  "instruction": "pick up the chocolate pudding and place it in the basket",
+  "file": "libero_object_t9.png",
   "source": "rlds first frame"
  },
  {
@@ -63,6 +161,55 @@
   "source": "rlds first frame"
  },
  {
+  "suite": "libero_goal",
+  "task": 3,
+  "instruction": "put the cream cheese in the bowl",
+  "file": "libero_goal_t3.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_goal",
+  "task": 4,
+  "instruction": "put the wine bottle on top of the cabinet",
+  "file": "libero_goal_t4.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_goal",
+  "task": 5,
+  "instruction": "push the plate to the front of the stove",
+  "file": "libero_goal_t5.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_goal",
+  "task": 6,
+  "instruction": "turn on the stove",
+  "file": "libero_goal_t6.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_goal",
+  "task": 7,
+  "instruction": "put the bowl on the stove",
+  "file": "libero_goal_t7.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_goal",
+  "task": 8,
+  "instruction": "put the bowl on top of the cabinet",
+  "file": "libero_goal_t8.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_goal",
+  "task": 9,
+  "instruction": "open the middle drawer of the cabinet",
+  "file": "libero_goal_t9.png",
+  "source": "rlds first frame"
+ },
+ {
   "suite": "libero_10",
   "task": 0,
   "instruction": "put the white mug on the left plate and put the yellow and white mug on the right plate",
@@ -81,6 +228,55 @@
   "task": 2,
   "instruction": "put the yellow and white mug in the microwave and close it",
   "file": "libero_10_t2.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_10",
+  "task": 3,
+  "instruction": "turn on the stove and put the moka pot on it",
+  "file": "libero_10_t3.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_10",
+  "task": 4,
+  "instruction": "put both the alphabet soup and the cream cheese box in the basket",
+  "file": "libero_10_t4.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_10",
+  "task": 5,
+  "instruction": "put both the alphabet soup and the tomato sauce in the basket",
+  "file": "libero_10_t5.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_10",
+  "task": 6,
+  "instruction": "put both moka pots on the stove",
+  "file": "libero_10_t6.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_10",
+  "task": 7,
+  "instruction": "put both the cream cheese box and the butter in the basket",
+  "file": "libero_10_t7.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_10",
+  "task": 8,
+  "instruction": "put the black bowl in the bottom drawer of the cabinet and close it",
+  "file": "libero_10_t8.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_10",
+  "task": 9,
+  "instruction": "pick up the book and place it in the back compartment of the caddy",
+  "file": "libero_10_t9.png",
   "source": "rlds first frame"
  }
 ]

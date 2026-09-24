@@ -21,11 +21,8 @@ INK, INK2 = "#1a1a19", "#52514e"
 TITLES = {"libero_spatial": "LIBERO-Spatial", "libero_object": "LIBERO-Object",
           "libero_goal": "LIBERO-Goal", "libero_10": "LIBERO-Long"}
 ORDER = ["libero_spatial", "libero_object", "libero_goal", "libero_10"]
-# What varies across the tasks of each suite.  The strip carries these instead of one task's instruction:
-# at single-column width a full instruction has to shrink past legibility, and one sampled instruction does
-# not describe the suite anyway.  The instructions stay in figures/libero_frames/frames.json.
-WHAT_VARIES = {"libero_spatial": "spatial relation", "libero_object": "object identity",
-               "libero_goal": "goal variation", "libero_10": "long-horizon"}
+# The strip shows the shortest instruction in each suite, verbatim: a real instruction, but one that stays
+# legible at single-column width.  Every instruction is in figures/libero_frames/frames.json.
 
 plt.rcParams.update({
     "font.family": "serif", "font.serif": ["DejaVu Serif"], "font.size": 7.6,
@@ -48,13 +45,15 @@ def _show(ax, d, rec):
         s.set_color("#c9c9c6"); s.set_linewidth(0.6)
 
 
-def strip(frames, d, out, row=0):
-    fig, axes = plt.subplots(1, 4, figsize=(7.2, 2.15), gridspec_kw={"wspace": 0.08})
+def strip(frames, d, out, row=None):
+    fig, axes = plt.subplots(1, 4, figsize=(7.2, 2.45), gridspec_kw={"wspace": 0.08})
     for ax, s in zip(axes, ORDER):
-        rec = [r for r in frames if r["suite"] == s][row]
+        recs = [r for r in frames if r["suite"] == s]
+        rec = recs[row] if row is not None else min(recs, key=lambda r: len(r["instruction"]))
         _show(ax, d, rec)
         ax.set_title(TITLES[s], fontsize=8.6, fontweight="bold", pad=4, color=INK)
-        ax.set_xlabel(WHAT_VARIES[s], fontsize=8.0, color=INK2, labelpad=4, style="italic")
+        w = textwrap.wrap("\u201c" + rec["instruction"].strip().rstrip(".") + "\u201d", width=23)
+        ax.set_xlabel("\n".join(w[:3]), fontsize=7.2, color=INK2, labelpad=4, style="italic", linespacing=1.3)
     fig.savefig(out + ".pdf"); fig.savefig(out + ".png"); plt.close(fig)
 
 

@@ -19,7 +19,8 @@ Currently placeholder: the LAPA probe row, and the closed-loop panel of the `wit
 UniVLA's Spatial/Object/Goal.  Palette validated with the data-viz validator (light surface, categorical, CVD-safe); the
 one slot below 3:1 contrast carries a direct value label on every bar as relief.  PDFs are vector, Type-42 fonts.
 
-`libero_suites` / `libero_suites_grid` are built by `acdc_la/figures/make_env_figure.py` from frames in
+`libero_suites` shows, per suite, the frame whose instruction is the **shortest in that suite** -- a real
+instruction, verbatim, that still fits under a quarter-width panel.  `libero_suites` / `libero_suites_grid` are built by `acdc_la/figures/make_env_figure.py` from frames in
 `figures/libero_frames/` (+ `frames.json` with each task's instruction).  Those frames are the **first
 observation of a demonstration**, read straight from the RLDS shards in `data/libero_rlds/` on CPU -- the same
 images the policy is trained and evaluated on.  `acdc_la/figures/grab_libero_frames.py` renders equivalent frames

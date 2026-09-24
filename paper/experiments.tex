@@ -77,8 +77,10 @@ the camera and differ in what is varied across tasks, from object layout
     \caption{
     \textbf{The four LIBERO suites we evaluate on.}
     One task per suite at its initial state, as the policy sees it (agent-view
-    observation); the label under each frame names what the suite varies across
-    its ten tasks.
+    observation), with that task's instruction.
+    Each suite holds ten such tasks and varies one factor across them: object
+    layout (Spatial), object identity (Object), the goal in a fixed scene
+    (Goal), and two-stage long-horizon composition (Long).
     }
     \label{fig:libero_suites}
 \end{figure}
