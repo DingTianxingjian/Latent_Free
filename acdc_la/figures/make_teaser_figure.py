@@ -1,24 +1,32 @@
-"""Teaser: figures/teaser.pdf -- the two challenges, one per panel, full width, page 1.
+"""Teaser: figures/teaser.{pdf,png} -- the two challenges, full width, page 1.
 
     ../envs/univla_vla/bin/python -m acdc_la.figures.make_teaser_figure
 
-The large marks are schematic (they illustrate the two failure modes); the inset charts are numbers:
-  (a) Profile NMSE = 1 - R^2(profile).  [real] endpoint-only .983 (s1_mean_1ep, prof .017),
-      ours .909 (latp2_inv, prof .091).  LEDGER 2026-09-11 / 09-16.
-  (b) effect error vs donor distance, Q1 and Q4.  [USER-SUPPLIED] .80 -> 1.06 (reconstruction only),
-      .77 -> .86 (EAT), quoted from the manuscript's Fig. 3(a); not recomputed on this machine.
+Panel (a) is MEASURED, not drawn.  One real pair of OXE validation clips from the same source with
+  cos(N) = 0.86   (the same net effect)      cos(A1) = -0.46   (opposite first dynamics mode)
+Its two curves are the clips' own action labels (per-segment xyz displacement, interpolated uniformly in
+time, so dot spacing IS speed), and the two latent panels are a 2-D PCA of that source's 400 latents under
+each tokenizer, with the pair marked.  Numbers: LEDGER 2026-09-24, dumps s1_mean_1ep_val / latp2_inv_val.
+Panel (b) is a schematic of the transport setting, in the layout of the manuscript's own teaser.
 """
+import json
 import os
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
+import numpy as np
+from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
 INK, INK2, GRID = "#1a1a19", "#52514e", "#d9d9d6"
-OURS, OURS_L, WARN = "#4a3aa7", "#a294db", "#eb6834"
-
-PROFILE_NMSE = {"endpoint only": 0.983, "+ $A_1$": 0.909}          # [real]
-QUART = {"reconstruction only": (0.80, 1.06), "EAT": (0.77, 0.86)}  # [USER-SUPPLIED]
+FAST, SLOW = "#2a78d6", "#eb6834"          # the two clips: "fast then slow" / "slow then fast"
+OURS, OURS_L, WARN = "#4a3aa7", "#e7e3f5", "#eb6834"
+PAIR = dict(i=7247, j=7444, src=18, cosN=0.86, cosA1=-0.46, cos_endpoint=0.895, cos_ours=0.181,
+            n_pairs=1111, agg_endpoint=0.628, agg_ours=0.416)
+ACT = {                                     # [real] the two clips' action labels, (4 segments, xyz)
+    "j": [[0.0373, 0.0555, -0.1715], [0.0046, 0.1095, -0.0145], [0.0005, -0.0038, -0.0071], [0.0028, -0.0021, -0.0189]],
+    "i": [[0.0250, 0.0291, 0.0036], [0.0094, 0.0323, -0.1098], [0.0407, 0.0789, -0.0744], [-0.0109, 0.0520, -0.0040]],
+}
 
 plt.rcParams.update({
     "font.family": "serif", "font.serif": ["Nimbus Roman", "DejaVu Serif"], "mathtext.fontset": "stix",
@@ -27,113 +35,104 @@ plt.rcParams.update({
 })
 
 
-def arrow(ax, p, q, color=INK2, lw=1.3, ls="-", ms=9):
-    ax.add_patch(FancyArrowPatch(p, q, arrowstyle="-|>", mutation_scale=ms, color=color, lw=lw,
-                                 linestyle=ls, shrinkA=0, shrinkB=0, zorder=4))
+def _path(act, n_sub=7):
+    """Cumulative end-effector path, sampled uniformly in time: dot spacing is speed."""
+    a = np.asarray(act, np.float32)
+    knots = np.vstack([np.zeros(3, np.float32), np.cumsum(a, 0)])
+    pts = [knots[k] + (knots[k + 1] - knots[k]) * t for k in range(len(a)) for t in np.linspace(0, 1, n_sub, endpoint=False)]
+    return np.array(pts + [knots[-1]])
 
 
-def tag(ax, t, title):
-    ax.text(0, 104, f"({t})  {title}", fontsize=8.4, fontweight="bold", va="bottom", ha="left", color=INK)
+def panel_a(ax_tr, ax_e, ax_o, cache):
+    P = {k: _path(v) for k, v in ACT.items()}
+    B = np.vstack(list(P.values()))
+    _, _, Vt = np.linalg.svd(B - B.mean(0), full_matrices=False)          # one 2-D view for both clips
+    for k, col, lab, y in (("j", FAST, "fast $\\rightarrow$ slow", 1), ("i", SLOW, "slow $\\rightarrow$ fast", 0)):
+        q = (P[k] - B.mean(0)) @ Vt[:2].T
+        q = q - q[0] + np.array([0.0, y * 0.30])
+        ax_tr.plot(q[:, 0], q[:, 1], "-", color=col, lw=0.9, alpha=0.5, zorder=2)
+        ax_tr.scatter(q[:, 0], q[:, 1], s=7.5, color=col, zorder=3, linewidths=0)
+        ax_tr.add_patch(FancyArrowPatch(q[0], q[-1], arrowstyle="-|>", mutation_scale=8, color=col, lw=1.0,
+                                        linestyle=(0, (3, 2)), shrinkA=0, shrinkB=0, zorder=4, alpha=0.85))
+        ax_tr.text(0.0, 0.97 if y else 0.40, lab, transform=ax_tr.transAxes, color=col, fontsize=7.4,
+                   ha="left", va="top")
+    ax_tr.text(0.5, -0.10, f"same net effect  $\\cos(N)={PAIR['cosN']:.2f}$,  opposite dynamics  "
+                           f"$\\cos(A_1)={PAIR['cosA1']:+.2f}$", transform=ax_tr.transAxes, ha="center",
+               va="top", fontsize=6.8, color=INK2)
+    ax_tr.set_aspect("equal"); ax_tr.axis("off")
 
-
-def track(ax, y, xs, label, color=INK):
-    """One clip: five frames on a common path, spaced by where the motion actually happened."""
-    ax.plot([2, 38], [y, y], color=GRID, lw=1.2, zorder=1)
-    for i, f in enumerate(xs):
-        x = 2 + 36 * f
-        ax.plot([x], [y], "o", ms=5.2, color=color if i in (0, len(xs) - 1) else "white",
-                markeredgecolor=color, markeredgewidth=1.1, zorder=3)
-    ax.text(2, y + 8, label, fontsize=7.4, color=INK, ha="left")
-
-
-def panel_a(ax):
-    tag(ax, "a", "Same endpoint, different process")
-
-    track(ax, 74, [0.0, 0.45, 0.72, 0.90, 1.0], "fast, then slow", INK)
-    track(ax, 42, [0.0, 0.10, 0.28, 0.55, 1.0], "slow, then fast", INK)
-
-    ax.text(58, 92, "$N=\\sum_k \\Delta F_k$", fontsize=8.0, color=INK, ha="center")
-    for y in (74, 42):
-        arrow(ax, (47, y), (69, y), color=INK2, lw=1.6)
-    ax.text(58, 57, "identical", fontsize=7.4, color=INK2, ha="center", style="italic")
-
-    ax.text(86, 92, "$A_1$", fontsize=8.0, color=INK, ha="center")
-    ax.plot([78, 94], [74, 74], color=INK2, lw=0.8, zorder=2)
-    ax.plot([78, 94], [42, 42], color=INK2, lw=0.8, zorder=2)
-    ax.add_patch(Rectangle((82, 74), 8, 11, facecolor=INK, edgecolor="white", lw=0.6, zorder=3))
-    ax.add_patch(Rectangle((82, 31), 8, 11, facecolor=INK, edgecolor="white", lw=0.6, zorder=3))
-    ax.text(86, 57, "opposite sign", fontsize=7.4, color=INK2, ha="center", style="italic")
-
-    ax.text(58, 26, "one latent", fontsize=7.2, color=INK, ha="center")
-    ax.text(86, 26, "separated", fontsize=7.2, color=INK, ha="center")
+    for ax, key, title, cos in ((ax_e, "endpoint", "Endpoint only", PAIR["cos_endpoint"]),
+                                (ax_o, "ours", "Net $+$ dynamics", PAIR["cos_ours"])):
+        c = cache[key]; A = np.array(c["all"])
+        ax.scatter(A[:, 0], A[:, 1], s=3.5, color=GRID, zorder=1, linewidths=0)
+        for cl, col in (("j", FAST), ("i", SLOW)):
+            p = np.array(c[cl])
+            ax.plot([p[0]], [p[1]], "o", ms=7.5, color=col, markeredgecolor="white", markeredgewidth=1.0, zorder=3)
+        pi, pj = np.array(c["i"]), np.array(c["j"])
+        ax.plot([pi[0], pj[0]], [pi[1], pj[1]], color=INK2, lw=0.8, ls=(0, (2, 2)), zorder=2)
+        ax.set_title(title, fontsize=7.6, color=INK, pad=3)
+        ax.text(0.5, -0.06, f"$\\cos(z)={cos:.2f}$", transform=ax.transAxes, ha="center", va="top",
+                fontsize=7.4, color=OURS if key == "ours" else INK2,
+                fontweight="bold" if key == "ours" else "normal")
+        ax.set_xticks([]); ax.set_yticks([])
+        for s in ax.spines.values(): s.set_color(GRID); s.set_linewidth(0.6)
+        ax.set_aspect("equal")
 
 
 def panel_b(ax):
-    tag(ax, "b", "One latent, a new initial state")
+    ax.set_xlim(0, 100); ax.set_ylim(0, 100); ax.axis("off")
     box = dict(boxstyle="round,pad=0,rounding_size=1.6", linewidth=0.7)
-    ax.add_patch(FancyBboxPatch((0, 50), 26, 17, facecolor=OURS_L, edgecolor=OURS, **box))
-    ax.text(13, 58.5, "donor clip\n$\\rightarrow\\ z$", fontsize=7.4, ha="center", va="center", color=INK,
-            linespacing=1.3)
-    ax.text(13, 44, "same $z$,\ntwo recipients", fontsize=6.9, ha="center", va="top", color=INK2, linespacing=1.3)
+    ax.add_patch(FancyBboxPatch((0, 46), 24, 16, facecolor="white", edgecolor=GRID, **box))
+    ax.text(12, 54, "donor transition", fontsize=7.2, ha="center", va="center", color=INK)
+    ax.add_patch(FancyArrowPatch((6, 44), (20, 44), arrowstyle="-|>", mutation_scale=7, color=INK2,
+                                 lw=1.0, linestyle=(0, (3, 2)), shrinkA=0, shrinkB=0))
+    ax.text(13, 38, "source effect", fontsize=6.6, color=INK2, ha="center")
+    ax.add_patch(plt.Circle((32, 54), 5.5, facecolor=OURS_L, edgecolor=OURS, lw=0.8, zorder=3))
+    ax.text(32, 54, "$z$", fontsize=8, ha="center", va="center", color=OURS, zorder=4)
+    ax.add_patch(FancyArrowPatch((24, 54), (26.5, 54), arrowstyle="-|>", mutation_scale=7, color=INK2, lw=0.9))
 
-    ax.text(52, 96, "near state", fontsize=7.2, color=INK2, ha="center")
-    ax.text(84, 96, "far state", fontsize=7.2, color=INK2, ha="center")
-    import math
-    for r, (name, col, angles) in enumerate([("reconstruction only", WARN, (16, 54)),
-                                             ("EAT", OURS, (5, 8))]):
-        y = 76 - r * 44
-        ax.text(38, y + 13, name, fontsize=7.4, color=col, ha="left", fontweight="bold")
-        arrow(ax, (26, 58.5), (36, y), color=OURS, lw=1.0)
-        for c in (0, 1):
-            x = 38 + c * 32
-            ax.add_patch(FancyBboxPatch((x, y - 10), 28, 20, facecolor="white", edgecolor=GRID, **box))
-            arrow(ax, (x + 5, y - 4), (x + 24, y - 4), color=GRID, lw=1.0, ls=(0, (2, 2)), ms=7)
-            a = math.radians(angles[c])
-            arrow(ax, (x + 5, y - 4), (x + 5 + 19 * math.cos(a), y - 4 + 19 * math.sin(a)), color=col, lw=1.5)
-
-
-
-
-def inset_a(ax):
-    ins = ax.inset_axes([0.12, -0.26, 0.50, 0.24])
-    ks = list(PROFILE_NMSE); v = [PROFILE_NMSE[k] for k in ks]
-    b = ins.barh([1, 0], v, height=0.55, color=[OURS_L, OURS], edgecolor="white", lw=0.7, zorder=3)
-    for bb, vv in zip(b, v):
-        ins.text(vv - 0.003, bb.get_y() + bb.get_height() / 2, f"{vv:.3f}", va="center", ha="right",
-                 fontsize=6.6, color="white")
-    ins.set_yticks([1, 0]); ins.set_yticklabels(ks, fontsize=6.8, color=INK2)
-    ins.set_xlim(0.86, 1.0); ins.set_xticks([])
-    ins.set_xlabel("profile NMSE   (lower is better)", fontsize=6.6, color=INK2, labelpad=2)
-    for sp in ("top", "right", "bottom"): ins.spines[sp].set_visible(False)
-    ins.spines["left"].set_color(INK2); ins.spines["left"].set_linewidth(0.6)
-    ins.tick_params(length=0, pad=1.5)
+    for r, (name, col, ang) in enumerate([("reconstruction only", WARN, (18, 58)), ("EAT (ours)", OURS, (6, 9))]):
+        y = 78 - r * 46
+        ax.add_patch(FancyArrowPatch((37, 54), (48, y - 4 + 8), arrowstyle="-|>", mutation_scale=7,
+                                     color=INK2, lw=0.9, connectionstyle=f"arc3,rad={0.18 if r else -0.18}"))
+        ax.text(52, y + (13 if r == 0 else -15), name, fontsize=7.2, color=col, ha="left", fontweight="bold")
+        for c, lab in enumerate(("similar state", "shifted state")):
+            x = 52 + c * 25
+            ax.add_patch(FancyBboxPatch((x, y - 12), 22, 20, facecolor="white", edgecolor=GRID, **box))
+            if r == 0:
+                ax.text(x + 11, y + 24, lab, fontsize=6.8, color=INK2, ha="center")
+            ax.add_patch(FancyArrowPatch((x + 4, y - 4), (x + 19, y - 4), arrowstyle="-|>", mutation_scale=6,
+                                         color=GRID, lw=1.0, linestyle=(0, (2, 2)), shrinkA=0, shrinkB=0))
+            a = np.radians(ang[c])
+            ax.add_patch(FancyArrowPatch((x + 4, y - 4), (x + 4 + 15 * np.cos(a), y - 4 + 15 * np.sin(a)),
+                                         arrowstyle="-|>", mutation_scale=7, color=col, lw=1.4, shrinkA=0, shrinkB=0))
+    ax.add_patch(FancyArrowPatch((36, 4), (44, 4), arrowstyle="-|>", mutation_scale=6, color=GRID, lw=1.0,
+                                 linestyle=(0, (2, 2)), shrinkA=0, shrinkB=0))
+    ax.text(45.5, 4, "source effect", fontsize=6.4, color=INK2, va="center")
+    ax.add_patch(FancyArrowPatch((72, 4), (80, 4), arrowstyle="-|>", mutation_scale=6, color=OURS, lw=1.2,
+                                 shrinkA=0, shrinkB=0))
+    ax.text(81.5, 4, "decoded effect", fontsize=6.4, color=INK2, va="center")
 
 
-def inset_b(ax):
-    ins = ax.inset_axes([0.16, -0.26, 0.42, 0.24])
-    for (k, (q1, q4)), c in zip(QUART.items(), (WARN, OURS)):
-        ins.plot([0, 1], [q1, q4], "-o", ms=4.2, lw=1.4, color=c, markeredgecolor="white", markeredgewidth=0.7)
-        ins.text(1.08, q4, "recon. only" if "recon" in k else k, fontsize=6.6, color=c, va="center")
-    ins.set_xticks([0, 1]); ins.set_xticklabels(["Q1", "Q4"], fontsize=6.8, color=INK2)
-    ins.set_xlim(-0.12, 1.1); ins.set_ylim(0.70, 1.14)
-    ins.set_yticks([0.8, 1.0]); ins.tick_params(labelsize=6.6, length=2, pad=1.5, colors=INK2)
-    ins.set_xlabel("donor distance quartile", fontsize=6.6, color=INK2, labelpad=1.5)
-    ins.set_ylabel("effect error", fontsize=6.6, color=INK2, labelpad=1.5)
-    ins.yaxis.grid(True, color=GRID, lw=0.5); ins.set_axisbelow(True)
-    for sp in ("top", "right"): ins.spines[sp].set_visible(False)
-    for sp in ("left", "bottom"): ins.spines[sp].set_color(INK2); ins.spines[sp].set_linewidth(0.6)
-
-
-def teaser(out):
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 2.5), gridspec_kw={"wspace": 0.16})
-    for ax in axes:
-        ax.set_xlim(-1, 101); ax.set_ylim(18, 100); ax.axis("off")
-    panel_a(axes[0]); inset_a(axes[0])
-    panel_b(axes[1]); inset_b(axes[1])
-    fig.savefig(out + ".pdf"); fig.savefig(out + ".png"); plt.close(fig)
+def teaser(out, cache):
+    fig = plt.figure(figsize=(7.2, 2.15))
+    gs = fig.add_gridspec(1, 4, width_ratios=[1.15, 0.78, 0.78, 2.5], wspace=0.30)
+    ax_tr, ax_e, ax_o = fig.add_subplot(gs[0]), fig.add_subplot(gs[1]), fig.add_subplot(gs[2])
+    ax_b = fig.add_subplot(gs[3])
+    panel_a(ax_tr, ax_e, ax_o, cache)
+    panel_b(ax_b)
+    fig.text(0.02, 1.10, "(a)  What to keep?", fontsize=9, fontweight="bold", va="bottom", color=INK)
+    fig.text(0.02, 1.02, "Same endpoint, different process.", fontsize=7.4, va="bottom", color=INK2)
+    fig.text(0.575, 1.10, "(b)  How to behave?", fontsize=9, fontweight="bold", va="bottom", color=INK)
+    fig.text(0.575, 1.02, "Same latent, different initial states.", fontsize=7.4, va="bottom", color=INK2)
+    fig.text(0.30, -0.085, f"one real validation pair; over all {PAIR['n_pairs']:,} such pairs "
+             f"$\\cos(z)$ falls {PAIR['agg_endpoint']:.2f} $\\rightarrow$ {PAIR['agg_ours']:.2f}",
+             ha="center", fontsize=6.6, color=INK2, style="italic")
+    fig.savefig(out + ".pdf", pad_inches=0.06); fig.savefig(out + ".png", pad_inches=0.06); plt.close(fig)
 
 
 if __name__ == "__main__":
     d = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "figures")
-    teaser(os.path.join(d, "teaser"))
+    cache = json.load(open(os.path.join(d, "teaser_latents.json")))
+    teaser(os.path.join(d, "teaser"), cache)
     print("wrote", d + "/teaser.{pdf,png}")

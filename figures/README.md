@@ -56,3 +56,17 @@ measured drops (endpoint-only 33.6 %, UniVLA 22.9 %, ours 17.9 %) belong in the 
 `representation_comparison`(c) already plots them.  Scene-level perturbations (a real light source moved in MuJoCo, an
 extra object added to the BDDL scene, as in LIBERO-Plus) are NOT what this figure shows and would need a GPU node
 plus scene edits.
+
+`teaser` panel (a) is **measured, not drawn**.  One real pair of OXE validation clips from source 18
+(clips 7247 / 7444) with cos(N) = 0.86 and cos(A1) = -0.46: the two curves are those clips' own action
+labels, interpolated uniformly in time so dot spacing is speed, and the two squares are a 2-D PCA of that
+source's 400 latents under each tokenizer with the pair marked (centred cosine 0.90 under the endpoint-only
+tokenizer, 0.18 under ours).  The aggregate under the panel is over all 1,111 validation pairs with
+cos(N) > 0.55 and cos(A1) < -0.05: centred cos(z) 0.63 (endpoint-only) -> 0.42 (ours).  Cached coordinates:
+`figures/teaser_latents.json`; the search is `acdc_la/figures/make_teaser_figure.py`'s docstring.
+Panel (b) is still a schematic of the transport setting.
+
+**Measured but not in the figure:** the same 1,111 pairs give centred cos(z) 0.14 for the matched UniVLA
+baseline, i.e. UniVLA separates these pairs better than we do -- consistent with its higher profile R^2
+(.125 vs .091).  Panel (a) is therefore an ablation of our own descriptor (N vs N+A1), not a claim against
+UniVLA, and the caption must not imply otherwise.
