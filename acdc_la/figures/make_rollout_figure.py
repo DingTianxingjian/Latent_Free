@@ -106,12 +106,12 @@ def rollout_compare(out):
     meta = {m["suite"]: m for m in json.load(open(os.path.join(d, "frames.json")))}
     nf = len(BLOCKS[0]["base"]["idx"])
     dis = Distractor("cpu")
-    fig = plt.figure(figsize=(7.2, 2.6))
-    outer = fig.add_gridspec(1, 2, wspace=0.11)
+    fig = plt.figure(figsize=(7.2, 2.25))
+    outer = fig.add_gridspec(1, 2, wspace=0.085)
     for blk in BLOCKS:
         clip = _perturb(_clip(d, blk["tag"]), blk["perturb"], dis)      # ONE clip: both rows share the state
         steps = np.linspace(0, meta[blk["tag"]]["episode_len"] - 1, 8).round().astype(int)
-        gs = outer[BLOCKS.index(blk)].subgridspec(2, nf, wspace=0.04, hspace=0.22)
+        gs = outer[BLOCKS.index(blk)].subgridspec(2, nf, wspace=0.035, hspace=0.13)
         axs = [[None] * nf, [None] * nf]
         for ri, (name, col, key) in enumerate(ROWS):
             spec = blk[key]
@@ -132,25 +132,25 @@ def rollout_compare(out):
                         color=INK, va="top", ha="left", zorder=6,       # per FRAME: the two rows are sampled at
                         bbox=dict(facecolor="white", alpha=0.72, pad=1.0, edgecolor="none"))   # different steps
                 if last and key == "base":
-                    ax.text(0.5, -0.09, spec["note"], transform=ax.transAxes, fontsize=6.8, color=BAD,
+                    ax.text(0.5, -0.045, spec["note"], transform=ax.transAxes, fontsize=6.8, color=BAD,
                             ha="center", va="top")
         # task header: title, full instruction, and which nuisance both rows are under
         bb = [axs[0][c].get_position() for c in range(nf)]
         x0, x1 = bb[0].x0, bb[-1].x1
         ins = textwrap.wrap(meta[blk["tag"]]["instruction"], width=46)     # the header is three short lines, so a
-        fig.text(x0, bb[0].y1 + 0.145, blk["title"], fontsize=8.4,         # task's text never reaches its neighbour
+        fig.text(x0, bb[0].y1 + 0.125, blk["title"], fontsize=8.4,         # task's text never reaches its neighbour
                  fontweight="bold", va="bottom", color=INK)
-        fig.text(x0, bb[0].y1 + 0.090, "“" + "\n".join(ins) + "”", fontsize=6.6, va="bottom",
+        fig.text(x0, bb[0].y1 + 0.075, "“" + "\n".join(ins) + "”", fontsize=6.6, va="bottom",
                  color=INK2, style="italic", linespacing=1.25)
-        fig.text(x0, bb[0].y1 + 0.045, "both rows under the " + blk["nuisance"], fontsize=6.4,
+        fig.text(x0, bb[0].y1 + 0.028, "both rows under the " + blk["nuisance"], fontsize=6.4,
                  va="bottom", color=INK2)
-        y = axs[1][0].get_position().y0 - 0.055                                # a thin time axis under the task
+        y = axs[1][0].get_position().y0 - 0.032                                # a thin time axis under the task
         fig.add_artist(plt.Line2D([x0, x1], [y, y], color=GRID, lw=0.8))
         fig.add_artist(plt.matplotlib.patches.FancyArrowPatch((x1 - 0.012, y), (x1, y), arrowstyle="-|>",
                                                              mutation_scale=7, color=GRID, lw=0.8))
-        fig.text((x0 + x1) / 2, y - 0.045, "time", fontsize=6.5, color=INK2, ha="center", style="italic")
+        fig.text(x1, y - 0.035, "time", fontsize=6.3, color=INK2, ha="right", va="top", style="italic")
     if MOCK:
-        fig.text(0.5, -0.10, "layout mock-up: frames are demonstration observations under the paper's own "
+        fig.text(0.5, -0.055, "layout mock-up: frames are demonstration observations under the paper's own "
                  "nuisance interventions, not policy rollouts", ha="center", fontsize=6.6, color=BAD, style="italic")
     fig.savefig(out + ".pdf", pad_inches=0.06); fig.savefig(out + ".png", pad_inches=0.06); plt.close(fig)
 
