@@ -1,7 +1,8 @@
 % =====================================================================
 % Experiments.  \input{paper/experiments} from the main file.
 %
-% Main-text float budget: one table and three figures.
+% Main-text float budget: one table and four figures.
+%   Fig.~\ref{fig:libero_suites}        what the evaluation environments look like
 %   Table~\ref{tab:closed_loop_main}      does the system work in closed loop
 %   Fig.~\ref{fig:representation_comparison}  is the representation better than other latent actions
 %   Fig.~\ref{fig:temporal_ablation}      does the temporal factorization cause it
@@ -11,6 +12,7 @@
 %   figures/representation_comparison.pdf
 %   figures/representation_ablation.pdf
 %   figures/eat_refinement.pdf
+%   figures/libero_suites.pdf            (environment strip; libero_suites_grid.pdf is the 2-row variant)
 % Not used in the main text: figures/representation_comparison_with_policy.pdf
 %   (same probe panels plus a closed-loop panel; kept for a teaser slot or a talk,
 %    where it does not sit next to Table~\ref{tab:closed_loop_main}).
@@ -65,6 +67,20 @@ continuous action expert described in Appendix~\ref{app:vla_adaptation}.
 Only the latent labeller differs between the two arms.
 Closed-loop success rate is the primary downstream metric.
 Each suite contains 10 tasks and is evaluated with 50 rollouts per task.
+Figure~\ref{fig:libero_suites} shows the four suites; they share the robot and
+the camera and differ in what is varied across tasks, from object layout
+(Spatial) to long-horizon compositions of two subtasks (Long).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/libero_suites.pdf}
+    \caption{
+    \textbf{The four LIBERO suites we evaluate on.}
+    One task per suite, shown at the initial state with its natural-language
+    instruction; the frames are the agent-view observation the policy receives.
+    }
+    \label{fig:libero_suites}
+\end{figure}
 
 \paragraph{Representation analysis.}
 For latent quality, we follow prior work and use a frozen-tokenizer linear

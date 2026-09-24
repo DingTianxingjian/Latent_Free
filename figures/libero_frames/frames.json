@@ -1,0 +1,86 @@
+[
+ {
+  "suite": "libero_spatial",
+  "task": 0,
+  "instruction": "pick up the black bowl next to the cookie box and place it on the plate",
+  "file": "libero_spatial_t0.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_spatial",
+  "task": 1,
+  "instruction": "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate",
+  "file": "libero_spatial_t1.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_spatial",
+  "task": 2,
+  "instruction": "pick up the black bowl on the ramekin and place it on the plate",
+  "file": "libero_spatial_t2.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_object",
+  "task": 0,
+  "instruction": "pick up the orange juice and place it in the basket",
+  "file": "libero_object_t0.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_object",
+  "task": 1,
+  "instruction": "pick up the ketchup and place it in the basket",
+  "file": "libero_object_t1.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_object",
+  "task": 2,
+  "instruction": "pick up the cream cheese and place it in the basket",
+  "file": "libero_object_t2.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_goal",
+  "task": 0,
+  "instruction": "put the bowl on the plate",
+  "file": "libero_goal_t0.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_goal",
+  "task": 1,
+  "instruction": "put the wine bottle on the rack",
+  "file": "libero_goal_t1.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_goal",
+  "task": 2,
+  "instruction": "open the top drawer and put the bowl inside",
+  "file": "libero_goal_t2.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_10",
+  "task": 0,
+  "instruction": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+  "file": "libero_10_t0.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_10",
+  "task": 1,
+  "instruction": "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+  "file": "libero_10_t1.png",
+  "source": "rlds first frame"
+ },
+ {
+  "suite": "libero_10",
+  "task": 2,
+  "instruction": "put the yellow and white mug in the microwave and close it",
+  "file": "libero_10_t2.png",
+  "source": "rlds first frame"
+ }
+]
