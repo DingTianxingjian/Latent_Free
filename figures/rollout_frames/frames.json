@@ -1,0 +1,14 @@
+[
+ {
+  "suite": "libero_object",
+  "instruction": "pick up the milk and place it in the basket",
+  "n_frames": 8,
+  "episode_len": 175
+ },
+ {
+  "suite": "libero_10",
+  "instruction": "put both moka pots on the stove",
+  "n_frames": 8,
+  "episode_len": 383
+ }
+]

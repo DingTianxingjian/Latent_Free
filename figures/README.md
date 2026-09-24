@@ -33,3 +33,11 @@ latent decoded into a near and a far recipient state.  The large marks are schem
 numbers.  The profile NMSE inset is measured (`1 - R^2(profile)`: endpoint-only .983 from `s1_mean_1ep`, ours .909
 from `latp2_inv`).  **The Q1/Q4 effect-error inset (.80 -> 1.06 recon-only, .77 -> .86 EAT) is quoted from the
 manuscript's Fig. 3(a) and has not been recomputed here** -- no such measurement exists in this repository.
+
+`rollout_compare` is the qualitative comparison (two tasks, UniVLA* above TERRA, red frame on the failure step,
+green frame + check on completion).  **It is a layout mock-up**: the frames are demonstration observations pulled
+from `data/libero_rlds`, not policy rollouts, and the figure prints a footer saying so.  Both rows of a block use
+the same episode, so the "failure" row is simply truncated -- the labels under the red frames are the failure modes
+the figure is meant to show, not observed ones.  When real rollouts exist, put their frames in
+`figures/rollout_frames/` with the same names, set `MOCK = False` in `acdc_la/figures/make_rollout_figure.py`, and
+uncomment the figure block in `paper/experiments.tex`.

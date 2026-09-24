@@ -163,6 +163,35 @@ significance; with 500 rollouts per suite the standard error is approximately
 Per-task results and additional seeds are reported in the appendix when
 available.
 
+% ---------------------------------------------------------------------
+% Qualitative rollout comparison.  READY TO USE ONCE THE FRAMES ARE REAL.
+% figures/rollout_compare.pdf is currently a LAYOUT MOCK-UP: its frames come
+% from demonstrations, not from policy rollouts, and the figure carries a
+% footer saying so (MOCK = True in acdc_la/figures/make_rollout_figure.py).
+% When the two arms have been rolled out from the same initial state, drop
+% their frames into figures/rollout_frames/, set MOCK = False, uncomment the
+% block below, and delete the environment figure above -- this one shows the
+% setting and the result together, so the page count does not grow.
+%
+% \begin{figure}[t]
+%     \centering
+%     \includegraphics[width=\linewidth]{figures/rollout_compare.pdf}
+%     \caption{
+%     \textbf{Representative closed-loop episodes from the same initial state.}
+%     Each pair of rows starts from one initial state and one evaluation seed.
+%     UniVLA$^*$ fails at the highlighted step (red); TERRA completes the task
+%     (green).
+%     Top: LIBERO-Object, where the baseline grasps a nearby distractor, the
+%     policy-level counterpart of the nuisance sensitivity in
+%     Figure~\ref{fig:representation_comparison}(c).
+%     Bottom: LIBERO-Long, where it releases the first object before the second
+%     stage, the counterpart of the within-window structure in
+%     Figure~\ref{fig:temporal_ablation}.
+%     Per-episode failure types for both arms are tabulated in the appendix.
+%     }
+%     \label{fig:rollouts}
+% \end{figure}
+
 
 \subsection{Temporal Effect Representation}
 \label{sec:temporal_repr_results}
