@@ -35,10 +35,13 @@ from `latp2_inv`).  **The Q1/Q4 effect-error inset (.80 -> 1.06 recon-only, .77 
 manuscript's Fig. 3(a) and has not been recomputed here** -- no such measurement exists in this repository.
 
 `rollout_compare` is the qualitative comparison (two tasks, UniVLA* above TERRA, red frame on the failure step,
-green frame + check on completion).  **It is a layout mock-up**: the frames are demonstration observations pulled
-from `data/libero_rlds`, not policy rollouts, and the figure prints a footer saying so.  Both rows of a block use
-the same episode, so the "failure" row is simply truncated -- the labels under the red frames are the failure modes
-the figure is meant to show, not observed ones.  When real rollouts exist, put their frames in
+green frame + check on completion), with the paper's own nuisance intervention applied to BOTH rows of a block so
+the two arms see the same perturbed scene: the moving patch on LIBERO-Object, the photometric shift on
+LIBERO-Long.  **It is a layout mock-up** and the figure prints a footer saying so.  The frames are demonstration
+observations from `data/libero_rlds`, not policy rollouts; the Object failure row is a *different* demonstration
+(a different target object) standing in for "grasps the wrong object", and the Long failure row is the same
+demonstration truncated.  Two consequences for the real version: both rows must come from **one** episode and one
+seed, and the labels under the red frames must be failure modes that were observed, not chosen.  When real rollouts exist, put their frames in
 `figures/rollout_frames/` with the same names, set `MOCK = False` in `acdc_la/figures/make_rollout_figure.py`, and
 uncomment the figure block in `paper/experiments.tex`.
 
