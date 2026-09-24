@@ -24,7 +24,7 @@ import torch
 from matplotlib.patches import Rectangle
 from PIL import Image
 
-from ..data.distractor import Distractor
+from ..data.distractor import Distractor, patch_trajectory
 from ..paths import IMG
 
 MOCK = True
@@ -124,9 +124,12 @@ def rollout_compare(out):
                 edge, lw = (BAD, 1.6) if (last and key == "base") else ((OK, 1.6) if last else (GRID, 0.6))
                 _show(ax, clip[0, fi], edge, lw)
                 if ci == 0 and ri == 0 and blk["perturb"] == "distractor":     # name the patch: it reads as a
-                    ax.add_patch(Rectangle((3, IMG - 67), 64, 64, fill=False, edgecolor=INK2,  # camera window otherwise
+                    cx, cy = patch_trajectory([EP], 8)[0][fi]                  # camera window otherwise.  Its
+                    x0, y0 = cx - 32, cy - 32                                  # position comes from the renderer
+                    ax.add_patch(Rectangle((x0, y0), 64, 64, fill=False, edgecolor=INK2,
                                            linewidth=0.8, linestyle=(0, (2, 1.6)), zorder=6))
-                    ax.text(35, IMG - 72, "distractor", fontsize=5.8, color=INK2, ha="center", va="bottom", zorder=6)
+                    ax.text(cx, y0 - 3, "distractor", fontsize=5.8, color=INK, ha="center", va="bottom", zorder=6,
+                            bbox=dict(facecolor="white", alpha=0.75, pad=0.8, edgecolor="none"))
                 if last:
                     _mark(ax, clip[0, fi], spec["roi"], BAD if key == "base" else OK)
                     (_cross if key == "base" else _check)(ax)
