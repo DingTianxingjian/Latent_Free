@@ -201,9 +201,17 @@ def panel_b(fig, gs):
 
 def teaser(out):
     fig = plt.figure(figsize=(7.2, 2.15))
-    gs = fig.add_gridspec(1, 2, width_ratios=[1.12, 1.0], wspace=0.07, top=0.90)
+    gs = fig.add_gridspec(1, 2, width_ratios=[1.12, 1.0], wspace=0.12, top=0.90)
     fa = panel_a(fig, gs[0])
     fb = panel_b(fig, gs[1])
+    # a divider between (a) and (b), midway through the gap between the two panels' contents
+    fig.canvas.draw()                                             # measure text too: titles overhang their axes
+    r = fig.canvas.get_renderer(); inv = fig.transFigure.inverted()
+    xb0 = fb.get_position().x0
+    right_a = max(inv.transform(t.get_window_extent(r))[1, 0] for ax in fig.axes for t in ax.texts
+                  if inv.transform(t.get_window_extent(r))[1, 0] < xb0)
+    xd = (right_a + xb0) / 2
+    fig.add_artist(plt.Line2D([xd, xd], [0.02, 1.02], color=GRID, lw=1.0, ls=(0, (4, 3))))
     top = 0.975                                                     # titles start where each panel's frames start
     fig.text(fa.get_position().x0, top, "(a)  Same endpoints, different dynamics", fontsize=8.8,
              fontweight="bold", va="bottom")
