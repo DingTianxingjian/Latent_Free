@@ -88,7 +88,7 @@ def panel_a(fig, gs):
     fr = _frames(DONOR)[: T_GRASP + 1]
     T = len(fr) - 1
     u = np.linspace(0, 1, N_STRIP)
-    outer = gs.subgridspec(1, 2, width_ratios=[4.0, 1.0], wspace=0.10)
+    outer = gs.subgridspec(1, 2, width_ratios=[4.0, 1.0], wspace=0.16)
     rows = outer[0].subgridspec(2, 1, hspace=0.10)
     first = None
     for r, (lab, col, w) in enumerate([("fast $\\rightarrow$ slow", FAST, 1 - (1 - u) ** 2),
@@ -109,17 +109,31 @@ def panel_a(fig, gs):
         tl.scatter(idx, np.zeros_like(idx), s=13, color=col, zorder=3, linewidths=0)
         tl.set_xlim(-1.5, T + 1.5); tl.set_ylim(-1, 1); tl.axis("off")
 
-    # two latent spaces: the colour of a dot is the strip it came from
-    sp = outer[1].subgridspec(2, 1, hspace=0.62)
-    top = fig.add_subplot(sp[0]); _space(top, "endpoints only", "reads $x_0, x_T$")
-    top.add_patch(Wedge((0.5, 0.5), 0.11, 90, 270, facecolor=FAST, edgecolor="white", lw=0.8, zorder=3))
-    top.add_patch(Wedge((0.5, 0.5), 0.11, 270, 90, facecolor=SLOW, edgecolor="white", lw=0.8, zorder=3))
-    top.text(0.5, 0.18, "one code for both", fontsize=6.2, ha="center", va="center", color=BAD)
-    bot = fig.add_subplot(sp[1]); _space(bot, "full transition", "reads every frame")
-    bot.plot([0.27, 0.73], [0.66, 0.34], color=INK2, lw=0.7, ls=(0, (2, 2)), zorder=2)
-    bot.add_patch(Circle((0.27, 0.66), 0.10, facecolor=FAST, edgecolor="white", lw=0.8, zorder=3))
-    bot.add_patch(Circle((0.73, 0.34), 0.10, facecolor=SLOW, edgecolor="white", lw=0.8, zorder=3))
-    bot.text(0.5, 0.12, "two codes", fontsize=6.2, ha="center", va="center", color=OK)
+    # what each encoder can recover: the progress curves the two strips were sampled from.  They are the
+    # actual warps, so the panel is exact: identical at the endpoints, different everywhere in between.
+    sp = outer[1].subgridspec(2, 1, hspace=0.70)
+    uu = np.linspace(0, 1, 100)
+    curves = ((FAST, 1 - (1 - uu) ** 2, 1 - (1 - u) ** 2), (SLOW, uu ** 2, u ** 2))
+    for k, (title, sub) in enumerate((("endpoints only", "sees $x_0, x_T$"), ("all frames", "sees every frame"))):
+        ax = fig.add_subplot(sp[k])
+        for col, c, samp in curves:
+            ax.plot(uu, c, color=col, lw=1.6 if k else 1.1, alpha=1.0 if k else 0.28, zorder=2)
+            if k:
+                ax.scatter(u[1:-1], samp[1:-1], s=16, color=col, zorder=4, linewidths=0.6, edgecolors="white")
+        ax.scatter([0, 1], [0, 1], s=26, color=INK, zorder=5, linewidths=0.6, edgecolors="white")
+        if not k:
+            ax.text(0.5, 0.5, "?", fontsize=11, ha="center", va="center", color=INK2, zorder=6)
+        ax.set_xlim(-0.06, 1.06); ax.set_ylim(-0.06, 1.06); ax.set_aspect("equal")
+        ax.set_xticks([]); ax.set_yticks([])
+        for sd in ("top", "right"): ax.spines[sd].set_visible(False)
+        for sd in ("left", "bottom"): ax.spines[sd].set_color(GRID); ax.spines[sd].set_linewidth(0.8)
+        ax.set_xlabel("time", fontsize=6.0, color=INK2, labelpad=1)
+        ax.set_ylabel("progress", fontsize=6.0, color=INK2, labelpad=1)
+        ax.text(0.5, 1.25, title, transform=ax.transAxes, fontsize=7.0, ha="center", va="bottom",
+                color=INK, fontweight="bold")
+        ax.text(0.5, 1.06, sub, transform=ax.transAxes, fontsize=6.2, ha="center", va="bottom", color=INK2)
+        ax.text(1.08, 0.5, "same $z$" if not k else "distinct $z$", transform=ax.transAxes, rotation=270,
+                fontsize=6.6, ha="center", va="center", color=BAD if not k else OK)
     return first
 
 
