@@ -93,7 +93,7 @@ def panel_a(fig, gs):
     fr = _frames(DONOR)[: T_GRASP + 1]
     T = len(fr) - 1
     u = np.linspace(0, 1, N_STRIP)
-    outer = gs.subgridspec(1, 2, width_ratios=[4.0, 2.1], wspace=0.24)
+    outer = gs.subgridspec(1, 2, width_ratios=[4.0, 1.15], wspace=0.30)
     rows = outer[0].subgridspec(2, 1, hspace=0.10)
     first, strips = None, []
     for r, (lab, col, w) in enumerate([("fast $\\rightarrow$ slow", FAST, 1 - (1 - u) ** 2),
@@ -118,30 +118,27 @@ def panel_a(fig, gs):
     # what each encoder can recover: the progress curves the two strips were sampled from.  They are the
     # actual warps, so the panel is exact: identical at the endpoints, different everywhere in between.
     # Side by side and fed by one bracket over BOTH strips, so neither plot reads as belonging to one row.
-    rc = outer[1].subgridspec(3, 2, height_ratios=[0.62, 1.0, 0.62], wspace=0.55)
+    rc = outer[1].subgridspec(2, 1, hspace=0.95)
     uu = np.linspace(0, 1, 100)
     curves = ((FAST, 1 - (1 - uu) ** 2, 1 - (1 - u) ** 2), (SLOW, uu ** 2, u ** 2))
     plots = []
-    for k, (title, sub, verdict, vcol) in enumerate((("endpoints only", "sees $x_0, x_T$", "same $z$", BAD),
-                                                     ("all frames", "sees every frame", "distinct $z$", OK))):
-        ax = fig.add_subplot(rc[1, k]); plots.append(ax)
+    for k, (title, verdict, vcol) in enumerate((("endpoints only", "same $z$", BAD),
+                                                ("all frames", "distinct $z$", OK))):
+        ax = fig.add_subplot(rc[k]); plots.append(ax)
         for col, c, samp in curves:
             ax.plot(uu, c, color=col, lw=1.6 if k else 1.1, alpha=1.0 if k else 0.28, zorder=2)
             if k:
-                ax.scatter(u[1:-1], samp[1:-1], s=16, color=col, zorder=4, linewidths=0.6, edgecolors="white")
-        ax.scatter([0, 1], [0, 1], s=26, color=INK, zorder=5, linewidths=0.6, edgecolors="white")
+                ax.scatter(u[1:-1], samp[1:-1], s=14, color=col, zorder=4, linewidths=0.6, edgecolors="white")
+        ax.scatter([0, 1], [0, 1], s=22, color=INK, zorder=5, linewidths=0.6, edgecolors="white")
         if not k:
-            ax.text(0.5, 0.5, "?", fontsize=11, ha="center", va="center", color=INK2, zorder=6)
+            ax.text(0.5, 0.5, "?", fontsize=10, ha="center", va="center", color=INK2, zorder=6)
         ax.set_xlim(-0.06, 1.06); ax.set_ylim(-0.06, 1.06); ax.set_aspect("equal")
         ax.set_xticks([]); ax.set_yticks([])
         for sd in ("top", "right"): ax.spines[sd].set_visible(False)
         for sd in ("left", "bottom"): ax.spines[sd].set_color(GRID); ax.spines[sd].set_linewidth(0.8)
-        ax.set_xlabel("time", fontsize=6.0, color=INK2, labelpad=1)
-        if k == 0: ax.set_ylabel("progress", fontsize=6.0, color=INK2, labelpad=1)
-        ax.text(0.5, 1.30, title, transform=ax.transAxes, fontsize=6.8, ha="center", va="bottom",
+        ax.text(0.5, 1.08, title, transform=ax.transAxes, fontsize=6.8, ha="center", va="bottom",
                 color=INK, fontweight="bold")
-        ax.text(0.5, 1.08, sub, transform=ax.transAxes, fontsize=5.9, ha="center", va="bottom", color=INK2)
-        ax.text(0.5, -0.36, verdict, transform=ax.transAxes, fontsize=7.2, ha="center", va="top", color=vcol,
+        ax.text(0.5, -0.10, verdict, transform=ax.transAxes, fontsize=7.0, ha="center", va="top", color=vcol,
                 fontweight="bold")
     # the bracket: from the middle of each strip into the plots
     pa, pb = strips[0].get_position(), strips[1].get_position()
@@ -152,7 +149,7 @@ def panel_a(fig, gs):
     for y in (ya, yb):
         fig.add_artist(plt.Line2D([x0, xb], [y, y], color=GRID, lw=1.0))
     fig.add_artist(plt.Line2D([xb, xb], [yb, ya], color=GRID, lw=1.0))
-    ym = (plots[0].get_position().y0 + plots[0].get_position().y1) / 2
+    ym = (ya + yb) / 2
     fig.add_artist(FancyArrowPatch((xb, ym), (px - 0.006, ym), arrowstyle="-|>",
                                    mutation_scale=7, color=INK2, lw=1.0, transform=fig.transFigure))
     return first
@@ -195,16 +192,16 @@ def panel_b(fig, gs):
     lg = fig.add_subplot(cells[3, 3:]); lg.axis("off"); lg.set_xlim(0, 1); lg.set_ylim(0, 1)
     lg.add_patch(FancyArrowPatch((0.02, 0.35), (0.12, 0.35), arrowstyle="-|>", mutation_scale=6, color=GRID,
                                  lw=1.2, linestyle=(0, (3, 2))))
-    lg.text(0.14, 0.35, "observed effect, at the source position", fontsize=6.2, color=INK2, va="center")
+    lg.text(0.14, 0.35, "observed effect", fontsize=6.2, color=INK2, va="center")
     lg.add_patch(FancyArrowPatch((0.02, -0.35), (0.12, -0.35), arrowstyle="-|>", mutation_scale=6, color=OURS,
                                  lw=1.4, clip_on=False))
-    lg.text(0.14, -0.35, "effect executed from $z$", fontsize=6.2, color=INK2, va="center")
+    lg.text(0.14, -0.35, "executed from $z$", fontsize=6.2, color=INK2, va="center")
     return a
 
 
 def teaser(out):
-    fig = plt.figure(figsize=(7.2, 2.3))
-    gs = fig.add_gridspec(1, 2, width_ratios=[1.32, 1.0], wspace=0.08, top=0.90)
+    fig = plt.figure(figsize=(7.2, 2.15))
+    gs = fig.add_gridspec(1, 2, width_ratios=[1.12, 1.0], wspace=0.07, top=0.90)
     fa = panel_a(fig, gs[0])
     fb = panel_b(fig, gs[1])
     top = 0.975                                                     # titles start where each panel's frames start
