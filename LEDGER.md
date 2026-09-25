@@ -4232,3 +4232,23 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   encoding predicts.  Not robust: any other ranking between the two.  The paper should not claim representation
   superiority over UniVLA from linear probes; its representation evidence is the controlled ablations (EAT vs
   reconstruction, N+A1 vs N), and the comparison with UniVLA rests on closed loop.
+
+### 2026-09-25 (14:50) — existing VQ and extra-AC arms, re-read under the NMSE protocol: VQ is much worse, AC2 is mixed
+
+- **What ran.**  Same per-source probe (`nmse_bootstrap.py`, rows cached in `acdc_la/results/nmse_rows/`) on dumps that
+  already existed: `tc_vq256` (the TC tokenizer with a 256-code VQ bottleneck, same data and 128k budget as the
+  continuous `tc_cont`) and the pilot-budget stage-1 ladder `s1_mean` / `s1_dc` / `s1_acdc` / `s1_acdc3` (0.039 ep).
+
+  | NMSE | net | seg1 | prof | seq | drop % |
+  |---|---|---|---|---|---|
+  | TC tokenizer, continuous `tc_cont` | .735 | .768 | .909 | .808 | 22.4 |
+  | TC tokenizer, VQ-256 `tc_vq256` | .946 | .925 | .967 | .946 | 40.5 |
+  | pilot DC + AC1 `s1_acdc` | .699 | .746 | .924 | .787 | 32.3 |
+  | pilot DC + AC1 + AC2 `s1_acdc3` | .714 | .774 | .916 | .797 | 28.9 |
+
+- **Conclusion: confirmed (single seed each).**  Discretising the same tokenizer loses most of the action information
+  (net NMSE .735 -> .946) and doubles the distractor drop, consistent with its under-used codebook (99/256 codes at
+  step 20k, 2026-09-13).  A second AC mode buys a little profile (.924 -> .916) and robustness at the cost of net, seg1
+  and seq, as recorded on 2026-09-09: one AC mode remains the operating point.  UniVLA's profile advantage comes from
+  per-pair encoding (one code set per segment), not from its quantiser.  Decision: no VQ variant of TERRA; the N-only
+  (endpoint) continuous arm is the CoMo-style baseline (continuous latent over an early temporal feature difference).
