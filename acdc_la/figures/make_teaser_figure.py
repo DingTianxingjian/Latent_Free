@@ -22,7 +22,7 @@ from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Wedge
 INK, INK2, GRID = "#1a1a19", "#52514e", "#d9d9d6"
 OBS = "#5f5e5a"                                              # the observed (source) effect, everywhere
 FAST, SLOW = "#2a78d6", "#eb6834"
-OURS, BAD, OK, RECON = "#4a3aa7", "#d92d20", "#1baf7a", "#eb6834"
+OURS, BAD, OK, RECON = "#4a3aa7", "#d92d20", "#1baf7a", "#c2409a"   # recon: magenta, clear of (a)'s orange
 
 EPS = "figures/teaser_eps/keep"
 DONOR, SIMILAR, SHIFTED = "table_center__libero_spatial_0", "table_center__libero_spatial_1", \
@@ -157,7 +157,7 @@ def panel_a(fig, gs):
 
 
 def panel_b(fig, gs):
-    cells = gs.subgridspec(4, 5, width_ratios=[1, 0.34, 0.13, 1, 1], height_ratios=[0.12, 1, 1, 0.16],
+    cells = gs.subgridspec(4, 5, width_ratios=[1, 0.34, 0.13, 1, 1], height_ratios=[0.12, 1, 1, 0.02],
                            wspace=0.05, hspace=0.08)
     for j, lab in ((0, "source clip"), (3, "similar state"), (4, "shifted state")):
         t = fig.add_subplot(cells[0, j]); t.axis("off")
@@ -166,7 +166,6 @@ def panel_b(fig, gs):
     a = d.inset_axes([0.0, 0.27, 1.0, 0.46])
     _img(a, _frames(DONOR)[0], CROP_B, edge=INK2, lw=0.8)
     _arrow(a, GRIP, BOWL[DONOR], OBS, CROP_B, ls=(0, (3, 2)), lw=1.8)
-    a.text(0.5, -0.05, "observed effect", transform=a.transAxes, fontsize=6.4, color=INK2, ha="center", va="top")
     zc = fig.add_subplot(cells[1:3, 1]); zc.axis("off"); zc.set_xlim(0, 1); zc.set_ylim(0, 1)
     zc.text(0.5, 0.5, "$z$", fontsize=8.6, ha="center", va="center", color=OURS, zorder=4, transform=zc.transAxes,
             bbox=dict(boxstyle="circle,pad=0.35", facecolor="#e7e3f5", edgecolor=OURS, linewidth=0.9))
@@ -192,17 +191,17 @@ def panel_b(fig, gs):
                 ax.add_patch(Circle(_pt(BOWL[DONOR], CROP_B), 17, fill=False, edgecolor=BAD, lw=1.1,
                                     ls=(0, (2, 1.5)), zorder=6))
             _mark(ax, not fail)
-    # legend in figure coordinates under the grid: dashed = observed, solid = executed from z (row colour)
+    # legend in the free space under the source clip: two short rows, the executed arrows side by side
     fig.canvas.draw()
-    p0 = cell_axes[0].get_position(); y = p0.y0 - 0.075; x = p0.x0
-    def arr(x0, x1, c, ls="-"):
-        fig.add_artist(FancyArrowPatch((x0, y), (x1, y), arrowstyle="-|>", mutation_scale=8, color=c, lw=1.5,
+    pa = a.get_position(); pd = d.get_position()
+    x = pa.x0; y1 = pa.y0 - 0.075; y2 = y1 - 0.075
+    def arr(x0, x1, y, c, ls="-"):
+        fig.add_artist(FancyArrowPatch((x0, y), (x1, y), arrowstyle="-|>", mutation_scale=6.5, color=c, lw=1.5,
                                        linestyle=ls, transform=fig.transFigure))
-    arr(x, x + 0.028, OBS, (0, (3, 2)))
-    fig.text(x + 0.034, y, "observed effect", fontsize=6.4, color=INK2, va="center")
-    x2 = x + 0.130
-    arr(x2, x2 + 0.024, RECON); arr(x2 + 0.030, x2 + 0.054, OURS)
-    fig.text(x2 + 0.060, y, "executed from $z$", fontsize=6.4, color=INK2, va="center")
+    arr(x, x + 0.038, y1, OBS, (0, (3, 2)))
+    fig.text(x + 0.045, y1, "observed effect", fontsize=6.3, color=INK2, va="center")
+    arr(x, x + 0.017, y2, RECON); arr(x + 0.021, x + 0.038, y2, OURS)
+    fig.text(x + 0.045, y2, "executed from $z$", fontsize=6.3, color=INK2, va="center")
     return a
 
 
