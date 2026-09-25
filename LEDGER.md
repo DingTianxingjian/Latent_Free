@@ -4184,3 +4184,28 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   confirmed above.  The comparison with UniVLA needs either the noinh row reported as is, or a stated reason why the
   released-prior initialisation is the protocol; the closed-loop comparison (user-reported, 2026-09-22) should be
   checked against a noinh VLA as well (four-suite chain from 2026-09-20 -- status unknown here).
+
+### 2026-09-25 (13:30) — why the random-TI UniVLA beats the released-prior one: the inherited TI codebook is an island, and in `s2mix_1ep` the TI branch is dead
+
+- **Question (user).**  A random TI codebook giving better probes than the released stage-1 prior looks like a bug.
+- **Checked.**  (i) Same dump script (`acdc_la/baselines/univla.py`), same val clips, Z = quantised TC codes `z_q` of the
+  K = 4 frame pairs (4 codes x 128 each) for both -- not a measurement difference.  (ii) What `--no-inherit` changes:
+  stage 2 inherits only `vq` + `action_latent` (5,120 params; encoder/decoder are trained from scratch in BOTH runs,
+  `genie/model.py:66-71`, ported in `claude_survey/rala2.py:562`).  (iii) Per-position code usage, first frame pair:
+
+  | run | TC bits per code position (max 4) | TI codes used / bits |
+  |---|---|---|
+  | `univla_matched` (`s2mix_1ep`, released prior) | 2.92 / 3.39 / 2.51 / 2.20, 14-16 codes | **1/16, 0 bits at every position** |
+  | `univla_noinh` (`s2mix_noinh_1ep`, random) | 3.37 / 3.37 / 3.37 / 3.22, all 16 | 8-9/16, ~2.7 bits |
+  | `univla_official` (released stage 2) | 3.17 / 3.45 / 3.65 / 3.43, all 16 | 1-9/16, 0-0.25 bits |
+
+- **Conclusion: confirmed mechanism, not a bug.**  The frozen inherited TI codebook does not match a freshly trained
+  stage-2 encoder, so every input maps to one TI code (the "island" diagnosis pre-registered in rala2.py's docstring,
+  and the 1/16 usage logged at every step on 2026-09-14).  With a random codebook at the encoder's own scale the TI
+  branch works as UniVLA designed it: nuisance goes to TI, TC is cleaner and better used -- hence noinh's higher probes
+  and its lower distractor drop (15.7 % vs 23.0 %).  The released-prior arm is therefore "UniVLA with a dead TI
+  branch", and noinh is the faithful, and stronger, baseline.  One seed each; the TI collapse in `s2mix_1ep` is
+  systematic within that run (every logged step), not a single-batch artefact.
+- **Consequence.**  Any comparison against `univla_matched` alone compares against a broken baseline.  The paper's
+  UniVLA row should be noinh (or both, with this explanation); against noinh TERRA is behind on prof and seq and tied
+  elsewhere (entry 12:30).  The closed-loop numbers reported on 2026-09-22 must be checked for which UniVLA they used.
