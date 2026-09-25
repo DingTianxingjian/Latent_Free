@@ -4209,3 +4209,26 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Consequence.**  Any comparison against `univla_matched` alone compares against a broken baseline.  The paper's
   UniVLA row should be noinh (or both, with this explanation); against noinh TERRA is behind on prof and seq and tied
   elsewhere (entry 12:30).  The closed-loop numbers reported on 2026-09-22 must be checked for which UniVLA they used.
+
+### 2026-09-25 (14:10) — dimension-matched readout: the TERRA vs UniVLA-noinh ranking depends on the readout; only UniVLA's profile advantage is robust
+
+- **Why.**  UniVLA's Z is 2048-d (4 frame pairs x 4 codes x 128, one code set per segment); TERRA's is 256-d for the
+  whole window.  The native-dimension comparison (entry 12:30) gives the ridge 8x the dimensions.
+- **What ran.**  `acdc_la/downstream/nmse_dimmatch.py`: unsupervised PCA of UniVLA's Z (basis fitted on clean + patch
+  Z, no labels) to 256 and 64 dims, then the same per-source probe.
+
+  | NMSE | net | seg1 | prof | seq | drop % |
+  |---|---|---|---|---|---|
+  | TERRA, 256-d native | .671 | .717 | .909 | .764 | 17.9 |
+  | UniVLA noinh, 2048-d native | .655 | .689 | .821 | .702 | 15.7 |
+  | UniVLA noinh, PCA 256 | .748 | .769 | .872 | .775 | 27.2 |
+  | UniVLA noinh, PCA 64 | .693 | .725 | .838 | .729 | 20.1 |
+  | UniVLA matched, PCA 256 | .851 | .890 | .931 | .879 | 31.2 |
+
+- **Conclusion: provisional, and a statement about the instrument.**  At equal dimension TERRA leads on net, seg1, seq
+  and distractor drop and trails on prof; at native dimension UniVLA ties or leads.  PCA is not a clean control either:
+  64 dims beats 256 for UniVLA because the probe standardises every feature, inflating low-variance PCA tails into
+  noise.  Robust across readouts: UniVLA is better on the within-window profile (.82-.87 vs .909), as its per-pair
+  encoding predicts.  Not robust: any other ranking between the two.  The paper should not claim representation
+  superiority over UniVLA from linear probes; its representation evidence is the controlled ablations (EAT vs
+  reconstruction, N+A1 vs N), and the comparison with UniVLA rests on closed loop.
