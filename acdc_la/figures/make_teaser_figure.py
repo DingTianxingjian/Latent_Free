@@ -17,7 +17,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch
+from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Wedge
 
 INK, INK2, GRID = "#1a1a19", "#52514e", "#d9d9d6"
 FAST, SLOW = "#2a78d6", "#eb6834"
@@ -75,82 +75,108 @@ def _tag(ax, text):
             bbox=dict(facecolor="white", alpha=0.8, pad=0.9, edgecolor="none"))
 
 
+def _space(ax, title, sub):
+    """A latent space, drawn as a light rounded square with the clips' codes as coloured dots."""
+    ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.set_aspect("equal"); ax.axis("off")
+    ax.add_patch(FancyBboxPatch((0.02, 0.02), 0.96, 0.96, boxstyle="round,pad=0,rounding_size=0.08",
+                                facecolor="#f4f4f2", edgecolor=GRID, linewidth=0.8))
+    ax.text(0.5, 1.21, title, fontsize=7.0, ha="center", va="bottom", color=INK, fontweight="bold")
+    ax.text(0.5, 1.04, sub, fontsize=6.2, ha="center", va="bottom", color=INK2)
+
+
 def panel_a(fig, gs):
     fr = _frames(DONOR)[: T_GRASP + 1]
     T = len(fr) - 1
     u = np.linspace(0, 1, N_STRIP)
-    outer = gs.subgridspec(1, 2, width_ratios=[4.0, 1.25], wspace=0.05)
-    rows = outer[0].subgridspec(2, 1, hspace=0.16)
+    outer = gs.subgridspec(1, 2, width_ratios=[4.0, 1.0], wspace=0.10)
+    rows = outer[0].subgridspec(2, 1, hspace=0.10)
+    first = None
     for r, (lab, col, w) in enumerate([("fast $\\rightarrow$ slow", FAST, 1 - (1 - u) ** 2),
                                        ("slow $\\rightarrow$ fast", SLOW, u ** 2)]):
         idx = np.round(w * T).astype(int)
-        g = rows[r].subgridspec(2, N_STRIP, height_ratios=[1, 0.13], wspace=0.05, hspace=0.04)
+        g = rows[r].subgridspec(3, N_STRIP, height_ratios=[0.20, 1, 0.13], wspace=0.05, hspace=0.04)
+        head = fig.add_subplot(g[0, :]); head.axis("off")          # the row's name, horizontal, above its strip
+        head.text(0.0, 0.1, lab, fontsize=8.0, color=col, fontweight="bold", ha="left", va="bottom",
+                  transform=head.transAxes)
         for c, i in enumerate(idx):
-            ax = fig.add_subplot(g[0, c])
+            ax = fig.add_subplot(g[1, c])
             end = c in (0, N_STRIP - 1)
             _img(ax, fr[i], CROP_A, edge=INK if end else col, lw=1.2 if end else 1.0)
             _tag(ax, f"$t{{=}}{i}$")
-            if c == 0:
-                ax.text(-0.09, 0.5, lab, transform=ax.transAxes, rotation=90, va="center", ha="center",
-                        fontsize=7.4, color=col, fontweight="bold")
-        tl = fig.add_subplot(g[1, :])                              # which source frames were sampled
+            if first is None: first = ax
+        tl = fig.add_subplot(g[2, :])                              # which source frames were sampled
         tl.plot([0, T], [0, 0], color=GRID, lw=1.2)
         tl.scatter(idx, np.zeros_like(idx), s=13, color=col, zorder=3, linewidths=0)
         tl.set_xlim(-1.5, T + 1.5); tl.set_ylim(-1, 1); tl.axis("off")
 
-    # what each encoder returns: one z for both strips from the endpoints, two from the full transition
-    z = fig.add_subplot(outer[1]); z.axis("off"); z.set_xlim(0, 20); z.set_ylim(0, 100)
-    box = dict(boxstyle="round,pad=0,rounding_size=1.2", linewidth=0.9)
-    y1, y2 = 75, 27                                                 # heights of the two strips' centres
-    z.text(5.1, 60, "endpoints", fontsize=6.3, ha="center", va="bottom", color=INK2)      # each label sits on
-    z.text(15.3, 84, "all frames", fontsize=6.3, ha="center", va="bottom", color=INK2)    # its own encoder
-    for y, col in ((y1, FAST), (y2, SLOW)):
-        z.add_patch(FancyArrowPatch((0.0, y), (1.6, 51 + (4 if y > 50 else -4)), arrowstyle="-", color=col,
-                                    lw=0.9, connectionstyle="arc3,rad=0"))
-    z.add_patch(FancyBboxPatch((1.6, 44), 7.0, 14, facecolor="white", edgecolor=BAD, **box))
-    z.text(5.1, 51, "$z$", fontsize=8.6, ha="center", va="center", color=INK)
-    z.text(5.1, 38, "same", fontsize=6.6, ha="center", va="top", color=BAD)
-    for y, col, lab in ((y1, FAST, "$z_{\\mathrm{fast}}$"), (y2, SLOW, "$z_{\\mathrm{slow}}$")):
-        z.add_patch(FancyBboxPatch((11.2, y - 7), 8.2, 14, facecolor="white", edgecolor=col, **box))
-        z.text(15.3, y, lab, fontsize=8.2, ha="center", va="center", color=col)
-    z.text(15.3, 51, "distinct", fontsize=6.6, ha="center", va="center", color=OK)
+    # two latent spaces: the colour of a dot is the strip it came from
+    sp = outer[1].subgridspec(2, 1, hspace=0.62)
+    top = fig.add_subplot(sp[0]); _space(top, "endpoints only", "reads $x_0, x_T$")
+    top.add_patch(Wedge((0.5, 0.5), 0.11, 90, 270, facecolor=FAST, edgecolor="white", lw=0.8, zorder=3))
+    top.add_patch(Wedge((0.5, 0.5), 0.11, 270, 90, facecolor=SLOW, edgecolor="white", lw=0.8, zorder=3))
+    top.text(0.5, 0.18, "one code for both", fontsize=6.2, ha="center", va="center", color=BAD)
+    bot = fig.add_subplot(sp[1]); _space(bot, "full transition", "reads every frame")
+    bot.plot([0.27, 0.73], [0.66, 0.34], color=INK2, lw=0.7, ls=(0, (2, 2)), zorder=2)
+    bot.add_patch(Circle((0.27, 0.66), 0.10, facecolor=FAST, edgecolor="white", lw=0.8, zorder=3))
+    bot.add_patch(Circle((0.73, 0.34), 0.10, facecolor=SLOW, edgecolor="white", lw=0.8, zorder=3))
+    bot.text(0.5, 0.12, "two codes", fontsize=6.2, ha="center", va="center", color=OK)
+    return first
 
 
 def panel_b(fig, gs):
-    cells = gs.subgridspec(3, 4, width_ratios=[1, 0.13, 1, 1], height_ratios=[0.12, 1, 1], wspace=0.05,
-                           hspace=0.08)
-    for j, lab in ((0, "donor"), (2, "similar state"), (3, "shifted state")):
+    cells = gs.subgridspec(4, 5, width_ratios=[1, 0.34, 0.13, 1, 1], height_ratios=[0.12, 1, 1, 0.16],
+                           wspace=0.05, hspace=0.08)
+    for j, lab in ((0, "source clip"), (3, "similar state"), (4, "shifted state")):
         t = fig.add_subplot(cells[0, j]); t.axis("off")
         t.text(0.5, 0.15, lab, fontsize=7.2, ha="center", va="center", color=INK if j == 0 else INK2)
-    d = fig.add_subplot(cells[1:, 0]); d.axis("off")                # the donor, centred across both rows
-    a = d.inset_axes([0.0, 0.26, 1.0, 0.48])
+    d = fig.add_subplot(cells[1:3, 0]); d.axis("off")              # the clip whose latent is transported
+    a = d.inset_axes([0.0, 0.27, 1.0, 0.46])
     _img(a, _frames(DONOR)[0], CROP_B, edge=INK2, lw=0.8)
     _arrow(a, GRIP, BOWL[DONOR], INK2, CROP_B, ls=(0, (3, 2)), lw=1.5)
-    a.text(0.5, -0.06, "source effect", transform=a.transAxes, fontsize=6.4, color=INK2, ha="center", va="top")
+    a.text(0.5, -0.05, "observed effect", transform=a.transAxes, fontsize=6.4, color=INK2, ha="center", va="top")
+    zc = fig.add_subplot(cells[1:3, 1]); zc.axis("off"); zc.set_xlim(0, 1); zc.set_ylim(0, 1)
+    zc.text(0.5, 0.5, "$z$", fontsize=8.6, ha="center", va="center", color=OURS, zorder=4, transform=zc.transAxes,
+            bbox=dict(boxstyle="circle,pad=0.35", facecolor="#e7e3f5", edgecolor=OURS, linewidth=0.9))
+    for y in (0.78, 0.22):                                          # the same z goes to both rows
+        zc.add_patch(FancyArrowPatch((0.62, 0.5 + (0.07 if y > 0.5 else -0.07)), (0.98, y), arrowstyle="-|>",
+                                     mutation_scale=7, color=INK2, lw=0.9, transform=zc.transAxes, clip_on=False))
+    zc.add_patch(FancyArrowPatch((-0.20, 0.5), (0.30, 0.5), arrowstyle="-|>", mutation_scale=7, color=INK2,
+                                 lw=0.9, transform=zc.transAxes, clip_on=False))
     for r, (name, col) in enumerate((("recon. only", RECON), ("EAT (ours)", OURS))):
-        lax = fig.add_subplot(cells[r + 1, 1]); lax.axis("off")
+        lax = fig.add_subplot(cells[r + 1, 2]); lax.axis("off")
         lax.text(0.5, 0.5, name, rotation=90, va="center", ha="center", fontsize=7.2, color=col,
                  fontweight="bold", transform=lax.transAxes)
-        for j, tag in ((2, SIMILAR), (3, SHIFTED)):
+        for j, tag in ((3, SIMILAR), (4, SHIFTED)):
             ax = fig.add_subplot(cells[r + 1, j])
             fail = (r == 0 and tag == SHIFTED)
             _img(ax, _frames(tag)[0], CROP_B, edge=BAD if fail else OK, lw=1.3)
-            _arrow(ax, GRIP, BOWL[DONOR], GRID, CROP_B, ls=(0, (3, 2)), lw=1.3, ms=7)   # source effect, as is
-            target = BOWL[DONOR] if r == 0 else BOWL[tag]                                # absolute vs adapted
+            _arrow(ax, GRIP, BOWL[DONOR], GRID, CROP_B, ls=(0, (3, 2)), lw=1.3, ms=7)
+            target = BOWL[DONOR] if r == 0 else BOWL[tag]
             _arrow(ax, GRIP, target, col, CROP_B)
             if fail:
                 ax.add_patch(Circle(_pt(BOWL[DONOR], CROP_B), 17, fill=False, edgecolor=BAD, lw=1.1,
                                     ls=(0, (2, 1.5)), zorder=6))
             _mark(ax, not fail)
+    lg = fig.add_subplot(cells[3, 3:]); lg.axis("off"); lg.set_xlim(0, 1); lg.set_ylim(0, 1)
+    lg.add_patch(FancyArrowPatch((0.02, 0.35), (0.12, 0.35), arrowstyle="-|>", mutation_scale=6, color=GRID,
+                                 lw=1.2, linestyle=(0, (3, 2))))
+    lg.text(0.14, 0.35, "observed effect, at the source position", fontsize=6.2, color=INK2, va="center")
+    lg.add_patch(FancyArrowPatch((0.02, -0.35), (0.12, -0.35), arrowstyle="-|>", mutation_scale=6, color=OURS,
+                                 lw=1.4, clip_on=False))
+    lg.text(0.14, -0.35, "effect executed from $z$", fontsize=6.2, color=INK2, va="center")
+    return a
 
 
 def teaser(out):
-    fig = plt.figure(figsize=(7.2, 2.05))
-    gs = fig.add_gridspec(1, 2, width_ratios=[1.25, 1.0], wspace=0.10)
-    panel_a(fig, gs[0])
-    panel_b(fig, gs[1])
-    fig.text(0.01, 1.0, "(a)  Same endpoints, different dynamics", fontsize=8.8, fontweight="bold", va="bottom")
-    fig.text(0.565, 1.0, "(b)  Same action, different states", fontsize=8.8, fontweight="bold", va="bottom")
+    fig = plt.figure(figsize=(7.2, 2.3))
+    gs = fig.add_gridspec(1, 2, width_ratios=[1.2, 1.0], wspace=0.09, top=0.90)
+    fa = panel_a(fig, gs[0])
+    fb = panel_b(fig, gs[1])
+    top = 0.975                                                     # titles start where each panel's frames start
+    fig.text(fa.get_position().x0, top, "(a)  Same endpoints, different dynamics", fontsize=8.8,
+             fontweight="bold", va="bottom")
+    fig.text(fb.get_position().x0, top, "(b)  Same action, different states", fontsize=8.8,
+             fontweight="bold", va="bottom")
     fig.savefig(out + ".pdf", pad_inches=0.05); fig.savefig(out + ".png", pad_inches=0.05); plt.close(fig)
 
 
