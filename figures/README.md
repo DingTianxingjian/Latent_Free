@@ -61,18 +61,18 @@ plus scene edits.
 data first, representation second.
 
 (a) is **exact by construction**.  One real LIBERO-Spatial demonstration ("pick up the black bowl from table
-center", approach phase t = 0..61) resampled under two temporal warps, w(u) = 1-(1-u)^2 and w(u) = u^2, six frames
-each; the dotted timeline under each strip marks which source frames were taken.  First and last frames are the
+center", approach phase t = 0..61) resampled under two temporal warps, w(u) = 1-(1-u)^2 and w(u) = u^2, four frames
+each, cropped to the arm and the bowl; the dotted timeline under each strip marks which source frames were taken.  First and last frames are the
 same pixels, so an encoder that reads only (x_0, x_T) receives identical inputs and must return the same latent --
 no measurement is needed for that claim.
 
 (b) uses real scenes and is **schematic in its arrows**.  Donor: the table-centre demonstration; similar recipient:
 another demonstration of the same task; shifted recipient: "bowl next to the cookie box", whose bowl sits where
-the donor's table centre is empty.  The before frames are real t = 0 observations, the green "after" frames are the
-demonstrations' own grasp frames (t = 45 / 50), the grey dashed arrow is the donor's effect at its absolute
-location and the coloured arrow is where each objective would send it (reconstruction: same absolute target;
-EAT: the recipient's bowl).  The red cell has no real "after" frame -- no policy was rolled out -- so it shows the
-recipient scene faded with the empty target circled.  Frames: `figures/teaser_eps/keep/*.npy`.
+the donor's table centre is empty.  Every cell is one real t = 0 frame; the grey dashed arrow is the donor's effect
+at its absolute location and the coloured arrow is where each objective would send it (reconstruction: the same
+absolute target, circled on empty table in the shifted scene; EAT: the recipient's bowl).  No "after" frames: the
+figure makes no claim about rolled-out behaviour.  The titles are the only text; the explanation is the caption's.
+Frames: `figures/teaser_eps/keep/*.npy`.
 
 
 The LIBERO-Long perturbation is a **directional** illumination gradient (0.55x to 1.25x across the frame), not the
