@@ -8,7 +8,7 @@ few and large frames, the text in the caption.
 (a) Same endpoints, different dynamics.  ONE real LIBERO-Spatial demonstration (approach phase, t = 0..61)
     resampled under two temporal warps, w(u) = 1-(1-u)^2 and w(u) = u^2, four frames each.  First and last
     frames are the same pixels by construction, so an endpoint encoder must return the same latent.
-(b) Same action, different states.  Real LIBERO-Spatial scenes (donor, a similar and a shifted recipient),
+(b) Same action, different states.  Real LIBERO-Spatial scenes (source, a similar and a nuisance-shifted recipient),
     one t = 0 frame per cell.  The arrows are SCHEMATIC effect directions drawn on real frames.
 """
 import os
@@ -26,11 +26,15 @@ FAST, SLOW = "#2a78d6", "#eb6834"
 OURS, BAD, OK, RECON = "#4a3aa7", "#d92d20", "#1baf7a", "#c2409a"   # recon: magenta, clear of (a)'s orange
 
 EPS = "figures/teaser_eps/keep"
+# The shifted state changes only what should NOT change the action: another demonstration of the same task
+# (same bowl, so "straight down to the bowl" is still correct) under a directional lighting shift.  EAT anchors
+# the decoded effect to the source direction (L_effect), so the figure must show it preserving that direction.
 DONOR, SIMILAR, SHIFTED = "table_center__libero_spatial_0", "table_center__libero_spatial_1", \
-                          "next_to_the_cookie_box__libero_spatial_0"
+                          "table_center__libero_spatial_2"
 T_GRASP = 61                                              # the donor's grasp frame: end of the approach phase
 GRIP = (0.50, 0.27)                                       # gripper at t = 0, frame fractions from top-left
-BOWL = {DONOR: (0.48, 0.62), SIMILAR: (0.48, 0.62), SHIFTED: (0.62, 0.83)}
+BOWL = {DONOR: (0.48, 0.62), SIMILAR: (0.48, 0.62), SHIFTED: (0.48, 0.62)}
+DRIFT = (0.24, 0.52)                                      # where recon-only drifts in the shifted state
 CROP_A = (0.20, 0.10, 0.80, 0.70)                         # (a): arm and bowl fill the frame
 CROP_B = (0.12, 0.14, 0.88, 0.90)                         # (b): wide enough to hold the shifted bowl
 N_STRIP = 4
@@ -125,7 +129,7 @@ def panel_a(fig, gs):
     curves = ((FAST, 1 - (1 - uu) ** 2, 1 - (1 - u) ** 2), (SLOW, uu ** 2, u ** 2))
     plots = []
     for k, (title, verdict, vcol) in enumerate((("endpoints only", "same $z$", BAD),
-                                                ("all frames", "distinct $z$", OK))):
+                                                ("net + dynamics", "distinct $z$", OK))):
         ax = fig.add_subplot(rc[k]); plots.append(ax)
         for col, c, samp in curves:
             ax.plot(uu, c, color=col, lw=1.6 if k else 1.1, alpha=1.0 if k else 0.28, zorder=2)
@@ -184,13 +188,14 @@ def panel_b(fig, gs):
             ax = fig.add_subplot(cells[r + 1, j])
             if r == 1 and j == 3: cell_axes.append(ax)
             fail = (r == 0 and tag == SHIFTED)
-            _img(ax, _frames(tag)[0], CROP_B, edge=BAD if fail else OK, lw=1.3)
+            im = _frames(tag)[0]
+            if tag == SHIFTED:                                     # directional lighting: dark left, bright right
+                im = np.clip(im.astype(np.float32) * np.linspace(0.5, 1.2, im.shape[1])[None, :, None], 0, 255
+                             ).astype(np.uint8)
+            _img(ax, im, CROP_B, edge=BAD if fail else OK, lw=1.3)
             _arrow(ax, GRIP, BOWL[DONOR], OBS, CROP_B, ls=(0, (3, 2)), lw=1.3, ms=7)
-            target = BOWL[DONOR] if r == 0 else BOWL[tag]
+            target = DRIFT if fail else BOWL[DONOR]                # recon drifts; EAT keeps the source direction
             _arrow(ax, GRIP, target, col, CROP_B)
-            if fail:
-                ax.add_patch(Circle(_pt(BOWL[DONOR], CROP_B), 17, fill=False, edgecolor=BAD, lw=1.1,
-                                    ls=(0, (2, 1.5)), zorder=6))
             _mark(ax, not fail)
     # legend in the free space under the source clip: two short rows, the executed arrows side by side
     fig.canvas.draw()
@@ -202,7 +207,7 @@ def panel_b(fig, gs):
     arr(x, x + 0.038, y1, YEL, (0, (3, 2)))
     fig.text(x + 0.045, y1, "observed effect", fontsize=6.3, color=INK2, va="center")
     arr(x, x + 0.017, y2, RECON); arr(x + 0.021, x + 0.038, y2, OURS)
-    fig.text(x + 0.045, y2, "executed from $z$", fontsize=6.3, color=INK2, va="center")
+    fig.text(x + 0.045, y2, "decoded from $z$", fontsize=6.3, color=INK2, va="center")
     return a
 
 

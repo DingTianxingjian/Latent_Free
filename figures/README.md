@@ -66,12 +66,15 @@ each, cropped to the arm and the bowl; the dotted timeline under each strip mark
 same pixels, so an encoder that reads only (x_0, x_T) receives identical inputs and must return the same latent --
 no measurement is needed for that claim.
 
-(b) uses real scenes and is **schematic in its arrows**.  Donor: the table-centre demonstration; similar recipient:
-another demonstration of the same task; shifted recipient: "bowl next to the cookie box", whose bowl sits where
-the donor's table centre is empty.  Every cell is one real t = 0 frame; the grey dashed arrow is the donor's effect
-at its absolute location and the coloured arrow is where each objective would send it (reconstruction: the same
-absolute target, circled on empty table in the shifted scene; EAT: the recipient's bowl).  No "after" frames: the
-figure makes no claim about rolled-out behaviour.  The source clip is encoded once into z, which is applied to both recipient rows; a legend under the grid names the two arrow kinds.  In (a), each strip's name sits horizontally above it, and the column to its right plots the two warps themselves as progress-vs-time curves (after the timelines of Pace Prediction and the speediness curves of SpeedNet): seen only at the endpoints (black dots) the two curves coincide, seen at every frame they separate, and the coloured dots on the lower plot are exactly the samples marked on the strips' timelines.  This replaced a latent-space cartoon, whose dots carried no meaning of their own; the curves are the actual w(u), so the panel is exact.  Panel titles start at the x of each panel's first frame.
+(b) uses real scenes and is **schematic in its arrows**, and draws what EAT actually optimises.  L_effect anchors
+the decoded effect to the source clip's effect direction; EAT is not supervision for a counterfactual physical
+action.  So the shifted state changes only what should not change the action -- another demonstration of the same
+task (same bowl) under a directional lighting shift -- and the correct decoded effect is the source's own
+direction: EAT keeps it (parallel to the grey reference, check), reconstruction-only drifts sideways (cross).  An
+earlier version showed EAT turning toward a moved object, i.e. the opposite of the objective; it is withdrawn.
+The legend says "decoded from z", not "executed": transport is measured on decoder outputs, not in closed loop.
+In (a) the lower encoder is labelled "net + dynamics", the two low-order components the method keeps, not "all
+frames", since the paper argues that keeping the full sequence admits nuisance.
 Frames: `figures/teaser_eps/keep/*.npy`.
 
 
