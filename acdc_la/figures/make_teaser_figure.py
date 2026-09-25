@@ -51,6 +51,23 @@ plt.rcParams.update({                                      # Comic Neue: an open
 })
 
 
+def _nuisance(im):
+    """What the shifted state changes -- nothing that should change the action: a strong directional,
+    colour-cast light (dark and cool on the left) and a natural-video distractor patch of the kind the paper's
+    probes are measured under, placed clear of the bowl and of the arrows."""
+    x = im.astype(np.float32)
+    ramp = np.linspace(0.35, 1.10, x.shape[1])[None, :, None]
+    x = x * ramp * np.array([0.88, 0.95, 1.12])[None, None, :]
+    vid = np.load(os.path.join("data", "distractor_video.npy"), mmap_mode="r")
+    fr = np.asarray(vid[40])                                  # (720, 1280, 3)
+    from PIL import Image as _I
+    H = x.shape[0]; ps = int(0.24 * H)
+    patch = np.asarray(_I.fromarray(fr[200:520, 480:800]).resize((ps, ps))).astype(np.float32)
+    y0, x0 = int(0.64 * H), int(0.15 * H)
+    x[y0:y0 + ps, x0:x0 + ps] = patch
+    return np.clip(x, 0, 255).astype(np.uint8)
+
+
 def _frames(tag):
     return np.load(os.path.join(EPS, tag + ".npy"))
 
@@ -189,9 +206,8 @@ def panel_b(fig, gs):
             if r == 1 and j == 3: cell_axes.append(ax)
             fail = (r == 0 and tag == SHIFTED)
             im = _frames(tag)[0]
-            if tag == SHIFTED:                                     # directional lighting: dark left, bright right
-                im = np.clip(im.astype(np.float32) * np.linspace(0.5, 1.2, im.shape[1])[None, :, None], 0, 255
-                             ).astype(np.uint8)
+            if tag == SHIFTED:
+                im = _nuisance(im)
             _img(ax, im, CROP_B, edge=BAD if fail else OK, lw=1.3)
             _arrow(ax, GRIP, BOWL[DONOR], OBS, CROP_B, ls=(0, (3, 2)), lw=1.3, ms=7)
             target = DRIFT if fail else BOWL[DONOR]                # recon drifts; EAT keeps the source direction
