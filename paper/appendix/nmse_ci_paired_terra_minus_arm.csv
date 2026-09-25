@@ -1,0 +1,41 @@
+arm,metric,lo95,hi95
+endpoint only (N),net,-0.0219,0.0354
+endpoint only (N),seg1,-0.1205,-0.0326
+endpoint only (N),prof,-0.1025,-0.0478
+endpoint only (N),seq,-0.0591,-0.0176
+endpoint only (N),drop,-27.0154,-8.1333
+"DC only (N, explicit)",net,-0.0315,0.0304
+"DC only (N, explicit)",seg1,-0.1279,-0.0398
+"DC only (N, explicit)",prof,-0.1175,-0.0536
+"DC only (N, explicit)",seq,-0.075,-0.0162
+"DC only (N, explicit)",drop,-21.4136,-5.2099
+"N + A1, earlier tokenizer",net,-0.0332,0.0237
+"N + A1, earlier tokenizer",seg1,-0.0393,0.0006
+"N + A1, earlier tokenizer",prof,-0.0166,0.0046
+"N + A1, earlier tokenizer",seq,-0.0263,0.0023
+"N + A1, earlier tokenizer",drop,-19.4198,-3.8645
+TERRA start (65k),net,-0.0846,-0.0386
+TERRA start (65k),seg1,-0.0747,-0.0289
+TERRA start (65k),prof,-0.0096,0.0096
+TERRA start (65k),seq,-0.0623,-0.0236
+TERRA start (65k),drop,-10.7065,0.1617
++15k reconstruction only,net,-0.0828,-0.0353
++15k reconstruction only,seg1,-0.0614,-0.0259
++15k reconstruction only,prof,-0.0079,0.0077
++15k reconstruction only,seq,-0.0589,-0.0276
++15k reconstruction only,drop,-11.3718,-0.289
++15k EAT w/o invariance,net,-0.0394,-0.0176
++15k EAT w/o invariance,seg1,-0.0321,-0.0006
++15k EAT w/o invariance,prof,-0.0175,0.0037
++15k EAT w/o invariance,seq,-0.032,-0.0092
++15k EAT w/o invariance,drop,-5.4409,0.6659
+UniVLA matched,net,-0.1486,-0.0381
+UniVLA matched,seg1,-0.1063,-0.0157
+UniVLA matched,prof,0.0112,0.06
+UniVLA matched,seq,-0.0561,0.0135
+UniVLA matched,drop,-17.1882,5.4937
+"UniVLA, random TI codebook",net,-0.0365,0.0679
+"UniVLA, random TI codebook",seg1,-0.0192,0.0748
+"UniVLA, random TI codebook",prof,0.0624,0.1193
+"UniVLA, random TI codebook",seq,0.0327,0.0936
+"UniVLA, random TI codebook",drop,-7.7215,10.4353

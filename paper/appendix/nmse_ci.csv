@@ -1,0 +1,46 @@
+arm,metric,point,lo95,hi95
+endpoint only (N),net,0.6645,0.5679,0.7617
+endpoint only (N),seg1,0.7905,0.7115,0.8639
+endpoint only (N),prof,0.983,0.9644,1.0001
+endpoint only (N),seq,0.8003,0.7295,0.8664
+endpoint only (N),drop,33.6167,24.206,46.8836
+"DC only (N, explicit)",net,0.6713,0.5763,0.768
+"DC only (N, explicit)",seg1,0.797,0.7276,0.8665
+"DC only (N, explicit)",prof,0.9929,0.9756,1.0104
+"DC only (N, explicit)",seq,0.8078,0.7412,0.8711
+"DC only (N, explicit)",drop,29.6544,21.7174,40.5361
+"N + A1, earlier tokenizer",net,0.6755,0.5856,0.7644
+"N + A1, earlier tokenizer",seg1,0.7359,0.667,0.803
+"N + A1, earlier tokenizer",prof,0.9154,0.8819,0.9457
+"N + A1, earlier tokenizer",seq,0.7755,0.7075,0.837
+"N + A1, earlier tokenizer",drop,28.9003,21.2674,38.4201
+TERRA start (65k),net,0.734,0.6527,0.8134
+TERRA start (65k),seg1,0.7674,0.7004,0.834
+TERRA start (65k),prof,0.9092,0.8753,0.9415
+TERRA start (65k),seq,0.8072,0.741,0.8658
+TERRA start (65k),drop,22.402,13.7292,33.2283
++15k reconstruction only,net,0.7316,0.6498,0.8148
++15k reconstruction only,seg1,0.7599,0.6924,0.8276
++15k reconstruction only,prof,0.9094,0.8742,0.943
++15k reconstruction only,seq,0.8069,0.7399,0.8685
++15k reconstruction only,drop,22.5678,14.4797,33.4474
++15k EAT w/o invariance,net,0.6995,0.6146,0.7811
++15k EAT w/o invariance,seg1,0.7332,0.6629,0.8056
++15k EAT w/o invariance,prof,0.9154,0.8793,0.9506
++15k EAT w/o invariance,seq,0.7842,0.7147,0.8484
++15k EAT w/o invariance,drop,19.7018,12.6309,27.4479
++15k EAT (TERRA),net,0.6708,0.5839,0.7586
++15k EAT (TERRA),seg1,0.7168,0.6467,0.7896
++15k EAT (TERRA),prof,0.9093,0.8783,0.9397
++15k EAT (TERRA),seq,0.7638,0.6927,0.8308
++15k EAT (TERRA),drop,17.9452,11.0514,24.8551
+UniVLA matched,net,0.7631,0.7026,0.8189
+UniVLA matched,seg1,0.7779,0.7292,0.8239
+UniVLA matched,prof,0.8751,0.8355,0.9107
+UniVLA matched,seq,0.7845,0.7285,0.8331
+UniVLA matched,drop,22.9782,12.4786,34.127
+"UniVLA, random TI codebook",net,0.6548,0.5875,0.7189
+"UniVLA, random TI codebook",seg1,0.6893,0.622,0.755
+"UniVLA, random TI codebook",prof,0.8208,0.7721,0.8661
+"UniVLA, random TI codebook",seq,0.7017,0.6377,0.7613
+"UniVLA, random TI codebook",drop,15.6639,9.5478,24.415

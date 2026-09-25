@@ -4326,3 +4326,12 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   Fig. 3(a) numbers (recon .80 -> 1.06, EAT .77 -> .86) come from a computation not in this repository and are not
   reproduced by this one; until they are, the text should claim breadth, not a distance trend.
   Figure: `figures/transport_scatter.{pdf,png}` (`acdc_la/figures/make_transport_scatter.py`).
+
+### 2026-09-25 (19:30) — CORRECTION to 16:20: the "effective rank ~25" used the variance-spectrum definition; the standard one gives 166
+
+- The 16:20 entry reported effective rank 127.7 (tc_cont) and 24.6 (latp2_inv) without naming the definition; it was
+  exp(entropy) of the normalised SQUARED singular values (PCA eigenvalue spectrum).  The standard Roy & Vetterli
+  definition (normalised singular values, as `train_v2.py::_erank` and the training logs use) gives 210.9 and 165.7.
+  The direction stands -- EAT concentrates variance (top 64 PCs hold 90 % after EAT vs 75 % before) -- but
+  "compresses the code to ~25 dimensions" is definition-dependent and should not be stated without the definition.
+  Both definitions and all values: `paper/appendix/APPENDIX_FACTS.md`.
