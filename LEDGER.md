@@ -4335,3 +4335,13 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   The direction stands -- EAT concentrates variance (top 64 PCs hold 90 % after EAT vs 75 % before) -- but
   "compresses the code to ~25 dimensions" is definition-dependent and should not be stated without the definition.
   Both definitions and all values: `paper/appendix/APPENDIX_FACTS.md`.
+
+### 2026-09-25 (20:10) — REGISTERED (not yet run): a LAPA-style baseline inside our pipeline, and a closed-loop perturbation protocol
+
+- Full specification: `acdc_la/PLAN_lapa_and_perturbation.md`.  (1) `tc_lapa`: LAPA's bottleneck (frame-pair
+  evidence `--tc endpoint`, discrete 4 x 8 codes = 8^4, NSVQ) on our shared features, window, decoder and budget --
+  explicitly not a LAPA reproduction.  (2) Perturbed closed loop: LIBERO-Plus light / background / object-layout at
+  L3 plus our moving patch; never a family any arm trained on (our invariance uses crop and global
+  brightness/contrast); TERRA vs UniVLA-noinh vs no-latent; Object + Long, 500 episodes per suite and condition;
+  retention with Wilson intervals; qualitative pair chosen by a rule fixed in advance.  Pre-registered predictions
+  are in the plan.  Blocked on GPU allocation (0 SU).
