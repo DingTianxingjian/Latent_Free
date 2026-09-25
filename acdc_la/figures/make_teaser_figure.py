@@ -33,8 +33,13 @@ CROP_A = (0.20, 0.10, 0.80, 0.70)                         # (a): arm and bowl fi
 CROP_B = (0.12, 0.14, 0.88, 0.90)                         # (b): wide enough to hold the shifted bowl
 N_STRIP = 4
 
-plt.rcParams.update({
-    "font.family": "serif", "font.serif": ["Nimbus Roman", "DejaVu Serif"], "mathtext.fontset": "stix",
+from matplotlib import font_manager as _fm
+_FONTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
+for _f in sorted(os.listdir(_FONTS)) if os.path.isdir(_FONTS) else []:
+    if _f.endswith(".ttf"): _fm.fontManager.addfont(os.path.join(_FONTS, _f))
+plt.rcParams.update({                                      # Comic Neue: an open (OFL) redrawing of Comic Sans
+    "font.family": "Comic Neue", "mathtext.fontset": "custom", "mathtext.rm": "Comic Neue",
+    "mathtext.it": "Comic Neue:italic", "mathtext.bf": "Comic Neue:bold",
     "font.size": 7.4, "figure.dpi": 160, "savefig.dpi": 300, "pdf.fonttype": 42, "ps.fonttype": 42,
     "savefig.bbox": "tight", "text.color": INK,
 })
@@ -88,9 +93,9 @@ def panel_a(fig, gs):
     fr = _frames(DONOR)[: T_GRASP + 1]
     T = len(fr) - 1
     u = np.linspace(0, 1, N_STRIP)
-    outer = gs.subgridspec(1, 2, width_ratios=[4.0, 1.0], wspace=0.16)
+    outer = gs.subgridspec(1, 2, width_ratios=[4.0, 2.1], wspace=0.24)
     rows = outer[0].subgridspec(2, 1, hspace=0.10)
-    first = None
+    first, strips = None, []
     for r, (lab, col, w) in enumerate([("fast $\\rightarrow$ slow", FAST, 1 - (1 - u) ** 2),
                                        ("slow $\\rightarrow$ fast", SLOW, u ** 2)]):
         idx = np.round(w * T).astype(int)
@@ -104,6 +109,7 @@ def panel_a(fig, gs):
             _img(ax, fr[i], CROP_A, edge=INK if end else col, lw=1.2 if end else 1.0)
             _tag(ax, f"$t{{=}}{i}$")
             if first is None: first = ax
+            if c == N_STRIP - 1: strips.append(ax)
         tl = fig.add_subplot(g[2, :])                              # which source frames were sampled
         tl.plot([0, T], [0, 0], color=GRID, lw=1.2)
         tl.scatter(idx, np.zeros_like(idx), s=13, color=col, zorder=3, linewidths=0)
@@ -111,11 +117,14 @@ def panel_a(fig, gs):
 
     # what each encoder can recover: the progress curves the two strips were sampled from.  They are the
     # actual warps, so the panel is exact: identical at the endpoints, different everywhere in between.
-    sp = outer[1].subgridspec(2, 1, hspace=0.70)
+    # Side by side and fed by one bracket over BOTH strips, so neither plot reads as belonging to one row.
+    rc = outer[1].subgridspec(3, 2, height_ratios=[0.62, 1.0, 0.62], wspace=0.55)
     uu = np.linspace(0, 1, 100)
     curves = ((FAST, 1 - (1 - uu) ** 2, 1 - (1 - u) ** 2), (SLOW, uu ** 2, u ** 2))
-    for k, (title, sub) in enumerate((("endpoints only", "sees $x_0, x_T$"), ("all frames", "sees every frame"))):
-        ax = fig.add_subplot(sp[k])
+    plots = []
+    for k, (title, sub, verdict, vcol) in enumerate((("endpoints only", "sees $x_0, x_T$", "same $z$", BAD),
+                                                     ("all frames", "sees every frame", "distinct $z$", OK))):
+        ax = fig.add_subplot(rc[1, k]); plots.append(ax)
         for col, c, samp in curves:
             ax.plot(uu, c, color=col, lw=1.6 if k else 1.1, alpha=1.0 if k else 0.28, zorder=2)
             if k:
@@ -128,12 +137,24 @@ def panel_a(fig, gs):
         for sd in ("top", "right"): ax.spines[sd].set_visible(False)
         for sd in ("left", "bottom"): ax.spines[sd].set_color(GRID); ax.spines[sd].set_linewidth(0.8)
         ax.set_xlabel("time", fontsize=6.0, color=INK2, labelpad=1)
-        ax.set_ylabel("progress", fontsize=6.0, color=INK2, labelpad=1)
-        ax.text(0.5, 1.25, title, transform=ax.transAxes, fontsize=7.0, ha="center", va="bottom",
+        if k == 0: ax.set_ylabel("progress", fontsize=6.0, color=INK2, labelpad=1)
+        ax.text(0.5, 1.30, title, transform=ax.transAxes, fontsize=6.8, ha="center", va="bottom",
                 color=INK, fontweight="bold")
-        ax.text(0.5, 1.06, sub, transform=ax.transAxes, fontsize=6.2, ha="center", va="bottom", color=INK2)
-        ax.text(1.08, 0.5, "same $z$" if not k else "distinct $z$", transform=ax.transAxes, rotation=270,
-                fontsize=6.6, ha="center", va="center", color=BAD if not k else OK)
+        ax.text(0.5, 1.08, sub, transform=ax.transAxes, fontsize=5.9, ha="center", va="bottom", color=INK2)
+        ax.text(0.5, -0.36, verdict, transform=ax.transAxes, fontsize=7.2, ha="center", va="top", color=vcol,
+                fontweight="bold")
+    # the bracket: from the middle of each strip into the plots
+    pa, pb = strips[0].get_position(), strips[1].get_position()
+    ya, yb = (pa.y0 + pa.y1) / 2, (pb.y0 + pb.y1) / 2
+    px = plots[0].get_position().x0
+    x0 = pa.x1 + 0.004
+    xb = pa.x1 + 0.25 * (px - pa.x1)
+    for y in (ya, yb):
+        fig.add_artist(plt.Line2D([x0, xb], [y, y], color=GRID, lw=1.0))
+    fig.add_artist(plt.Line2D([xb, xb], [yb, ya], color=GRID, lw=1.0))
+    ym = (plots[0].get_position().y0 + plots[0].get_position().y1) / 2
+    fig.add_artist(FancyArrowPatch((xb, ym), (px - 0.006, ym), arrowstyle="-|>",
+                                   mutation_scale=7, color=INK2, lw=1.0, transform=fig.transFigure))
     return first
 
 
@@ -183,7 +204,7 @@ def panel_b(fig, gs):
 
 def teaser(out):
     fig = plt.figure(figsize=(7.2, 2.3))
-    gs = fig.add_gridspec(1, 2, width_ratios=[1.2, 1.0], wspace=0.09, top=0.90)
+    gs = fig.add_gridspec(1, 2, width_ratios=[1.32, 1.0], wspace=0.08, top=0.90)
     fa = panel_a(fig, gs[0])
     fb = panel_b(fig, gs[1])
     top = 0.975                                                     # titles start where each panel's frames start
