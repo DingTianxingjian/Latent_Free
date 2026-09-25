@@ -68,8 +68,8 @@ no measurement is needed for that claim.
 
 (b) uses real scenes and is **schematic in its arrows**, and draws what EAT actually optimises.  L_effect anchors
 the decoded effect to the source clip's effect direction; EAT is not supervision for a counterfactual physical
-action.  So the shifted state changes only what should not change the action -- another demonstration of the same
-task (same bowl) under a strong directional, colour-cast light plus a natural-video distractor patch -- and the correct decoded effect is the source's own
+action.  So the shifted state is a different clip from a different suite -- LIBERO-Goal "put the bowl on the plate", new
+scene and objects, whose bowl also sits right below the gripper -- so the correct decoded effect is still the source's own
 direction: EAT keeps it (parallel to the grey reference, check), reconstruction-only drifts sideways (cross).  An
 earlier version showed EAT turning toward a moved object, i.e. the opposite of the objective; it is withdrawn.
 The legend says "decoded from z", not "executed": transport is measured on decoder outputs, not in closed loop.

@@ -26,14 +26,14 @@ FAST, SLOW = "#2a78d6", "#eb6834"
 OURS, BAD, OK, RECON = "#4a3aa7", "#d92d20", "#1baf7a", "#c2409a"   # recon: magenta, clear of (a)'s orange
 
 EPS = "figures/teaser_eps/keep"
-# The shifted state changes only what should NOT change the action: another demonstration of the same task
-# (same bowl, so "straight down to the bowl" is still correct) under a directional lighting shift.  EAT anchors
+# The shifted state is a different clip from a different suite (LIBERO-Goal, "put the bowl on the plate"): new
+# scene and objects, but its bowl also sits right below the gripper, so "straight down" is still correct.  EAT anchors
 # the decoded effect to the source direction (L_effect), so the figure must show it preserving that direction.
 DONOR, SIMILAR, SHIFTED = "table_center__libero_spatial_0", "table_center__libero_spatial_1", \
-                          "table_center__libero_spatial_2"
+                          "goal_bowl_on_plate__libero_goal_0"
 T_GRASP = 61                                              # the donor's grasp frame: end of the approach phase
 GRIP = (0.50, 0.27)                                       # gripper at t = 0, frame fractions from top-left
-BOWL = {DONOR: (0.48, 0.62), SIMILAR: (0.48, 0.62), SHIFTED: (0.48, 0.62)}
+BOWL = {DONOR: (0.48, 0.62), SIMILAR: (0.48, 0.62), SHIFTED: (0.47, 0.62)}
 DRIFT = (0.24, 0.52)                                      # where recon-only drifts in the shifted state
 CROP_A = (0.20, 0.10, 0.80, 0.70)                         # (a): arm and bowl fill the frame
 CROP_B = (0.12, 0.14, 0.88, 0.90)                         # (b): wide enough to hold the shifted bowl
@@ -49,23 +49,6 @@ plt.rcParams.update({                                      # Comic Neue: an open
     "font.size": 7.4, "figure.dpi": 160, "savefig.dpi": 300, "pdf.fonttype": 42, "ps.fonttype": 42,
     "savefig.bbox": "tight", "text.color": INK,
 })
-
-
-def _nuisance(im):
-    """What the shifted state changes -- nothing that should change the action: a strong directional,
-    colour-cast light (dark and cool on the left) and a natural-video distractor patch of the kind the paper's
-    probes are measured under, placed clear of the bowl and of the arrows."""
-    x = im.astype(np.float32)
-    ramp = np.linspace(0.35, 1.10, x.shape[1])[None, :, None]
-    x = x * ramp * np.array([0.88, 0.95, 1.12])[None, None, :]
-    vid = np.load(os.path.join("data", "distractor_video.npy"), mmap_mode="r")
-    fr = np.asarray(vid[40])                                  # (720, 1280, 3)
-    from PIL import Image as _I
-    H = x.shape[0]; ps = int(0.24 * H)
-    patch = np.asarray(_I.fromarray(fr[200:520, 480:800]).resize((ps, ps))).astype(np.float32)
-    y0, x0 = int(0.64 * H), int(0.15 * H)
-    x[y0:y0 + ps, x0:x0 + ps] = patch
-    return np.clip(x, 0, 255).astype(np.uint8)
 
 
 def _frames(tag):
@@ -206,8 +189,6 @@ def panel_b(fig, gs):
             if r == 1 and j == 3: cell_axes.append(ax)
             fail = (r == 0 and tag == SHIFTED)
             im = _frames(tag)[0]
-            if tag == SHIFTED:
-                im = _nuisance(im)
             _img(ax, im, CROP_B, edge=BAD if fail else OK, lw=1.3)
             _arrow(ax, GRIP, BOWL[DONOR], OBS, CROP_B, ls=(0, (3, 2)), lw=1.3, ms=7)
             target = DRIFT if fail else BOWL[DONOR]                # recon drifts; EAT keeps the source direction
