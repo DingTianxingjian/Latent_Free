@@ -4269,3 +4269,17 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   chain): continuous oracle L1 0.367 vs 0.394-0.408 discrete; gate failed.  UniVLA's VQ reads well because its codes
   are few and frequent (4 per pair, 16-way); a 256-way, 16-token code is rare per code.  Decision unchanged: TERRA
   stays continuous.
+
+### 2026-09-25 (16:20) — TERRA's 256-d latent is effectively ~25-d: EAT acts as an information bottleneck
+
+- **Why.**  CoMo constrains its continuous latent to 16 d on information-bottleneck grounds (higher dims admit
+  static noise); ours is nominally 256 d.  `acdc_la/downstream/nmse_pca_truncate.py`, existing dumps, no training.
+- **Result.**  Effective rank: `tc_cont` (before EAT) 127.7 of 256, top 16/32/64 PCs hold 33/52/75 % of variance;
+  `latp2_inv` (after EAT) **24.6**, top 16/32/64 hold 76/83/90 %.  Probing the top-k PCs: before EAT, truncation costs
+  steadily (net NMSE .891 at k=16 vs .735 at 256); after EAT, k=64 is within .02 of the full code on every target
+  (net .694 vs .671) with a slightly lower drop (16.6 vs 17.9 %).  k=128's drop (23.5 %) is the probe's standardisation
+  inflating low-variance PCA tails, as before -- read trends, not single k.
+- **Conclusion: provisional.**  EAT concentrates the code into ~25 effective dimensions, i.e. it performs the
+  compression CoMo imposes by construction.  Truncating a trained code is not training a k-d bottleneck; a 4 x 16
+  continuous arm is the test of whether a CoMo-sized bottleneck is better.  Cheap downstream option: use the top-64
+  PCs of z as the VLA target instead of all 256 dims.
