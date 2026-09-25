@@ -57,22 +57,23 @@ measured drops (endpoint-only 33.6 %, UniVLA 22.9 %, ours 17.9 %) belong in the 
 extra object added to the BDDL scene, as in LIBERO-Plus) are NOT what this figure shows and would need a GPU node
 plus scene edits.
 
-`teaser` panel (a) is **measured, not drawn**, and shows the two clips' own frames.  They are fetched by
-rebuilding the deterministic val split on CPU (`MixDS(..., "val")` + `stratified_pair_indices(200, seed=123)`,
-rows 7247 / 7444 -> dataset indices 582934 / 582940), cached as `figures/teaser_clip_{i,j}.npy`; the action
-labels read back from there match the dump exactly, which is what confirms the row alignment.  One real pair of OXE validation clips from source 18
-(clips 7247 / 7444) with cos(N) = 0.86 and cos(A1) = -0.46: the two curves are those clips' own action
-labels, interpolated uniformly in time so dot spacing is speed, and the two squares are a 2-D PCA of that
-source's 400 latents under each tokenizer with the pair marked (centred cosine 0.90 under the endpoint-only
-tokenizer, 0.18 under ours).  The aggregate under the panel is over all 1,111 validation pairs with
-cos(N) > 0.55 and cos(A1) < -0.05: centred cos(z) 0.63 (endpoint-only) -> 0.42 (ours).  Cached coordinates:
-`figures/teaser_latents.json`; the search is `acdc_la/figures/make_teaser_figure.py`'s docstring.
-Panel (b) is still a schematic of the transport setting.
+`teaser` follows the visual language of Jenni et al. (ECCV 2020), SpeedNet (CVPR 2020) and MoCoGAN (CVPR 2018):
+data first, representation second.
 
-**Measured but not in the figure:** the same 1,111 pairs give centred cos(z) 0.14 for the matched UniVLA
-baseline, i.e. UniVLA separates these pairs better than we do -- consistent with its higher profile R^2
-(.125 vs .091).  Panel (a) is therefore an ablation of our own descriptor (N vs N+A1), not a claim against
-UniVLA, and the caption must not imply otherwise.
+(a) is **exact by construction**.  One real LIBERO-Spatial demonstration ("pick up the black bowl from table
+center", approach phase t = 0..61) resampled under two temporal warps, w(u) = 1-(1-u)^2 and w(u) = u^2, six frames
+each; the dotted timeline under each strip marks which source frames were taken.  First and last frames are the
+same pixels, so an encoder that reads only (x_0, x_T) receives identical inputs and must return the same latent --
+no measurement is needed for that claim.
+
+(b) uses real scenes and is **schematic in its arrows**.  Donor: the table-centre demonstration; similar recipient:
+another demonstration of the same task; shifted recipient: "bowl next to the cookie box", whose bowl sits where
+the donor's table centre is empty.  The before frames are real t = 0 observations, the green "after" frames are the
+demonstrations' own grasp frames (t = 45 / 50), the grey dashed arrow is the donor's effect at its absolute
+location and the coloured arrow is where each objective would send it (reconstruction: same absolute target;
+EAT: the recipient's bowl).  The red cell has no real "after" frame -- no policy was rolled out -- so it shows the
+recipient scene faded with the empty target circled.  Frames: `figures/teaser_eps/keep/*.npy`.
+
 
 The LIBERO-Long perturbation is a **directional** illumination gradient (0.55x to 1.25x across the frame), not the
 global brightness/contrast draw the invariance term trains on (`_jitter`, U(0.8,1.2) scalars).  Testing with the

@@ -1,0 +1,17 @@
+[
+ {
+  "k": 0,
+  "len": 135,
+  "instruction": "pick up the black bowl from table center and place it on the plate"
+ },
+ {
+  "k": 1,
+  "len": 100,
+  "instruction": "pick up the black bowl from table center and place it on the plate"
+ },
+ {
+  "k": 2,
+  "len": 120,
+  "instruction": "pick up the black bowl from table center and place it on the plate"
+ }
+]

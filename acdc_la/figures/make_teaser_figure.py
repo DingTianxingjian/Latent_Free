@@ -1,171 +1,193 @@
-"""Teaser: figures/teaser.{pdf,png} -- the two challenges, full width, page 1.
+"""Teaser: figures/teaser.{pdf,png} -- the two counter-examples, full width, page 1.
 
     ../envs/univla_vla/bin/python -m acdc_la.figures.make_teaser_figure
 
-Panel (a) is MEASURED, not drawn.  One real pair of OXE validation clips from the same source with
-  cos(N) = 0.86   (the same net effect)      cos(A1) = -0.46   (opposite first dynamics mode)
-Its two curves are the clips' own action labels (per-segment xyz displacement, interpolated uniformly in
-time, so dot spacing IS speed), and the two latent panels are a 2-D PCA of that source's 400 latents under
-each tokenizer, with the pair marked.  Numbers: LEDGER 2026-09-24, dumps s1_mean_1ep_val / latp2_inv_val.
-Panel (b) is a schematic of the transport setting, in the layout of the manuscript's own teaser.
+Visual language after Jenni et al. (ECCV 2020), SpeedNet (CVPR 2020) and MoCoGAN (CVPR 2018): show the
+data first, explain the representation after.
+
+(a) Same endpoints, different dynamics.  ONE real LIBERO-Spatial demonstration (approach phase, t = 0..61)
+    resampled under two temporal warps, w(u) = 1-(1-u)^2 (fast -> slow) and w(u) = u^2 (slow -> fast).
+    First and last frames are the same pixels by construction, so an encoder that reads only the endpoints
+    receives identical inputs and must return identical latents -- a fact, not an illustration.
+(b) Same action, different states.  Real LIBERO-Spatial scenes: the donor picks the black bowl at the table
+    centre; the similar recipient is another demonstration of that task, the shifted recipient a scene whose
+    bowl sits by the cookie box.  "After" frames are demonstration frames at the grasp.  The arrows are
+    SCHEMATIC effect directions drawn on those real frames, not decoder outputs.
 """
-import json
 import os
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Rectangle
 
 INK, INK2, GRID = "#1a1a19", "#52514e", "#d9d9d6"
-FAST, SLOW = "#2a78d6", "#eb6834"          # the two clips: "fast then slow" / "slow then fast"
-OURS, OURS_L, WARN = "#4a3aa7", "#e7e3f5", "#eb6834"
-PAIR = dict(i=7247, j=7444, src=18, cosN=0.86, cosA1=-0.46, cos_endpoint=0.895, cos_ours=0.181,
-            n_pairs=1111, agg_endpoint=0.628, agg_ours=0.416)
-ACT = {                                     # [real] the two clips' action labels, (4 segments, xyz)
-    "j": [[0.0373, 0.0555, -0.1715], [0.0046, 0.1095, -0.0145], [0.0005, -0.0038, -0.0071], [0.0028, -0.0021, -0.0189]],
-    "i": [[0.0250, 0.0291, 0.0036], [0.0094, 0.0323, -0.1098], [0.0407, 0.0789, -0.0744], [-0.0109, 0.0520, -0.0040]],
-}
+FAST, SLOW = "#2a78d6", "#eb6834"
+OURS, BAD, OK = "#4a3aa7", "#d92d20", "#1baf7a"
+RECON = "#eb6834"
+
+EPS = "figures/teaser_eps/keep"
+DONOR, SIMILAR, SHIFTED = "table_center__libero_spatial_0", "table_center__libero_spatial_1", \
+                          "next_to_the_cookie_box__libero_spatial_0"
+T_GRASP = {DONOR: 61, SIMILAR: 45, SHIFTED: 50}          # the grasp frame of each demonstration (read by eye)
+GRIP = (0.50, 0.27)                                       # gripper at t = 0, frame fractions from top-left
+BOWL = {DONOR: (0.48, 0.62), SIMILAR: (0.48, 0.62), SHIFTED: (0.62, 0.83)}
+N_STRIP = 6
+CROP = (0.12, 0.12, 0.88, 0.88)                            # x0, y0, x1, y1 in frame fractions, applied everywhere
 
 plt.rcParams.update({
     "font.family": "serif", "font.serif": ["Nimbus Roman", "DejaVu Serif"], "mathtext.fontset": "stix",
-    "font.size": 7.6, "figure.dpi": 160, "savefig.dpi": 300, "pdf.fonttype": 42, "ps.fonttype": 42,
+    "font.size": 7.4, "figure.dpi": 160, "savefig.dpi": 300, "pdf.fonttype": 42, "ps.fonttype": 42,
     "savefig.bbox": "tight", "text.color": INK,
 })
 
 
-def _path(act, n_sub=7):
-    """Cumulative end-effector path, sampled uniformly in time: dot spacing is speed."""
-    a = np.asarray(act, np.float32)
-    knots = np.vstack([np.zeros(3, np.float32), np.cumsum(a, 0)])
-    pts = [knots[k] + (knots[k + 1] - knots[k]) * t for k in range(len(a)) for t in np.linspace(0, 1, n_sub, endpoint=False)]
-    return np.array(pts + [knots[-1]])
+def _frames(tag):
+    return np.load(os.path.join(EPS, tag + ".npy"))
 
 
-def panel_a_frames(fig, gs, d):
-    """Two real clips of the same source: three frames each, with their own speed profile."""
-    import numpy as _np
-    for r, (k, col, lab) in enumerate((("j", FAST, "fast $\\rightarrow$ slow"), ("i", SLOW, "slow $\\rightarrow$ fast"))):
-        clip = _np.load(os.path.join(d, f"teaser_clip_{k}.npy"))                 # (5, 256, 256, 3) uint8
-        spd = _np.linalg.norm(_np.asarray(ACT[k], _np.float32), axis=1)          # real per-segment displacement
-        for c, fi in enumerate((0, 2, 4)):
-            ax = fig.add_subplot(gs[r, c])
-            ax.imshow(clip[fi]); ax.set_xticks([]); ax.set_yticks([])
-            for sp in ax.spines.values(): sp.set_color(col if c else GRID); sp.set_linewidth(0.9 if c else 0.6)
-            if r == 0: ax.set_title(f"$t{{=}}{fi}$", fontsize=6.2, color=INK2, pad=2)
+def _crop(im):
+    H, W = im.shape[:2]
+    return im[int(CROP[1] * H):int(CROP[3] * H), int(CROP[0] * W):int(CROP[2] * W)]
+
+
+def _pt(p, H):
+    """Frame-fraction point -> pixel coordinates inside the crop."""
+    return ((p[0] - CROP[0]) / (CROP[2] - CROP[0]) * H, (p[1] - CROP[1]) / (CROP[3] - CROP[1]) * H)
+
+
+def _img(ax, im, edge=GRID, lw=0.6):
+    ax.imshow(_crop(im)); ax.set_xticks([]); ax.set_yticks([])
+    for s in ax.spines.values(): s.set_color(edge); s.set_linewidth(lw)
+
+
+def _arrow(ax, p, q, col, ls="-", lw=1.5, ms=8):
+    H = int(256 * (CROP[2] - CROP[0]))
+    ax.add_patch(FancyArrowPatch(_pt(p, H), _pt(q, H), arrowstyle="-|>", mutation_scale=ms,
+                                 color=col, lw=lw, linestyle=ls, shrinkA=0, shrinkB=0, zorder=5))
+
+
+def _mark(ax, ok):
+    if ok:
+        ax.plot([0.74, 0.82, 0.94], [0.16, 0.07, 0.27], transform=ax.transAxes, color=OK, lw=2.0,
+                solid_capstyle="round", zorder=6)
+    else:
+        for a, b in (([0.76, 0.93], [0.07, 0.24]), ([0.76, 0.93], [0.24, 0.07])):
+            ax.plot(a, b, transform=ax.transAxes, color=BAD, lw=2.0, solid_capstyle="round", zorder=6)
+
+
+def panel_a(fig, gs):
+    fr = _frames(DONOR)[: T_GRASP[DONOR] + 1]
+    T = len(fr) - 1
+    u = np.linspace(0, 1, N_STRIP)
+    warps = [("fast $\\rightarrow$ slow", FAST, 1 - (1 - u) ** 2), ("slow $\\rightarrow$ fast", SLOW, u ** 2)]
+    inner = gs.subgridspec(2, 1, hspace=0.18)
+    for r, (lab, col, w) in enumerate(warps):
+        idx = np.round(w * T).astype(int)
+        g = inner[r].subgridspec(2, N_STRIP, height_ratios=[1, 0.16], wspace=0.04, hspace=0.05)
+        for c, i in enumerate(idx):
+            ax = fig.add_subplot(g[0, c])
+            end = c in (0, N_STRIP - 1)
+            _img(ax, fr[i], edge=INK if end else col, lw=1.1 if end else 0.8)
+            ax.text(0.04, 0.96, f"$t{{=}}{i}$", transform=ax.transAxes, fontsize=5.8, va="top", ha="left",
+                    bbox=dict(facecolor="white", alpha=0.75, pad=0.8, edgecolor="none"))
             if c == 0:
-                ax.text(-0.06, 0.5, lab, transform=ax.transAxes, rotation=90, va="center", ha="center",
-                        fontsize=7.0, color=col, fontweight="bold")
-        ax = fig.add_subplot(gs[r, 3])
-        ax.plot(range(4), spd, "-o", color=col, lw=1.2, ms=3.4, markeredgecolor="white", markeredgewidth=0.6)
-        ax.set_ylim(0, max(_np.linalg.norm(_np.asarray(ACT["i"], _np.float32), axis=1).max(),
-                           _np.linalg.norm(_np.asarray(ACT["j"], _np.float32), axis=1).max()) * 1.2)
-        ax.set_xticks([]); ax.set_yticks([])
-        for sp in ("top", "right"): ax.spines[sp].set_visible(False)
-        for sp in ("left", "bottom"): ax.spines[sp].set_color(GRID); ax.spines[sp].set_linewidth(0.6)
-        if r == 0: ax.set_title("speed", fontsize=6.2, color=INK2, pad=2)
+                ax.text(-0.10, 0.5, lab, transform=ax.transAxes, rotation=90, va="center", ha="center",
+                        fontsize=7.2, color=col, fontweight="bold")
+        tl = fig.add_subplot(g[1, :])                            # source timeline: WHICH frames were sampled
+        tl.plot([0, T], [0, 0], color=GRID, lw=1.2)
+        tl.scatter(idx, np.zeros_like(idx), s=11, color=col, zorder=3, linewidths=0)
+        tl.set_xlim(-1, T + 1); tl.set_ylim(-1, 1); tl.axis("off")
+    return idx
 
 
-def panel_a(ax_tr, ax_e, ax_o, cache):
-    if ax_tr is None:
-        _latents(ax_e, ax_o, cache); return
-    P = {k: _path(v) for k, v in ACT.items()}
-    B = np.vstack(list(P.values()))
-    _, _, Vt = np.linalg.svd(B - B.mean(0), full_matrices=False)          # one 2-D view for both clips
-    for k, col, lab, y in (("j", FAST, "fast $\\rightarrow$ slow", 1), ("i", SLOW, "slow $\\rightarrow$ fast", 0)):
-        q = (P[k] - B.mean(0)) @ Vt[:2].T
-        q = q - q[0] + np.array([0.0, y * 0.30])
-        ax_tr.plot(q[:, 0], q[:, 1], "-", color=col, lw=0.9, alpha=0.5, zorder=2)
-        ax_tr.scatter(q[:, 0], q[:, 1], s=7.5, color=col, zorder=3, linewidths=0)
-        ax_tr.add_patch(FancyArrowPatch(q[0], q[-1], arrowstyle="-|>", mutation_scale=8, color=col, lw=1.0,
-                                        linestyle=(0, (3, 2)), shrinkA=0, shrinkB=0, zorder=4, alpha=0.85))
-        ax_tr.text(0.0, 0.97 if y else 0.40, lab, transform=ax_tr.transAxes, color=col, fontsize=7.4,
-                   ha="left", va="top")
-    ax_tr.text(0.5, -0.10, f"same net effect  $\\cos(N)={PAIR['cosN']:.2f}$,  opposite dynamics  "
-                           f"$\\cos(A_1)={PAIR['cosA1']:+.2f}$", transform=ax_tr.transAxes, ha="center",
-               va="top", fontsize=6.8, color=INK2)
-    ax_tr.set_aspect("equal"); ax_tr.axis("off")
-
-    _latents(ax_e, ax_o, cache)
-
-
-def _latents(ax_e, ax_o, cache):
-    for ax, key, title, cos in ((ax_e, "endpoint", "endpoint only", PAIR["cos_endpoint"]),
-                                (ax_o, "ours", "net $+\\ A_1$", PAIR["cos_ours"])):
-        c = cache[key]; A = np.array(c["all"])
-        ax.scatter(A[:, 0], A[:, 1], s=3.5, color=GRID, zorder=1, linewidths=0)
-        for cl, col in (("j", FAST), ("i", SLOW)):
-            p = np.array(c[cl])
-            ax.plot([p[0]], [p[1]], "o", ms=7.5, color=col, markeredgecolor="white", markeredgewidth=1.0, zorder=3)
-        pi, pj = np.array(c["i"]), np.array(c["j"])
-        ax.plot([pi[0], pj[0]], [pi[1], pj[1]], color=INK2, lw=0.8, ls=(0, (2, 2)), zorder=2)
-        ax.set_title(title, fontsize=7.0, color=INK, pad=3)
-        ax.text(0.5, -0.06, f"$\\cos(z)={cos:.2f}$", transform=ax.transAxes, ha="center", va="top",
-                fontsize=7.4, color=OURS if key == "ours" else INK2,
-                fontweight="bold" if key == "ours" else "normal")
-        ax.set_xticks([]); ax.set_yticks([])
-        for s in ax.spines.values(): s.set_color(GRID); s.set_linewidth(0.6)
-        ax.set_aspect("equal")
-
-
-def panel_b(ax):
+def panel_a_latent(ax):
+    """Endpoint encoding vs full transition, as a diagram of inputs rather than a latent-space cartoon."""
     ax.set_xlim(0, 100); ax.set_ylim(0, 100); ax.axis("off")
-    box = dict(boxstyle="round,pad=0,rounding_size=1.6", linewidth=0.7)
-    ax.add_patch(FancyBboxPatch((0, 46), 24, 16, facecolor="white", edgecolor=GRID, **box))
-    ax.text(12, 54, "donor transition", fontsize=7.2, ha="center", va="center", color=INK)
-    ax.add_patch(FancyArrowPatch((6, 44), (20, 44), arrowstyle="-|>", mutation_scale=7, color=INK2,
-                                 lw=1.0, linestyle=(0, (3, 2)), shrinkA=0, shrinkB=0))
-    ax.text(13, 38, "source effect", fontsize=6.6, color=INK2, ha="center")
-    ax.add_patch(plt.Circle((32, 54), 5.5, facecolor=OURS_L, edgecolor=OURS, lw=0.8, zorder=3))
-    ax.text(32, 54, "$z$", fontsize=8, ha="center", va="center", color=OURS, zorder=4)
-    ax.add_patch(FancyArrowPatch((24, 54), (26.5, 54), arrowstyle="-|>", mutation_scale=7, color=INK2, lw=0.9))
+    box = dict(boxstyle="round,pad=0,rounding_size=1.8", linewidth=0.7)
+    ax.text(50, 97, "Endpoints only", fontsize=7.6, ha="center", va="top", color=INK, fontweight="bold")
+    ax.text(50, 88, "reads $(x_0, x_T)$", fontsize=6.8, ha="center", va="top", color=INK2)
+    for x, col in ((22, FAST), (78, SLOW)):
+        ax.add_patch(FancyArrowPatch((x, 80), (46 if x < 50 else 54, 66), arrowstyle="-|>", mutation_scale=7,
+                                     color=col, lw=1.1))
+    ax.add_patch(FancyBboxPatch((38, 55), 24, 11, facecolor="white", edgecolor=INK2, **box))
+    ax.text(50, 60.5, "$z$", fontsize=8, ha="center", va="center")
+    ax.text(50, 50, "identical input $\\Rightarrow$ same $z$", fontsize=6.6, ha="center", va="top", color=BAD)
 
-    for r, (name, col, ang) in enumerate([("reconstruction only", WARN, (18, 58)), ("EAT (ours)", OURS, (6, 9))]):
-        y = 78 - r * 46
-        ax.add_patch(FancyArrowPatch((37, 54), (48, y - 4 + 8), arrowstyle="-|>", mutation_scale=7,
-                                     color=INK2, lw=0.9, connectionstyle=f"arc3,rad={0.18 if r else -0.18}"))
-        ax.text(52, y + (13 if r == 0 else -15), name, fontsize=7.2, color=col, ha="left", fontweight="bold")
-        for c, lab in enumerate(("similar state", "shifted state")):
-            x = 52 + c * 25
-            ax.add_patch(FancyBboxPatch((x, y - 12), 22, 20, facecolor="white", edgecolor=GRID, **box))
-            if r == 0:
-                ax.text(x + 11, y + 24, lab, fontsize=6.8, color=INK2, ha="center")
-            ax.add_patch(FancyArrowPatch((x + 4, y - 4), (x + 19, y - 4), arrowstyle="-|>", mutation_scale=6,
-                                         color=GRID, lw=1.0, linestyle=(0, (2, 2)), shrinkA=0, shrinkB=0))
-            a = np.radians(ang[c])
-            ax.add_patch(FancyArrowPatch((x + 4, y - 4), (x + 4 + 15 * np.cos(a), y - 4 + 15 * np.sin(a)),
-                                         arrowstyle="-|>", mutation_scale=7, color=col, lw=1.4, shrinkA=0, shrinkB=0))
-    ax.add_patch(FancyArrowPatch((36, 4), (44, 4), arrowstyle="-|>", mutation_scale=6, color=GRID, lw=1.0,
-                                 linestyle=(0, (2, 2)), shrinkA=0, shrinkB=0))
-    ax.text(45.5, 4, "source effect", fontsize=6.4, color=INK2, va="center")
-    ax.add_patch(FancyArrowPatch((72, 4), (80, 4), arrowstyle="-|>", mutation_scale=6, color=OURS, lw=1.2,
-                                 shrinkA=0, shrinkB=0))
-    ax.text(81.5, 4, "decoded effect", fontsize=6.4, color=INK2, va="center")
+    ax.text(50, 38, "Full transition", fontsize=7.6, ha="center", va="top", color=INK, fontweight="bold")
+    ax.text(50, 29, "reads every frame", fontsize=6.8, ha="center", va="top", color=INK2)
+    for x, col, zx in ((22, FAST, 12), (78, SLOW, 64)):
+        ax.add_patch(FancyArrowPatch((x, 22), (zx + 12, 12), arrowstyle="-|>", mutation_scale=7, color=col, lw=1.1))
+        ax.add_patch(FancyBboxPatch((zx, 0), 24, 11, facecolor="white", edgecolor=col, **box))
+        ax.text(zx + 12, 5.5, "$z_{\\mathrm{fast}}$" if col == FAST else "$z_{\\mathrm{slow}}$", fontsize=7.4,
+                ha="center", va="center", color=col)
+    ax.text(50, -5, "distinct latents", fontsize=6.6, ha="center", va="top", color=OK)
 
 
-def teaser(out, cache, d):
-    fig = plt.figure(figsize=(7.2, 2.0))
-    gs = fig.add_gridspec(1, 3, width_ratios=[1.7, 1.0, 2.2], wspace=0.22)
-    gsa = gs[0].subgridspec(2, 4, width_ratios=[1, 1, 1, 0.75], wspace=0.07, hspace=0.16)
-    gsl = gs[1].subgridspec(1, 2, wspace=0.34)
-    ax_e, ax_o = fig.add_subplot(gsl[0]), fig.add_subplot(gsl[1])
-    ax_b = fig.add_subplot(gs[2])
-    panel_a_frames(fig, gsa, d)
-    panel_a(None, ax_e, ax_o, cache)
-    panel_b(ax_b)
-    fig.text(0.02, 1.10, "(a)  What to keep?", fontsize=9, fontweight="bold", va="bottom", color=INK)
-    fig.text(0.02, 1.02, "Same endpoint, different process.", fontsize=7.4, va="bottom", color=INK2)
-    fig.text(0.575, 1.10, "(b)  How to behave?", fontsize=9, fontweight="bold", va="bottom", color=INK)
-    fig.text(0.575, 1.02, "Same latent, different initial states.", fontsize=7.4, va="bottom", color=INK2)
-    fig.text(0.26, -0.085, f"one real validation pair; over all {PAIR['n_pairs']:,} such pairs "
-             f"$\\cos(z)$ falls {PAIR['agg_endpoint']:.2f} $\\rightarrow$ {PAIR['agg_ours']:.2f}",
-             ha="center", fontsize=6.6, color=INK2, style="italic")
+def panel_b(fig, gs):
+    """MoCoGAN-style grid: rows = objective, columns = recipient state; each cell is before -> after."""
+    cells = gs.subgridspec(3, 4, width_ratios=[0.5, 0.11, 1, 1], height_ratios=[0.14, 1, 1], wspace=0.06,
+                           hspace=0.10)
+    donor = _frames(DONOR)
+    # donor column: the transition whose effect is transported
+    axd = fig.add_subplot(cells[1:, 0])
+    axd.axis("off")
+    for k, (t, y) in enumerate(((0, 0.53), (T_GRASP[DONOR], 0.03))):
+        a = axd.inset_axes([0.0, y, 1.0, 0.44])
+        _img(a, donor[t], edge=INK2, lw=0.7)
+        if k == 0: _arrow(a, GRIP, BOWL[DONOR], INK2, ls=(0, (3, 2)), lw=1.3)
+        a.text(0.04, 0.96, "before" if k == 0 else "after", transform=a.transAxes, fontsize=5.8, va="top",
+               bbox=dict(facecolor="white", alpha=0.75, pad=0.8, edgecolor="none"))
+    for j, lab in ((0, "donor"), (2, "similar state"), (3, "shifted state")):
+        t = fig.add_subplot(cells[0, j]); t.axis("off")
+        t.text(0.5, 0.2, lab, fontsize=7.2, ha="center", va="center", color=INK if lab == "donor" else INK2)
+    for r, (name, col) in enumerate((("recon. only", RECON), ("EAT (ours)", OURS))):
+        lax = fig.add_subplot(cells[r + 1, 1]); lax.axis("off")
+        lax.text(0.5, 0.5, name, rotation=90, va="center", ha="center", fontsize=7.0, color=col,
+                 fontweight="bold", linespacing=1.0, transform=lax.transAxes)
+        for j, tag in ((2, SIMILAR), (3, SHIFTED)):
+            fr = _frames(tag)
+            g = cells[r + 1, j].subgridspec(1, 2, wspace=0.03)
+            before, after = fig.add_subplot(g[0]), fig.add_subplot(g[1])
+            _img(before, fr[0])
+            _arrow(before, GRIP, BOWL[DONOR], GRID, ls=(0, (3, 2)), lw=1.1, ms=6)      # the donor's absolute effect
+            fail = (r == 0 and tag == SHIFTED)
+            target = BOWL[DONOR] if r == 0 else BOWL[tag]                               # recon: absolute; EAT: relative
+            _arrow(before, GRIP, target, col, lw=1.6)
+            if fail:                                                                     # where it lands: empty table
+                Hc = int(256 * (CROP[2] - CROP[0]))
+                before.add_patch(Circle(_pt(BOWL[DONOR], Hc), 15, fill=False, edgecolor=BAD, lw=1.0,
+                                        ls=(0, (2, 1.5)), zorder=6))
+                _img(after, fr[0], edge=BAD, lw=1.4)
+                after.add_patch(Rectangle((0, 0), 1, 1, transform=after.transAxes, color="white", alpha=0.6, zorder=4))
+                after.text(0.5, 0.58, "empty\ntable", transform=after.transAxes, ha="center", va="center",
+                           fontsize=6.6, color=BAD, zorder=6, linespacing=1.1)
+                _mark(after, False)
+            else:
+                _img(after, fr[T_GRASP[tag]], edge=OK, lw=1.4)
+                _mark(after, True)
+
+
+def teaser(out):
+    fig = plt.figure(figsize=(7.2, 2.1))
+    gs = fig.add_gridspec(1, 3, width_ratios=[1.85, 0.62, 2.05], wspace=0.10)
+    panel_a(fig, gs[0])
+    panel_a_latent(fig.add_subplot(gs[1]))
+    panel_b(fig, gs[2])
+    fig.text(0.01, 1.03, "(a)  Same endpoints, different dynamics", fontsize=8.8, fontweight="bold", va="bottom")
+    fig.text(0.01, 0.975, "A latent action should preserve how the transition unfolds.", fontsize=7.0,
+             color=INK2, va="bottom", style="italic")
+    fig.text(0.545, 1.03, "(b)  Same action, different states", fontsize=8.8, fontweight="bold", va="bottom")
+    fig.text(0.545, 0.975, "Its effect should adapt to the current state.", fontsize=7.0, color=INK2,
+             va="bottom", style="italic")
+    fig.text(0.5, -0.045, "Latent actions should capture temporal effects — not merely endpoints — "
+             "and remain executable across states.", ha="center", fontsize=7.6, color=INK, fontweight="bold")
     fig.savefig(out + ".pdf", pad_inches=0.06); fig.savefig(out + ".png", pad_inches=0.06); plt.close(fig)
 
 
 if __name__ == "__main__":
-    d = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "figures")
-    cache = json.load(open(os.path.join(d, "teaser_latents.json")))
-    teaser(os.path.join(d, "teaser"), cache, d)
-    print("wrote", d + "/teaser.{pdf,png}")
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.chdir(root)
+    teaser(os.path.join("figures", "teaser"))
+    print("wrote figures/teaser.{pdf,png}")
