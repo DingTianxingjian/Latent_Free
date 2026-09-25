@@ -4147,3 +4147,40 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Retraction of the placeholder block.**  The invented matched-block numbers committed earlier today
   (no-latent 72.1 / UniVLA 75.4 / TERRA 76.7 avg) are withdrawn; they were only ever scaffolding for the figure
   and table layout and are replaced by the table above.
+
+### 2026-09-25 (12:30) — NMSE ablation with paired source-bootstrap intervals, from existing dumps (no training); the random-TI UniVLA baseline is at least as good as TERRA on every probe
+
+- **What ran.** `acdc_la/downstream/nmse_bootstrap.py`: the repo's own per-source episode-disjoint ridge
+  (`common.probes.per_source_readouts`) from each arm's frozen Z to net / seg1 / seq / prof built from ACT, plus the
+  moving-patch drop; NMSE = 1 - R^2, clip-weighted over the 29 sources.  2,000 bootstrap resamples of SOURCES, the
+  same resample for every arm, so TERRA - arm gets a paired interval.  Point estimates reproduce the ledger to the
+  third decimal (TERRA net .329, endpoint-only .336, UniVLA matched .237), so the protocol is unchanged.
+  **Intervals are across sources, not across training seeds; every arm is still one training seed.**
+  Artifacts: `acdc_la/results/nmse_bootstrap.json`, per-source rows in `acdc_la/results/nmse_rows/`.
+
+  | arm | net | seg1 | prof | seq | drop % |
+  |---|---|---|---|---|---|
+  | endpoint only (N) `s1_mean_1ep` | .664 | .790 | .983 | .800 | 33.6 |
+  | DC only (N) `s1_dc` | .671 | .797 | .993 | .808 | 29.7 |
+  | N + A1, earlier tokenizer `s1_acdc_1ep` | .676 | .736 | .915 | .776 | 28.9 |
+  | TERRA start `tc_cont` (65k) | .734 | .767 | .909 | .807 | 22.4 |
+  | +15k reconstruction only | .732 | .760 | .909 | .807 | 22.6 |
+  | +15k EAT w/o invariance | .700 | .733 | .915 | .784 | 19.7 |
+  | **+15k EAT (TERRA) `latp2_inv`** | **.671** | **.717** | **.909** | **.764** | **17.9** |
+  | UniVLA matched (released TI prior) | .763 | .778 | .875 | .785 | 23.0 |
+  | **UniVLA, random TI codebook `univla_noinh`** | **.655** | **.689** | **.821** | **.702** | **15.7** |
+
+- **Confirmed (paired intervals exclude 0).**  (i) EAT vs reconstruction-only at the same start and budget: better on
+  net [-.083,-.035], seg1 [-.061,-.026], seq [-.059,-.028], drop [-11.4,-0.3]; prof unchanged.  (ii) TERRA vs the
+  endpoint (N-only) code: better on seg1, prof [-.102,-.048], seq and drop [-27.0,-8.1]; net tied.
+  (iii) vs UniVLA matched: better on net and seg1, **worse on prof** [+.011,+.060], seq and drop tied.
+- **NEW and adverse: the fair baseline.**  `univla_noinh` (UniVLA Stage 2 with a RANDOM-init TI codebook, same mixture,
+  128k x 64, same seed -- the comparison the user asked for on 2026-09-18) was probed on 2026-09-22 06:28 and never
+  written up here.  It is **significantly better than TERRA on prof [+.062,+.119] and seq [+.033,+.094]**, and tied on
+  net, seg1 and drop (intervals span 0, point estimates all favour UniVLA).  Consequence: no representation claim of
+  the form "TERRA beats UniVLA" survives against the fair baseline; the released-prior row (`univla_matched`) is the
+  weaker of the two UniVLA arms and cannot be presented as the matched comparison without this row beside it.
+- **Next decision.**  The paper's positive representation evidence is the EAT ablation and the N-only ablation, both
+  confirmed above.  The comparison with UniVLA needs either the noinh row reported as is, or a stated reason why the
+  released-prior initialisation is the protocol; the closed-loop comparison (user-reported, 2026-09-22) should be
+  checked against a noinh VLA as well (four-suite chain from 2026-09-20 -- status unknown here).
