@@ -17,11 +17,11 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.patheffects as pe
 from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Wedge
 
 INK, INK2, GRID = "#1a1a19", "#52514e", "#d9d9d6"
-OBS = "#ffc400"                                              # the observed (source) effect, everywhere
+OBS = "#5f5e5a"
+YEL = "#f5b800"                                             # the source clip's observed effect only                                              # the observed (source) effect, everywhere
 FAST, SLOW = "#2a78d6", "#eb6834"
 OURS, BAD, OK, RECON = "#4a3aa7", "#d92d20", "#1baf7a", "#c2409a"   # recon: magenta, clear of (a)'s orange
 
@@ -63,28 +63,9 @@ def _pt(p, crop, n=256):
     return ((p[0] - crop[0]) / (crop[2] - crop[0]) * side, (p[1] - crop[1]) / (crop[3] - crop[1]) * side)
 
 
-_EDGE = [pe.Stroke(linewidth=3.0, foreground="#3a3936"), pe.Normal()]   # dark outline: yellow on a light floor
-
-
-def _draw_arrow(add, p, q, col, ls, lw, ms, transform=None):
-    """A complete arrow.  A dashed linestyle would also dash the head's outline and leave it broken, so a
-    dashed arrow is a dashed shaft plus a solid head over its last stretch."""
-    kw = {} if transform is None else {"transform": transform}
-    fx = _EDGE if col == OBS else None
-    if ls == "-" or ls is None:
-        add(FancyArrowPatch(p, q, arrowstyle="-|>", mutation_scale=ms, color=col, lw=lw, shrinkA=0, shrinkB=0,
-                            zorder=5, path_effects=fx, joinstyle="miter", capstyle="butt", **kw))
-        return
-    p, q = np.asarray(p, float), np.asarray(q, float)
-    k = q - (q - p) * min(0.35, 1.0)                                  # where the solid head segment starts
-    add(FancyArrowPatch(p, k, arrowstyle="-", color=col, lw=lw, linestyle=ls, shrinkA=0, shrinkB=0, zorder=5,
-                        path_effects=fx, **kw))
-    add(FancyArrowPatch(k, q, arrowstyle="-|>", mutation_scale=ms, color=col, lw=lw, shrinkA=0, shrinkB=0,
-                        zorder=5, path_effects=fx, joinstyle="miter", **kw))
-
-
 def _arrow(ax, p, q, col, crop, ls="-", lw=1.7, ms=9):
-    _draw_arrow(ax.add_patch, _pt(p, crop), _pt(q, crop), col, ls, lw, ms)
+    ax.add_patch(FancyArrowPatch(_pt(p, crop), _pt(q, crop), arrowstyle="-|>", mutation_scale=ms, color=col,
+                                 lw=lw, linestyle=ls, shrinkA=0, shrinkB=0, zorder=5))
 
 
 def _mark(ax, ok):
@@ -185,7 +166,7 @@ def panel_b(fig, gs):
     d = fig.add_subplot(cells[1:3, 0]); d.axis("off")              # the clip whose latent is transported
     a = d.inset_axes([0.0, 0.27, 1.0, 0.46])
     _img(a, _frames(DONOR)[0], CROP_B, edge=INK2, lw=0.8)
-    _arrow(a, GRIP, BOWL[DONOR], OBS, CROP_B, ls=(0, (3, 2)), lw=1.8)
+    _arrow(a, GRIP, BOWL[DONOR], YEL, CROP_B, ls=(0, (3, 2)), lw=1.8)
     zc = fig.add_subplot(cells[1:3, 1]); zc.axis("off"); zc.set_xlim(0, 1); zc.set_ylim(0, 1)
     zc.text(0.5, 0.5, "$z$", fontsize=8.6, ha="center", va="center", color=OURS, zorder=4, transform=zc.transAxes,
             bbox=dict(boxstyle="circle,pad=0.35", facecolor="#e7e3f5", edgecolor=OURS, linewidth=0.9))
@@ -204,8 +185,7 @@ def panel_b(fig, gs):
             if r == 1 and j == 3: cell_axes.append(ax)
             fail = (r == 0 and tag == SHIFTED)
             _img(ax, _frames(tag)[0], CROP_B, edge=BAD if fail else OK, lw=1.3)
-            _arrow(ax, (GRIP[0] - 0.045, GRIP[1]), (BOWL[DONOR][0] - 0.045, BOWL[DONOR][1]), OBS, CROP_B,
-                   ls=(0, (3, 2)), lw=1.3, ms=7)   # beside, not under, the executed arrow
+            _arrow(ax, GRIP, BOWL[DONOR], OBS, CROP_B, ls=(0, (3, 2)), lw=1.3, ms=7)
             target = BOWL[DONOR] if r == 0 else BOWL[tag]
             _arrow(ax, GRIP, target, col, CROP_B)
             if fail:
@@ -217,8 +197,9 @@ def panel_b(fig, gs):
     pa = a.get_position(); pd = d.get_position()
     x = pa.x0; y1 = pa.y0 - 0.075; y2 = y1 - 0.075
     def arr(x0, x1, y, c, ls="-"):
-        _draw_arrow(fig.add_artist, (x0, y), (x1, y), c, ls, 1.5, 7, transform=fig.transFigure)
-    arr(x, x + 0.038, y1, OBS, (0, (3, 2)))
+        fig.add_artist(FancyArrowPatch((x0, y), (x1, y), arrowstyle="-|>", mutation_scale=6.5, color=c, lw=1.5,
+                                       linestyle=ls, transform=fig.transFigure))
+    arr(x, x + 0.038, y1, YEL, (0, (3, 2)))
     fig.text(x + 0.045, y1, "observed effect", fontsize=6.3, color=INK2, va="center")
     arr(x, x + 0.017, y2, RECON); arr(x + 0.021, x + 0.038, y2, OURS)
     fig.text(x + 0.045, y2, "executed from $z$", fontsize=6.3, color=INK2, va="center")
