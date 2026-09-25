@@ -4252,3 +4252,20 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   and seq, as recorded on 2026-09-09: one AC mode remains the operating point.  UniVLA's profile advantage comes from
   per-pair encoding (one code set per segment), not from its quantiser.  Decision: no VQ variant of TERRA; the N-only
   (endpoint) continuous arm is the CoMo-style baseline (continuous latent over an early temporal feature difference).
+
+### 2026-09-25 (15:30) — why the VQ tokenizer reads so much worse: it loses some information, and the linear probe exaggerates the rest
+
+- **Facts checked.**  `ckpt/tc_vq256.pt`: step 75,000 (of 128k, stopped with the chains on 2026-09-14), 16 tokens x
+  256 codes x 64 d, endpointdyn -- 10k steps MORE than `tc_cont` (65,000).  Final code usage is healthy: every token
+  uses ~all 256 codes, 6.5-7.1 bits per token, ~109 bits per window, top code share 3-6 % (the 99/256 seen at step 20k
+  was repaired by dead-code restarts).  So the gap is not collapse.
+- **Evidence, most to least certain.**  (i) Information: validation reconstruction MSE of dF 1.604 (VQ) vs 1.485
+  (continuous) with the same decoder -- the quantiser costs information.  (ii) Readout: a linear probe on the codebook
+  vectors gives NMSE .946; reading the codes as one-hot categories is worse (.987, 4,099 dims against ~270 train clips
+  per source), so the probe number overstates the information gap -- "not linearly readable at this sample size", not
+  "carries nothing".  (iii) Nuisance: drop 40.5 % -- small feature shifts flip discrete codes.
+  Script: `acdc_la/downstream/nmse_vq_onehot.py`.
+- **Consistent with** the 2026-09-12 gate (post-hoc VQ/PQ codebooks of the continuous code, LIBERO history-policy
+  chain): continuous oracle L1 0.367 vs 0.394-0.408 discrete; gate failed.  UniVLA's VQ reads well because its codes
+  are few and frequent (4 per pair, 16-way); a 256-way, 16-token code is rare per code.  Decision unchanged: TERRA
+  stays continuous.
