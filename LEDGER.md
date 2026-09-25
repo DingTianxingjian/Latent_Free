@@ -4283,3 +4283,23 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   compression CoMo imposes by construction.  Truncating a trained code is not training a k-d bottleneck; a 4 x 16
   continuous arm is the test of whether a CoMo-sized bottleneck is better.  Cheap downstream option: use the top-64
   PCs of z as the VLA target instead of all 256 dims.
+
+### 2026-09-25 (17:00) — REGISTERED (not yet run): low-bottleneck sweep of the TC tokenizer
+
+- **Question.**  CoMo constrains its continuous latent to 16 d; ours is 4 x 64 = 256 d (effective rank ~128 before
+  EAT, ~25 after, entry 16:20).  Does training with a small bottleneck give a better latent than truncating a big one?
+- **Arms.**  `tc_cont_d16` (4 x 16 = 64 d) and `tc_cont_d4` (4 x 4 = 16 d, CoMo-sized).  Everything else is
+  `tc_cont`'s recipe as stored in its checkpoint (endpointdyn, continuous, 6-layer encoder, 4-layer decoder, lr 3e-4,
+  warmup 4000, batch 64, seed 0), including its schedule: `--steps 128000 --stop-at 65000` reproduces the cosine curve
+  tc_cont was on when it was stopped.  New flag `--stop-at` in `common/train_loop.py` for exactly that.
+  Script: `acdc_la/scripts/run_tc_bottleneck.sh` (LD=16 / LD=4), `ai` partition.
+- **Readout.**  The NMSE table (`nmse_bootstrap.py` rows + paired source bootstrap) against `tc_cont` (256 d, same
+  budget), plus effective rank.  **Pre-registered reading:** the small bottleneck is worth continuing (to +15k EAT, then
+  VLA) only if at 64 d or 16 d it matches tc_cont on net/seg1/seq (paired interval containing 0 or favouring it) AND
+  lowers the distractor drop.  If it loses on net/seg1/seq, the bottleneck is too tight at this budget, and EAT's
+  learned compression (entry 16:20) is the better route.
+- **Not submitted (17:10).**  `sbatch` refused: AssocGrpGRESMinutes.  `mybalance`: `cis250950-ai` SU limit 0.0 (used
+  1995.0), `cis250950-gpu` SU limit 0.0 (used 27.1).  Every pending job on the account (24, incl. the univla_noinh
+  four-suite VLA chain registered 2026-09-20) is held for the same reason, which is why that chain never produced
+  results; 5 more are DependencyNeverSatisfied.  The sweep is ready to submit as soon as an allocation exists:
+  `for LD in 16 4; do sbatch --export=ALL,LD=$LD acdc_la/scripts/run_tc_bottleneck.sh; done`.

@@ -36,6 +36,8 @@ def common_args(ap):
     ap.add_argument("--freeze-encoder", action="store_true", help="train the decoder only (E, U, cell_emb frozen)")
     ap.add_argument("--eval-only", action="store_true", help="load ckpt/<tag>.pt and write the validation dump only")
     ap.add_argument("--save-every", type=int, default=5000, help="periodic checkpoint (model + optimiser + step) for --resume")
+    ap.add_argument("--stop-at", type=int, default=0, help="stop after this many steps but keep the --steps cosine schedule, "
+                    "so a run can match one that was cut short (tc_cont: --steps 128000 stopped at 65000); 0 = run to --steps")
     ap.add_argument("--resume", action="store_true", help="continue ckpt/<tag>.pt from its saved step (same seed, same batch list)")
     ap.add_argument("--eval-every", type=int, default=-1, help="steps between cheap proxy evaluations (Tier 0/1 of PROTOCOL.md) on a 100-clip-per-source val subset; -1 = steps//10 for runs >= 200k steps, else off")
     ap.add_argument("--curve-per-source", type=int, default=200)   # 100 in the leg-1 runs of 2026-09-12 (per-source ridge on ~33 test clips is noisy)
@@ -125,10 +127,13 @@ def run(a, step_fn, ramp_keys=(), pairs_for_train=False, stage="", build=None, o
                 import traceback; print(f"[{a.tag}] CURVE FAILED at step {s+1}: {type(e).__name__}: {e}\n{traceback.format_exc()[-1500:]}", flush=True)
             model.train()
         if s + 1 >= a.steps: break
+        if getattr(a, "stop_at", 0) and s + 1 >= a.stop_at: break
     for k, v in base.items(): setattr(a, k, v)
-    save_ckpt(ck_path, model, vars(a), dstats, extra=dict(sources=srcs, stage=stage, step=a.steps))
+    done = min(a.steps, a.stop_at) if getattr(a, "stop_at", 0) else a.steps
+    save_ckpt(ck_path, model, vars(a), dstats, extra=dict(sources=srcs, stage=stage, step=done,
+                                                          opt=opt.state_dict(), sched=sched.state_dict()))
     R = dump_val(model, feat, dl_val, distractor, dump_path, a.val_batches)
-    R.update(tag=a.tag, stage=stage, seed=a.seed, steps=a.steps, seconds=int(time.time() - t0), train_clips=len(ds), sources=len(srcs),
+    R.update(tag=a.tag, stage=stage, seed=a.seed, steps=done, seconds=int(time.time() - t0), train_clips=len(ds), sources=len(srcs),
              final={k: float(np.mean(v[-200:])) for k, v in log.items()}, args=vars(a))
     json.dump(R, open(os.path.join(RESULTS, f"{a.tag}.json"), "w"), indent=1)
     print(f"[{a.tag}-done] rec={R['rec']:.4f} kl_z={R['kl_z']:.2f} val_clips={R['n_val_clips']} -> {dump_path}", flush=True)
