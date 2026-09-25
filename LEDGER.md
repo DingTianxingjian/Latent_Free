@@ -4303,3 +4303,26 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   four-suite VLA chain registered 2026-09-20) is held for the same reason, which is why that chain never produced
   results; 5 more are DependencyNeverSatisfied.  The sweep is ready to submit as soon as an allocation exists:
   `for LD in 16 4; do sbatch --export=ALL,LD=$LD acdc_la/scripts/run_tc_bottleneck.sh; done`.
+
+### 2026-09-25 (18:30) — transported-action NMSE per source: EAT beats reconstruction-only on 26/29 sources, but the gap does not grow with donor distance
+
+- **What ran.**  `acdc_la/downstream/transport_by_source.py` (CPU, existing dumps).  Per source, a frozen ridge
+  reader fitted on REAL transitions (DF -> 12-step action sequence, train episodes) -- DF is model-free, so both arms
+  are read by the same reader -- applied to the transported DSW of the test episodes (recipient F0 + same-source donor
+  z) and scored against the donor's action; NMSE = 1 - R^2.  Donor rows recovered exactly (same source, DONOR_GE, ACT
+  == ASW); donor distance = ||F0Q(recipient) - F0Q(donor)||, quartiles within source.  Arms: `tc_cont_plus15k`
+  (reconstruction only) vs `latp2_inv` (full EAT), same start and budget.  One training seed each.
+
+  | donors | median recon | median EAT | EAT lower |
+  |---|---|---|---|
+  | all | .828 | .722 | 26 / 29 |
+  | Q1 (nearest) | .866 | .776 | 24 / 29 |
+  | Q4 (farthest) | .914 | .830 | 21 / 29 |
+  | Q3-Q4 mean | .895 | .777 | 22 / 29 |
+
+- **Conclusion.**  Confirmed: EAT's transport gain is broad, not carried by a few sources (26/29 overall).
+  Not supported under this protocol: that the gap GROWS with donor distance -- both arms rise by about .05 from Q1 to
+  Q4 and the gap stays about .09, while the count of sources favouring EAT falls from 24 to 21.  The manuscript's
+  Fig. 3(a) numbers (recon .80 -> 1.06, EAT .77 -> .86) come from a computation not in this repository and are not
+  reproduced by this one; until they are, the text should claim breadth, not a distance trend.
+  Figure: `figures/transport_scatter.{pdf,png}` (`acdc_la/figures/make_transport_scatter.py`).
