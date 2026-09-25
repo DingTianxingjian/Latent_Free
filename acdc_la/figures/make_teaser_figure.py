@@ -20,6 +20,7 @@ import numpy as np
 from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Wedge
 
 INK, INK2, GRID = "#1a1a19", "#52514e", "#d9d9d6"
+OBS = "#5f5e5a"                                              # the observed (source) effect, everywhere
 FAST, SLOW = "#2a78d6", "#eb6834"
 OURS, BAD, OK, RECON = "#4a3aa7", "#d92d20", "#1baf7a", "#eb6834"
 
@@ -164,7 +165,7 @@ def panel_b(fig, gs):
     d = fig.add_subplot(cells[1:3, 0]); d.axis("off")              # the clip whose latent is transported
     a = d.inset_axes([0.0, 0.27, 1.0, 0.46])
     _img(a, _frames(DONOR)[0], CROP_B, edge=INK2, lw=0.8)
-    _arrow(a, GRIP, BOWL[DONOR], INK2, CROP_B, ls=(0, (3, 2)), lw=1.5)
+    _arrow(a, GRIP, BOWL[DONOR], OBS, CROP_B, ls=(0, (3, 2)), lw=1.8)
     a.text(0.5, -0.05, "observed effect", transform=a.transAxes, fontsize=6.4, color=INK2, ha="center", va="top")
     zc = fig.add_subplot(cells[1:3, 1]); zc.axis("off"); zc.set_xlim(0, 1); zc.set_ylim(0, 1)
     zc.text(0.5, 0.5, "$z$", fontsize=8.6, ha="center", va="center", color=OURS, zorder=4, transform=zc.transAxes,
@@ -174,28 +175,34 @@ def panel_b(fig, gs):
                                      mutation_scale=7, color=INK2, lw=0.9, transform=zc.transAxes, clip_on=False))
     zc.add_patch(FancyArrowPatch((-0.20, 0.5), (0.30, 0.5), arrowstyle="-|>", mutation_scale=7, color=INK2,
                                  lw=0.9, transform=zc.transAxes, clip_on=False))
+    cell_axes = []
     for r, (name, col) in enumerate((("recon. only", RECON), ("EAT (ours)", OURS))):
         lax = fig.add_subplot(cells[r + 1, 2]); lax.axis("off")
         lax.text(0.5, 0.5, name, rotation=90, va="center", ha="center", fontsize=7.2, color=col,
                  fontweight="bold", transform=lax.transAxes)
         for j, tag in ((3, SIMILAR), (4, SHIFTED)):
             ax = fig.add_subplot(cells[r + 1, j])
+            if r == 1 and j == 3: cell_axes.append(ax)
             fail = (r == 0 and tag == SHIFTED)
             _img(ax, _frames(tag)[0], CROP_B, edge=BAD if fail else OK, lw=1.3)
-            _arrow(ax, GRIP, BOWL[DONOR], GRID, CROP_B, ls=(0, (3, 2)), lw=1.3, ms=7)
+            _arrow(ax, GRIP, BOWL[DONOR], OBS, CROP_B, ls=(0, (3, 2)), lw=1.3, ms=7)
             target = BOWL[DONOR] if r == 0 else BOWL[tag]
             _arrow(ax, GRIP, target, col, CROP_B)
             if fail:
                 ax.add_patch(Circle(_pt(BOWL[DONOR], CROP_B), 17, fill=False, edgecolor=BAD, lw=1.1,
                                     ls=(0, (2, 1.5)), zorder=6))
             _mark(ax, not fail)
-    lg = fig.add_subplot(cells[3, 3:]); lg.axis("off"); lg.set_xlim(0, 1); lg.set_ylim(0, 1)
-    lg.add_patch(FancyArrowPatch((0.02, 0.35), (0.12, 0.35), arrowstyle="-|>", mutation_scale=6, color=GRID,
-                                 lw=1.2, linestyle=(0, (3, 2))))
-    lg.text(0.14, 0.35, "observed effect", fontsize=6.2, color=INK2, va="center")
-    lg.add_patch(FancyArrowPatch((0.02, -0.35), (0.12, -0.35), arrowstyle="-|>", mutation_scale=6, color=OURS,
-                                 lw=1.4, clip_on=False))
-    lg.text(0.14, -0.35, "executed from $z$", fontsize=6.2, color=INK2, va="center")
+    # legend in figure coordinates under the grid: dashed = observed, solid = executed from z (row colour)
+    fig.canvas.draw()
+    p0 = cell_axes[0].get_position(); y = p0.y0 - 0.075; x = p0.x0
+    def arr(x0, x1, c, ls="-"):
+        fig.add_artist(FancyArrowPatch((x0, y), (x1, y), arrowstyle="-|>", mutation_scale=8, color=c, lw=1.5,
+                                       linestyle=ls, transform=fig.transFigure))
+    arr(x, x + 0.028, OBS, (0, (3, 2)))
+    fig.text(x + 0.034, y, "observed effect", fontsize=6.4, color=INK2, va="center")
+    x2 = x + 0.130
+    arr(x2, x2 + 0.024, RECON); arr(x2 + 0.030, x2 + 0.054, OURS)
+    fig.text(x2 + 0.060, y, "executed from $z$", fontsize=6.4, color=INK2, va="center")
     return a
 
 
@@ -211,7 +218,7 @@ def teaser(out):
     right_a = max(inv.transform(t.get_window_extent(r))[1, 0] for ax in fig.axes for t in ax.texts
                   if inv.transform(t.get_window_extent(r))[1, 0] < xb0)
     xd = (right_a + xb0) / 2
-    fig.add_artist(plt.Line2D([xd, xd], [0.02, 1.02], color=GRID, lw=1.0, ls=(0, (4, 3))))
+    fig.add_artist(plt.Line2D([xd, xd], [0.02, 1.02], color=INK2, lw=1.1))
     top = 0.975                                                     # titles start where each panel's frames start
     fig.text(fa.get_position().x0, top, "(a)  Same endpoints, different dynamics", fontsize=8.8,
              fontweight="bold", va="bottom")
