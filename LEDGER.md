@@ -4360,3 +4360,19 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   latent channel is close to decorative here (no-latent control 88.6 % on Goal).
 - **Consequence.**  Probe improvements alone cannot justify scaling a tokenizer; a closed-loop effect of the latent
   must first be shown under the protocol that would be scaled.
+
+### 2026-10-02 — UniVLA's stage-2 scale, a correction to the 09-20 phase-2 plan, and the scale-matched phase-2 plan (REGISTERED, not run)
+
+- **UniVLA, as published (arXiv 2505.06111).**  Generalist-policy pretraining on latent pseudo-labels: Prismatic-7B,
+  FULL fine-tuning (visual encoders + LLM + head), global batch 1,024, 20,000 steps (~20.5M samples), constant lr 2e-5,
+  32 x A100 for ~30 h (960 A100-hours); data = OXE subset + GNM + Ego4D; latent actions as |C| added vocabulary
+  tokens with cross-entropy.
+- **CORRECTION to the 2026-09-20 entry.**  "30,000 x 64 = 1.9M clips, ~1/100 of their pretraining" is wrong: it is
+  ~1/10.7 of UniVLA's 20.5M samples.
+- **Plan (user, today): phase 2 at UniVLA's scale, read as a curve.**  Both arms (TERRA labels, UniVLA labels) on our
+  29-source mixture, UniVLA's recipe -- full fine-tuning, global batch 1,024, 20k steps, constant lr 2e-5 -- so that,
+  because the learning rate is constant, checkpoints at 2k / 6.7k / 20k steps (1/10, 1/3, 1 x UniVLA) are valid
+  points of one curve without separate runs.  Downstream at each point (Object + Long; all four suites at 20k, two
+  seeds), plus the no-phase-2 and no-latent controls.  Stated difference from UniVLA: no Ego4D (our tokenizer never
+  saw human video, so its labels would be out of distribution there).  Head for continuous labels: flow matching,
+  with an MSE-regression arm at the 1/10 point to test that choice before the full run.
