@@ -1,0 +1,31 @@
+{
+ "suite": "libero_object",
+ "note": "univla_noinh_object_f10",
+ "kind": "token",
+ "files": [
+  "EVAL-libero_object-openvla-2026_09_29-13_53_08--t0_1--univla_noinh_object_f10.txt",
+  "EVAL-libero_object-openvla-2026_09_29-14_30_09--t2_3--univla_noinh_object_f10.txt"
+ ],
+ "per_task": {
+  "pick up the alphabet soup and place it in the basket": {
+   "successes": 36,
+   "episodes": 50
+  },
+  "pick up the cream cheese and place it in the basket": {
+   "successes": 47,
+   "episodes": 50
+  },
+  "pick up the salad dressing and place it in the basket": {
+   "successes": 49,
+   "episodes": 50
+  },
+  "pick up the bbq sauce and place it in the basket": {
+   "successes": 30,
+   "episodes": 50
+  }
+ },
+ "successes": 162,
+ "episodes": 200,
+ "success_rate": 0.81,
+ "complete": false
+}

@@ -1,0 +1,58 @@
+{
+ "suite": "libero_spatial",
+ "note": "univla_noinh_spatial_f10",
+ "kind": "token",
+ "files": [
+  "EVAL-libero_spatial-openvla-2026_09_23-16_22_46--t0_1--univla_noinh_spatial_f10.txt",
+  "EVAL-libero_spatial-openvla-2026_09_29-11_22_39--t2_3--univla_noinh_spatial_f10.txt",
+  "EVAL-libero_spatial-openvla-2026_09_29-11_31_52--t4_5--univla_noinh_spatial_f10.txt",
+  "EVAL-libero_spatial-openvla-2026_09_29-11_31_52--t6_7--univla_noinh_spatial_f10.txt",
+  "EVAL-libero_spatial-openvla-2026_09_29-11_54_51--t8_9--univla_noinh_spatial_f10.txt"
+ ],
+ "per_task": {
+  "pick up the black bowl between the plate and the ramekin and place it on the plate": {
+   "successes": 44,
+   "episodes": 50
+  },
+  "pick up the black bowl next to the ramekin and place it on the plate": {
+   "successes": 48,
+   "episodes": 50
+  },
+  "pick up the black bowl from table center and place it on the plate": {
+   "successes": 43,
+   "episodes": 50
+  },
+  "pick up the black bowl on the cookie box and place it on the plate": {
+   "successes": 42,
+   "episodes": 50
+  },
+  "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate": {
+   "successes": 29,
+   "episodes": 50
+  },
+  "pick up the black bowl on the ramekin and place it on the plate": {
+   "successes": 49,
+   "episodes": 50
+  },
+  "pick up the black bowl next to the cookie box and place it on the plate": {
+   "successes": 49,
+   "episodes": 50
+  },
+  "pick up the black bowl on the stove and place it on the plate": {
+   "successes": 36,
+   "episodes": 50
+  },
+  "pick up the black bowl next to the plate and place it on the plate": {
+   "successes": 44,
+   "episodes": 50
+  },
+  "pick up the black bowl on the wooden cabinet and place it on the plate": {
+   "successes": 28,
+   "episodes": 50
+  }
+ },
+ "successes": 412,
+ "episodes": 500,
+ "success_rate": 0.824,
+ "complete": true
+}

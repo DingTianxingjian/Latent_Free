@@ -4345,3 +4345,18 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   brightness/contrast); TERRA vs UniVLA-noinh vs no-latent; Object + Long, 500 episodes per suite and condition;
   retention with Wilson intervals; qualitative pair chosen by a rule fixed in advance.  Pre-registered predictions
   are in the plan.  Blocked on GPU allocation (0 SU).
+
+### 2026-10-02 — UniVLA-noinh VLA at 10 % demos: closed loop equal to the released-prior UniVLA despite much better probes
+
+- **What ran** (2026-09-23 / 09-29, while `cis250950-ai` briefly had allocation): the four-suite token-interface VLA
+  chain registered on 2026-09-20, labeller = `s2mix_noinh_1ep` (random TI codebook), Anvil protocol (10 % demos, no
+  phase-2 VLM pretraining, UniVLA evaluator, 50 trials per task).  Merged with `eval_merge.py`.
+- **Result.**  Spatial **412/500 = 82.4 %** (complete); Object **162/200 = 81.0 %** (tasks 0-3 only, INCOMPLETE);
+  Goal and Long not run (allocation exhausted again: `cis250950-ai` 1.3 SU left).  Same-protocol UniVLA with the
+  released prior: Spatial 84.2 %, Object 82.8 %.
+- **Conclusion: provisional (one seed, Object incomplete).**  The random-TI arm is much better on every OXE probe
+  (entries 2026-09-25) yet not better in closed loop -- Spatial -1.8 pp, inside the ~1.7 pp binomial SE.  Probe gains
+  of this size do not predict closed-loop gains under this protocol, consistent with the 2026-09-20 finding that the
+  latent channel is close to decorative here (no-latent control 88.6 % on Goal).
+- **Consequence.**  Probe improvements alone cannot justify scaling a tokenizer; a closed-loop effect of the latent
+  must first be shown under the protocol that would be scaled.
