@@ -1,0 +1,606 @@
+Task suite: libero_10
+Tested Ckpt': univla+libero_10_no_noops+b16x4+lr0.00035+r32+s15000--univla_noinh_frac10 
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 1...
+Success: True steps: 280
+# episodes completed so far: 1
+# successes: 1 (100.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 2...
+Success: False steps: 560
+# episodes completed so far: 2
+# successes: 1 (50.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 3...
+Success: True steps: 258
+# episodes completed so far: 3
+# successes: 2 (66.7%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 4...
+Success: True steps: 248
+# episodes completed so far: 4
+# successes: 3 (75.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 5...
+Success: True steps: 514
+# episodes completed so far: 5
+# successes: 4 (80.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 6...
+Success: True steps: 520
+# episodes completed so far: 6
+# successes: 5 (83.3%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 7...
+Success: False steps: 560
+# episodes completed so far: 7
+# successes: 5 (71.4%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 8...
+Success: False steps: 560
+# episodes completed so far: 8
+# successes: 5 (62.5%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 9...
+Success: False steps: 560
+# episodes completed so far: 9
+# successes: 5 (55.6%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 10...
+Success: True steps: 296
+# episodes completed so far: 10
+# successes: 6 (60.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 11...
+Success: False steps: 560
+# episodes completed so far: 11
+# successes: 6 (54.5%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 12...
+Success: True steps: 272
+# episodes completed so far: 12
+# successes: 7 (58.3%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 13...
+Success: True steps: 271
+# episodes completed so far: 13
+# successes: 8 (61.5%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 14...
+Success: False steps: 560
+# episodes completed so far: 14
+# successes: 8 (57.1%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 15...
+Success: True steps: 278
+# episodes completed so far: 15
+# successes: 9 (60.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 16...
+Success: True steps: 259
+# episodes completed so far: 16
+# successes: 10 (62.5%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 17...
+Success: True steps: 287
+# episodes completed so far: 17
+# successes: 11 (64.7%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 18...
+Success: False steps: 560
+# episodes completed so far: 18
+# successes: 11 (61.1%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 19...
+Success: False steps: 560
+# episodes completed so far: 19
+# successes: 11 (57.9%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 20...
+Success: False steps: 560
+# episodes completed so far: 20
+# successes: 11 (55.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 21...
+Success: False steps: 560
+# episodes completed so far: 21
+# successes: 11 (52.4%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 22...
+Success: True steps: 269
+# episodes completed so far: 22
+# successes: 12 (54.5%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 23...
+Success: False steps: 560
+# episodes completed so far: 23
+# successes: 12 (52.2%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 24...
+Success: False steps: 560
+# episodes completed so far: 24
+# successes: 12 (50.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 25...
+Success: False steps: 560
+# episodes completed so far: 25
+# successes: 12 (48.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 26...
+Success: False steps: 560
+# episodes completed so far: 26
+# successes: 12 (46.2%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 27...
+Success: False steps: 560
+# episodes completed so far: 27
+# successes: 12 (44.4%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 28...
+Success: True steps: 267
+# episodes completed so far: 28
+# successes: 13 (46.4%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 29...
+Success: False steps: 560
+# episodes completed so far: 29
+# successes: 13 (44.8%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 30...
+Success: False steps: 560
+# episodes completed so far: 30
+# successes: 13 (43.3%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 31...
+Success: False steps: 560
+# episodes completed so far: 31
+# successes: 13 (41.9%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 32...
+Success: True steps: 257
+# episodes completed so far: 32
+# successes: 14 (43.8%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 33...
+Success: False steps: 560
+# episodes completed so far: 33
+# successes: 14 (42.4%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 34...
+Success: False steps: 560
+# episodes completed so far: 34
+# successes: 14 (41.2%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 35...
+Success: False steps: 560
+# episodes completed so far: 35
+# successes: 14 (40.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 36...
+Success: False steps: 560
+# episodes completed so far: 36
+# successes: 14 (38.9%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 37...
+Success: True steps: 266
+# episodes completed so far: 37
+# successes: 15 (40.5%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 38...
+Success: False steps: 560
+# episodes completed so far: 38
+# successes: 15 (39.5%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 39...
+Success: False steps: 560
+# episodes completed so far: 39
+# successes: 15 (38.5%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 40...
+Success: False steps: 560
+# episodes completed so far: 40
+# successes: 15 (37.5%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 41...
+Success: True steps: 272
+# episodes completed so far: 41
+# successes: 16 (39.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 42...
+Success: False steps: 560
+# episodes completed so far: 42
+# successes: 16 (38.1%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 43...
+Success: True steps: 264
+# episodes completed so far: 43
+# successes: 17 (39.5%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 44...
+Success: False steps: 560
+# episodes completed so far: 44
+# successes: 17 (38.6%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 45...
+Success: False steps: 560
+# episodes completed so far: 45
+# successes: 17 (37.8%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 46...
+Success: True steps: 248
+# episodes completed so far: 46
+# successes: 18 (39.1%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 47...
+Success: False steps: 560
+# episodes completed so far: 47
+# successes: 18 (38.3%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 48...
+Success: False steps: 560
+# episodes completed so far: 48
+# successes: 18 (37.5%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 49...
+Success: False steps: 560
+# episodes completed so far: 49
+# successes: 18 (36.7%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 50...
+Success: False steps: 560
+# episodes completed so far: 50
+# successes: 18 (36.0%)
+Current task success rate: 0.36
+Current total success rate: 0.36
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 1...
+Success: True steps: 253
+# episodes completed so far: 51
+# successes: 19 (37.3%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 2...
+Success: True steps: 298
+# episodes completed so far: 52
+# successes: 20 (38.5%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 3...
+Success: True steps: 246
+# episodes completed so far: 53
+# successes: 21 (39.6%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 4...
+Success: True steps: 256
+# episodes completed so far: 54
+# successes: 22 (40.7%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 5...
+Success: True steps: 261
+# episodes completed so far: 55
+# successes: 23 (41.8%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 6...
+Success: True steps: 246
+# episodes completed so far: 56
+# successes: 24 (42.9%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 7...
+Success: True steps: 311
+# episodes completed so far: 57
+# successes: 25 (43.9%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 8...
+Success: True steps: 290
+# episodes completed so far: 58
+# successes: 26 (44.8%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 9...
+Success: True steps: 254
+# episodes completed so far: 59
+# successes: 27 (45.8%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 10...
+Success: False steps: 560
+# episodes completed so far: 60
+# successes: 27 (45.0%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 11...
+Success: True steps: 253
+# episodes completed so far: 61
+# successes: 28 (45.9%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 12...
+Success: True steps: 525
+# episodes completed so far: 62
+# successes: 29 (46.8%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 13...
+Success: True steps: 271
+# episodes completed so far: 63
+# successes: 30 (47.6%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 14...
+Success: False steps: 560
+# episodes completed so far: 64
+# successes: 30 (46.9%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 15...
+Success: True steps: 254
+# episodes completed so far: 65
+# successes: 31 (47.7%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 16...
+Success: True steps: 254
+# episodes completed so far: 66
+# successes: 32 (48.5%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 17...
+Success: True steps: 240
+# episodes completed so far: 67
+# successes: 33 (49.3%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 18...
+Success: True steps: 284
+# episodes completed so far: 68
+# successes: 34 (50.0%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 19...
+Success: True steps: 248
+# episodes completed so far: 69
+# successes: 35 (50.7%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 20...
+Success: True steps: 261
+# episodes completed so far: 70
+# successes: 36 (51.4%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 21...
+Success: True steps: 247
+# episodes completed so far: 71
+# successes: 37 (52.1%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 22...
+Success: True steps: 251
+# episodes completed so far: 72
+# successes: 38 (52.8%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 23...
+Success: True steps: 508
+# episodes completed so far: 73
+# successes: 39 (53.4%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 24...
+Success: True steps: 238
+# episodes completed so far: 74
+# successes: 40 (54.1%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 25...
+Success: True steps: 244
+# episodes completed so far: 75
+# successes: 41 (54.7%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 26...
+Success: False steps: 560
+# episodes completed so far: 76
+# successes: 41 (53.9%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 27...
+Success: True steps: 244
+# episodes completed so far: 77
+# successes: 42 (54.5%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 28...
+Success: True steps: 244
+# episodes completed so far: 78
+# successes: 43 (55.1%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 29...
+Success: True steps: 247
+# episodes completed so far: 79
+# successes: 44 (55.7%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 30...
+Success: True steps: 249
+# episodes completed so far: 80
+# successes: 45 (56.2%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 31...
+Success: True steps: 267
+# episodes completed so far: 81
+# successes: 46 (56.8%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 32...
+Success: True steps: 264
+# episodes completed so far: 82
+# successes: 47 (57.3%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 33...
+Success: False steps: 560
+# episodes completed so far: 83
+# successes: 47 (56.6%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 34...
+Success: True steps: 251
+# episodes completed so far: 84
+# successes: 48 (57.1%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 35...
+Success: True steps: 284
+# episodes completed so far: 85
+# successes: 49 (57.6%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 36...
+Success: True steps: 253
+# episodes completed so far: 86
+# successes: 50 (58.1%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 37...
+Success: True steps: 301
+# episodes completed so far: 87
+# successes: 51 (58.6%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 38...
+Success: True steps: 253
+# episodes completed so far: 88
+# successes: 52 (59.1%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 39...
+Success: True steps: 240
+# episodes completed so far: 89
+# successes: 53 (59.6%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 40...
+Success: False steps: 560
+# episodes completed so far: 90
+# successes: 53 (58.9%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 41...
+Success: True steps: 247
+# episodes completed so far: 91
+# successes: 54 (59.3%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 42...
+Success: True steps: 317
+# episodes completed so far: 92
+# successes: 55 (59.8%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 43...
+Success: False steps: 560
+# episodes completed so far: 93
+# successes: 55 (59.1%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 44...
+Success: True steps: 241
+# episodes completed so far: 94
+# successes: 56 (59.6%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 45...
+Success: True steps: 261
+# episodes completed so far: 95
+# successes: 57 (60.0%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 46...
+Success: False steps: 560
+# episodes completed so far: 96
+# successes: 57 (59.4%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 47...
+Success: True steps: 251
+# episodes completed so far: 97
+# successes: 58 (59.8%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 48...
+Success: True steps: 266
+# episodes completed so far: 98
+# successes: 59 (60.2%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 49...
+Success: True steps: 267
+# episodes completed so far: 99
+# successes: 60 (60.6%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 50...
+Success: False steps: 560
+# episodes completed so far: 100
+# successes: 60 (60.0%)
+Current task success rate: 0.84
+Current total success rate: 0.6

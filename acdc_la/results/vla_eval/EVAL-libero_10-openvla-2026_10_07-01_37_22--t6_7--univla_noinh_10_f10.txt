@@ -1,0 +1,606 @@
+Task suite: libero_10
+Tested Ckpt': univla+libero_10_no_noops+b16x4+lr0.00035+r32+s15000--univla_noinh_frac10 
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 1...
+Success: False steps: 560
+# episodes completed so far: 1
+# successes: 0 (0.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 2...
+Success: True steps: 231
+# episodes completed so far: 2
+# successes: 1 (50.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 3...
+Success: False steps: 560
+# episodes completed so far: 3
+# successes: 1 (33.3%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 4...
+Success: True steps: 254
+# episodes completed so far: 4
+# successes: 2 (50.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 5...
+Success: True steps: 228
+# episodes completed so far: 5
+# successes: 3 (60.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 6...
+Success: True steps: 246
+# episodes completed so far: 6
+# successes: 4 (66.7%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 7...
+Success: True steps: 245
+# episodes completed so far: 7
+# successes: 5 (71.4%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 8...
+Success: False steps: 560
+# episodes completed so far: 8
+# successes: 5 (62.5%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 9...
+Success: True steps: 222
+# episodes completed so far: 9
+# successes: 6 (66.7%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 10...
+Success: True steps: 224
+# episodes completed so far: 10
+# successes: 7 (70.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 11...
+Success: False steps: 560
+# episodes completed so far: 11
+# successes: 7 (63.6%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 12...
+Success: True steps: 245
+# episodes completed so far: 12
+# successes: 8 (66.7%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 13...
+Success: False steps: 560
+# episodes completed so far: 13
+# successes: 8 (61.5%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 14...
+Success: True steps: 261
+# episodes completed so far: 14
+# successes: 9 (64.3%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 15...
+Success: False steps: 560
+# episodes completed so far: 15
+# successes: 9 (60.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 16...
+Success: True steps: 232
+# episodes completed so far: 16
+# successes: 10 (62.5%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 17...
+Success: True steps: 307
+# episodes completed so far: 17
+# successes: 11 (64.7%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 18...
+Success: True steps: 235
+# episodes completed so far: 18
+# successes: 12 (66.7%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 19...
+Success: False steps: 560
+# episodes completed so far: 19
+# successes: 12 (63.2%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 20...
+Success: True steps: 227
+# episodes completed so far: 20
+# successes: 13 (65.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 21...
+Success: False steps: 560
+# episodes completed so far: 21
+# successes: 13 (61.9%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 22...
+Success: False steps: 560
+# episodes completed so far: 22
+# successes: 13 (59.1%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 23...
+Success: False steps: 560
+# episodes completed so far: 23
+# successes: 13 (56.5%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 24...
+Success: True steps: 254
+# episodes completed so far: 24
+# successes: 14 (58.3%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 25...
+Success: True steps: 221
+# episodes completed so far: 25
+# successes: 15 (60.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 26...
+Success: False steps: 560
+# episodes completed so far: 26
+# successes: 15 (57.7%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 27...
+Success: False steps: 560
+# episodes completed so far: 27
+# successes: 15 (55.6%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 28...
+Success: False steps: 560
+# episodes completed so far: 28
+# successes: 15 (53.6%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 29...
+Success: False steps: 560
+# episodes completed so far: 29
+# successes: 15 (51.7%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 30...
+Success: False steps: 560
+# episodes completed so far: 30
+# successes: 15 (50.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 31...
+Success: True steps: 235
+# episodes completed so far: 31
+# successes: 16 (51.6%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 32...
+Success: False steps: 560
+# episodes completed so far: 32
+# successes: 16 (50.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 33...
+Success: True steps: 225
+# episodes completed so far: 33
+# successes: 17 (51.5%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 34...
+Success: False steps: 560
+# episodes completed so far: 34
+# successes: 17 (50.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 35...
+Success: True steps: 234
+# episodes completed so far: 35
+# successes: 18 (51.4%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 36...
+Success: False steps: 560
+# episodes completed so far: 36
+# successes: 18 (50.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 37...
+Success: True steps: 251
+# episodes completed so far: 37
+# successes: 19 (51.4%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 38...
+Success: True steps: 233
+# episodes completed so far: 38
+# successes: 20 (52.6%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 39...
+Success: False steps: 560
+# episodes completed so far: 39
+# successes: 20 (51.3%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 40...
+Success: False steps: 560
+# episodes completed so far: 40
+# successes: 20 (50.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 41...
+Success: True steps: 257
+# episodes completed so far: 41
+# successes: 21 (51.2%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 42...
+Success: False steps: 560
+# episodes completed so far: 42
+# successes: 21 (50.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 43...
+Success: True steps: 223
+# episodes completed so far: 43
+# successes: 22 (51.2%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 44...
+Success: True steps: 223
+# episodes completed so far: 44
+# successes: 23 (52.3%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 45...
+Success: False steps: 560
+# episodes completed so far: 45
+# successes: 23 (51.1%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 46...
+Success: True steps: 247
+# episodes completed so far: 46
+# successes: 24 (52.2%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 47...
+Success: False steps: 560
+# episodes completed so far: 47
+# successes: 24 (51.1%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 48...
+Success: True steps: 257
+# episodes completed so far: 48
+# successes: 25 (52.1%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 49...
+Success: True steps: 221
+# episodes completed so far: 49
+# successes: 26 (53.1%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 50...
+Success: True steps: 247
+# episodes completed so far: 50
+# successes: 27 (54.0%)
+Current task success rate: 0.54
+Current total success rate: 0.54
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 1...
+Success: True steps: 268
+# episodes completed so far: 51
+# successes: 28 (54.9%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 2...
+Success: True steps: 244
+# episodes completed so far: 52
+# successes: 29 (55.8%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 3...
+Success: True steps: 247
+# episodes completed so far: 53
+# successes: 30 (56.6%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 4...
+Success: False steps: 560
+# episodes completed so far: 54
+# successes: 30 (55.6%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 5...
+Success: True steps: 343
+# episodes completed so far: 55
+# successes: 31 (56.4%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 6...
+Success: True steps: 277
+# episodes completed so far: 56
+# successes: 32 (57.1%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 7...
+Success: True steps: 260
+# episodes completed so far: 57
+# successes: 33 (57.9%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 8...
+Success: False steps: 560
+# episodes completed so far: 58
+# successes: 33 (56.9%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 9...
+Success: False steps: 560
+# episodes completed so far: 59
+# successes: 33 (55.9%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 10...
+Success: False steps: 560
+# episodes completed so far: 60
+# successes: 33 (55.0%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 11...
+Success: True steps: 325
+# episodes completed so far: 61
+# successes: 34 (55.7%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 12...
+Success: True steps: 247
+# episodes completed so far: 62
+# successes: 35 (56.5%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 13...
+Success: False steps: 560
+# episodes completed so far: 63
+# successes: 35 (55.6%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 14...
+Success: True steps: 249
+# episodes completed so far: 64
+# successes: 36 (56.2%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 15...
+Success: False steps: 560
+# episodes completed so far: 65
+# successes: 36 (55.4%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 16...
+Success: False steps: 560
+# episodes completed so far: 66
+# successes: 36 (54.5%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 17...
+Success: False steps: 560
+# episodes completed so far: 67
+# successes: 36 (53.7%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 18...
+Success: False steps: 560
+# episodes completed so far: 68
+# successes: 36 (52.9%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 19...
+Success: True steps: 242
+# episodes completed so far: 69
+# successes: 37 (53.6%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 20...
+Success: True steps: 253
+# episodes completed so far: 70
+# successes: 38 (54.3%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 21...
+Success: True steps: 240
+# episodes completed so far: 71
+# successes: 39 (54.9%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 22...
+Success: False steps: 560
+# episodes completed so far: 72
+# successes: 39 (54.2%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 23...
+Success: True steps: 255
+# episodes completed so far: 73
+# successes: 40 (54.8%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 24...
+Success: True steps: 361
+# episodes completed so far: 74
+# successes: 41 (55.4%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 25...
+Success: True steps: 241
+# episodes completed so far: 75
+# successes: 42 (56.0%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 26...
+Success: True steps: 240
+# episodes completed so far: 76
+# successes: 43 (56.6%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 27...
+Success: True steps: 247
+# episodes completed so far: 77
+# successes: 44 (57.1%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 28...
+Success: True steps: 273
+# episodes completed so far: 78
+# successes: 45 (57.7%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 29...
+Success: True steps: 240
+# episodes completed so far: 79
+# successes: 46 (58.2%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 30...
+Success: True steps: 330
+# episodes completed so far: 80
+# successes: 47 (58.8%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 31...
+Success: True steps: 325
+# episodes completed so far: 81
+# successes: 48 (59.3%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 32...
+Success: False steps: 560
+# episodes completed so far: 82
+# successes: 48 (58.5%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 33...
+Success: False steps: 560
+# episodes completed so far: 83
+# successes: 48 (57.8%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 34...
+Success: True steps: 284
+# episodes completed so far: 84
+# successes: 49 (58.3%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 35...
+Success: True steps: 242
+# episodes completed so far: 85
+# successes: 50 (58.8%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 36...
+Success: True steps: 251
+# episodes completed so far: 86
+# successes: 51 (59.3%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 37...
+Success: True steps: 241
+# episodes completed so far: 87
+# successes: 52 (59.8%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 38...
+Success: True steps: 248
+# episodes completed so far: 88
+# successes: 53 (60.2%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 39...
+Success: False steps: 560
+# episodes completed so far: 89
+# successes: 53 (59.6%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 40...
+Success: True steps: 339
+# episodes completed so far: 90
+# successes: 54 (60.0%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 41...
+Success: True steps: 264
+# episodes completed so far: 91
+# successes: 55 (60.4%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 42...
+Success: True steps: 251
+# episodes completed so far: 92
+# successes: 56 (60.9%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 43...
+Success: True steps: 253
+# episodes completed so far: 93
+# successes: 57 (61.3%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 44...
+Success: True steps: 292
+# episodes completed so far: 94
+# successes: 58 (61.7%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 45...
+Success: False steps: 560
+# episodes completed so far: 95
+# successes: 58 (61.1%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 46...
+Success: False steps: 560
+# episodes completed so far: 96
+# successes: 58 (60.4%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 47...
+Success: True steps: 303
+# episodes completed so far: 97
+# successes: 59 (60.8%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 48...
+Success: False steps: 560
+# episodes completed so far: 98
+# successes: 59 (60.2%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 49...
+Success: True steps: 234
+# episodes completed so far: 99
+# successes: 60 (60.6%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 50...
+Success: True steps: 284
+# episodes completed so far: 100
+# successes: 61 (61.0%)
+Current task success rate: 0.68
+Current total success rate: 0.61

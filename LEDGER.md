@@ -4376,3 +4376,19 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   seeds), plus the no-phase-2 and no-latent controls.  Stated difference from UniVLA: no Ego4D (our tokenizer never
   saw human video, so its labels would be out of distribution there).  Head for continuous labels: flow matching,
   with an MSE-regression arm at the 1/10 point to test that choice before the full run.
+
+### 2026-10-07 — (1) UniVLA-noinh VLA complete on four suites; (2) from the first frame alone, the within-window profile is unpredictable
+
+- **(1) Closed loop, Anvil protocol (10 % demos, no phase 2), labeller `s2mix_noinh_1ep`**, evaluations that ran from
+  the queue on 2026-10-06/07: Spatial 82.4 %, Object **87.2 %**, Goal 83.8 %, Long 53.0 % (avg 76.6).  Released-prior
+  UniVLA, same protocol: 84.2 / 82.8 / 86.6 / ~53.6.  Wins and losses split (+4.4 Object, -2.8 Goal, -1.8 Spatial):
+  confirmed, under this protocol, that the large probe gap between the two UniVLA labellers does not reach the policy.
+- **(2) What a phase-2 policy can predict.**  Same per-source probe, targets from ACT, two inputs: the first frame only
+  (F0Q -- what the VLM sees in phase 2) vs the whole window (DF -- what the tokenizer sees).  R^2 net / seg1 / last
+  segment / profile / seq: first frame **.142 / .088 / .110 / .009 / .106**; whole window .249 / .238 / .159 / .114 /
+  .216.  **The within-window profile -- the information A1 adds -- is essentially unpredictable from one frame by a
+  linear reader**, while the net effect is partly predictable.  Caveat (estimator, not estimand): a linear ridge on
+  pooled DINO features, without the instruction; a VLM is nonlinear and reads the instruction, so this bounds
+  nothing from above.  Consequence for phase 2: the A1 part of TERRA's labels may act mostly as target noise for a
+  single-frame policy unless the policy gets velocity context (previous frame or proprioception); the decisive test is
+  a phase-2 arm with endpoint-only (N) labels against N+A1 labels at the same budget.

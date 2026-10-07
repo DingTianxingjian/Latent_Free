@@ -1,0 +1,606 @@
+Task suite: libero_10
+Tested Ckpt': univla+libero_10_no_noops+b16x4+lr0.00035+r32+s15000--univla_noinh_frac10 
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 1...
+Success: False steps: 560
+# episodes completed so far: 1
+# successes: 0 (0.0%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 2...
+Success: True steps: 219
+# episodes completed so far: 2
+# successes: 1 (50.0%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 3...
+Success: True steps: 216
+# episodes completed so far: 3
+# successes: 2 (66.7%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 4...
+Success: False steps: 560
+# episodes completed so far: 4
+# successes: 2 (50.0%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 5...
+Success: False steps: 560
+# episodes completed so far: 5
+# successes: 2 (40.0%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 6...
+Success: False steps: 560
+# episodes completed so far: 6
+# successes: 2 (33.3%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 7...
+Success: False steps: 560
+# episodes completed so far: 7
+# successes: 2 (28.6%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 8...
+Success: False steps: 560
+# episodes completed so far: 8
+# successes: 2 (25.0%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 9...
+Success: True steps: 226
+# episodes completed so far: 9
+# successes: 3 (33.3%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 10...
+Success: True steps: 299
+# episodes completed so far: 10
+# successes: 4 (40.0%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 11...
+Success: False steps: 560
+# episodes completed so far: 11
+# successes: 4 (36.4%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 12...
+Success: False steps: 560
+# episodes completed so far: 12
+# successes: 4 (33.3%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 13...
+Success: True steps: 227
+# episodes completed so far: 13
+# successes: 5 (38.5%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 14...
+Success: True steps: 231
+# episodes completed so far: 14
+# successes: 6 (42.9%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 15...
+Success: True steps: 384
+# episodes completed so far: 15
+# successes: 7 (46.7%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 16...
+Success: False steps: 560
+# episodes completed so far: 16
+# successes: 7 (43.8%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 17...
+Success: False steps: 560
+# episodes completed so far: 17
+# successes: 7 (41.2%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 18...
+Success: False steps: 560
+# episodes completed so far: 18
+# successes: 7 (38.9%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 19...
+Success: False steps: 560
+# episodes completed so far: 19
+# successes: 7 (36.8%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 20...
+Success: True steps: 219
+# episodes completed so far: 20
+# successes: 8 (40.0%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 21...
+Success: True steps: 248
+# episodes completed so far: 21
+# successes: 9 (42.9%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 22...
+Success: True steps: 216
+# episodes completed so far: 22
+# successes: 10 (45.5%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 23...
+Success: True steps: 255
+# episodes completed so far: 23
+# successes: 11 (47.8%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 24...
+Success: False steps: 560
+# episodes completed so far: 24
+# successes: 11 (45.8%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 25...
+Success: True steps: 394
+# episodes completed so far: 25
+# successes: 12 (48.0%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 26...
+Success: False steps: 560
+# episodes completed so far: 26
+# successes: 12 (46.2%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 27...
+Success: True steps: 473
+# episodes completed so far: 27
+# successes: 13 (48.1%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 28...
+Success: True steps: 216
+# episodes completed so far: 28
+# successes: 14 (50.0%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 29...
+Success: True steps: 236
+# episodes completed so far: 29
+# successes: 15 (51.7%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 30...
+Success: False steps: 560
+# episodes completed so far: 30
+# successes: 15 (50.0%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 31...
+Success: True steps: 263
+# episodes completed so far: 31
+# successes: 16 (51.6%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 32...
+Success: True steps: 238
+# episodes completed so far: 32
+# successes: 17 (53.1%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 33...
+Success: True steps: 494
+# episodes completed so far: 33
+# successes: 18 (54.5%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 34...
+Success: True steps: 240
+# episodes completed so far: 34
+# successes: 19 (55.9%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 35...
+Success: False steps: 560
+# episodes completed so far: 35
+# successes: 19 (54.3%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 36...
+Success: False steps: 560
+# episodes completed so far: 36
+# successes: 19 (52.8%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 37...
+Success: True steps: 471
+# episodes completed so far: 37
+# successes: 20 (54.1%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 38...
+Success: False steps: 560
+# episodes completed so far: 38
+# successes: 20 (52.6%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 39...
+Success: False steps: 560
+# episodes completed so far: 39
+# successes: 20 (51.3%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 40...
+Success: True steps: 511
+# episodes completed so far: 40
+# successes: 21 (52.5%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 41...
+Success: False steps: 560
+# episodes completed so far: 41
+# successes: 21 (51.2%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 42...
+Success: True steps: 277
+# episodes completed so far: 42
+# successes: 22 (52.4%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 43...
+Success: False steps: 560
+# episodes completed so far: 43
+# successes: 22 (51.2%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 44...
+Success: True steps: 235
+# episodes completed so far: 44
+# successes: 23 (52.3%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 45...
+Success: False steps: 560
+# episodes completed so far: 45
+# successes: 23 (51.1%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 46...
+Success: False steps: 560
+# episodes completed so far: 46
+# successes: 23 (50.0%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 47...
+Success: False steps: 560
+# episodes completed so far: 47
+# successes: 23 (48.9%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 48...
+Success: False steps: 560
+# episodes completed so far: 48
+# successes: 23 (47.9%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 49...
+Success: True steps: 228
+# episodes completed so far: 49
+# successes: 24 (49.0%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 50...
+Success: False steps: 560
+# episodes completed so far: 50
+# successes: 24 (48.0%)
+Current task success rate: 0.48
+Current total success rate: 0.48
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 1...
+Success: False steps: 560
+# episodes completed so far: 51
+# successes: 24 (47.1%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 2...
+Success: True steps: 292
+# episodes completed so far: 52
+# successes: 25 (48.1%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 3...
+Success: False steps: 560
+# episodes completed so far: 53
+# successes: 25 (47.2%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 4...
+Success: False steps: 560
+# episodes completed so far: 54
+# successes: 25 (46.3%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 5...
+Success: False steps: 560
+# episodes completed so far: 55
+# successes: 25 (45.5%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 6...
+Success: True steps: 397
+# episodes completed so far: 56
+# successes: 26 (46.4%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 7...
+Success: False steps: 560
+# episodes completed so far: 57
+# successes: 26 (45.6%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 8...
+Success: True steps: 275
+# episodes completed so far: 58
+# successes: 27 (46.6%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 9...
+Success: False steps: 560
+# episodes completed so far: 59
+# successes: 27 (45.8%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 10...
+Success: True steps: 217
+# episodes completed so far: 60
+# successes: 28 (46.7%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 11...
+Success: False steps: 560
+# episodes completed so far: 61
+# successes: 28 (45.9%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 12...
+Success: False steps: 560
+# episodes completed so far: 62
+# successes: 28 (45.2%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 13...
+Success: True steps: 226
+# episodes completed so far: 63
+# successes: 29 (46.0%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 14...
+Success: True steps: 229
+# episodes completed so far: 64
+# successes: 30 (46.9%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 15...
+Success: False steps: 560
+# episodes completed so far: 65
+# successes: 30 (46.2%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 16...
+Success: False steps: 560
+# episodes completed so far: 66
+# successes: 30 (45.5%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 17...
+Success: False steps: 560
+# episodes completed so far: 67
+# successes: 30 (44.8%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 18...
+Success: True steps: 194
+# episodes completed so far: 68
+# successes: 31 (45.6%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 19...
+Success: False steps: 560
+# episodes completed so far: 69
+# successes: 31 (44.9%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 20...
+Success: True steps: 238
+# episodes completed so far: 70
+# successes: 32 (45.7%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 21...
+Success: False steps: 560
+# episodes completed so far: 71
+# successes: 32 (45.1%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 22...
+Success: False steps: 560
+# episodes completed so far: 72
+# successes: 32 (44.4%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 23...
+Success: False steps: 560
+# episodes completed so far: 73
+# successes: 32 (43.8%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 24...
+Success: True steps: 211
+# episodes completed so far: 74
+# successes: 33 (44.6%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 25...
+Success: False steps: 560
+# episodes completed so far: 75
+# successes: 33 (44.0%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 26...
+Success: False steps: 560
+# episodes completed so far: 76
+# successes: 33 (43.4%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 27...
+Success: False steps: 560
+# episodes completed so far: 77
+# successes: 33 (42.9%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 28...
+Success: False steps: 560
+# episodes completed so far: 78
+# successes: 33 (42.3%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 29...
+Success: False steps: 560
+# episodes completed so far: 79
+# successes: 33 (41.8%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 30...
+Success: False steps: 560
+# episodes completed so far: 80
+# successes: 33 (41.2%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 31...
+Success: True steps: 281
+# episodes completed so far: 81
+# successes: 34 (42.0%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 32...
+Success: False steps: 560
+# episodes completed so far: 82
+# successes: 34 (41.5%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 33...
+Success: False steps: 560
+# episodes completed so far: 83
+# successes: 34 (41.0%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 34...
+Success: False steps: 560
+# episodes completed so far: 84
+# successes: 34 (40.5%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 35...
+Success: True steps: 235
+# episodes completed so far: 85
+# successes: 35 (41.2%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 36...
+Success: False steps: 560
+# episodes completed so far: 86
+# successes: 35 (40.7%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 37...
+Success: True steps: 255
+# episodes completed so far: 87
+# successes: 36 (41.4%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 38...
+Success: False steps: 560
+# episodes completed so far: 88
+# successes: 36 (40.9%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 39...
+Success: False steps: 560
+# episodes completed so far: 89
+# successes: 36 (40.4%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 40...
+Success: True steps: 227
+# episodes completed so far: 90
+# successes: 37 (41.1%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 41...
+Success: False steps: 560
+# episodes completed so far: 91
+# successes: 37 (40.7%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 42...
+Success: True steps: 206
+# episodes completed so far: 92
+# successes: 38 (41.3%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 43...
+Success: True steps: 173
+# episodes completed so far: 93
+# successes: 39 (41.9%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 44...
+Success: False steps: 560
+# episodes completed so far: 94
+# successes: 39 (41.5%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 45...
+Success: False steps: 560
+# episodes completed so far: 95
+# successes: 39 (41.1%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 46...
+Success: True steps: 264
+# episodes completed so far: 96
+# successes: 40 (41.7%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 47...
+Success: False steps: 560
+# episodes completed so far: 97
+# successes: 40 (41.2%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 48...
+Success: False steps: 560
+# episodes completed so far: 98
+# successes: 40 (40.8%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 49...
+Success: True steps: 193
+# episodes completed so far: 99
+# successes: 41 (41.4%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 50...
+Success: True steps: 273
+# episodes completed so far: 100
+# successes: 42 (42.0%)
+Current task success rate: 0.36
+Current total success rate: 0.42
