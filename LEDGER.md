@@ -3414,6 +3414,30 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Repository.**  The workstation's 6 commits (cells 1-3, prior_gate, phase-2 code, RLDS-leak fix) were merged by rebase;
   both ledger blocks kept in chronological order.
 
+### 2026-10-07 (16:45) — workstation, `next_task.md` started: prerequisites done, OXE data path VALIDATED on one source before the 3.9 TB transfer finishes (peak VRAM 42.4 GB)
+
+- **Prerequisites.** `main` pulled (60 commits).  Vendored patch: the workstation's `third_party/UniVLA` still carried
+  only the 2026-09-20 local edit, so it was reset and `acdc_la/patches/univla_rlds_acdc.patch` re-applied; the required
+  check passes (`_fixed_window` 3 hits in `rlds/dataset.py`, `acdc_oxe29` 1 hit in `rlds/oxe/mixtures.py`,
+  `LIBERO_TRAIN_FRAC` 2 hits).  Labellers (`latp2_inv`, `s2mix_1ep`), `openvla-7b`, DINOv2 hub cache and the
+  `univla_vla` venv were already in place from September.
+- **Disk.** The project disk has 61 GB free (97 % used), so `data/oxe_raw` is a symlink to `/data/ti874297/oxe_raw` on
+  the 22 TB RAID (5.0 TB free before the copy, ~1.1 TB after).  The 29 `acdc_oxe29` sources sum to 3.89 TB (largest:
+  fmb 1.29 TB, kuka 835 GB, language_table 429 GB, bridge_oxe 416 GB).  Transfer from Anvil started 16:23 UTC, 2
+  streams, smallest first, 85 MiB/s measured -> ETA ~05:00 UTC 10-08.  **Nothing is dropped from the mixture.**
+- **Single-source smoke (not in the task list; run because the real smoke is 13 h away).**  `--dataset_name
+  cmu_stretch` (763 MB, the first source to land), 2 GPUs, batch 8 x accum 4, `--lam_a 0`, `UNIVLA_FIXED_WINDOW=1`,
+  20 steps per arm.  Both arms exit 0 with a finite, falling latent loss: ours (`tc_cont`/`latp2_inv`) 1.683 -> 1.514
+  at ~2.3 s/step, UniVLA (`univla_cont`) 1.825 -> 1.465 at ~2.9 s/step.  **Peak GPU memory 42.4 GB of 96 GB** (the
+  number `next_task.md` asks for; it also fits an A100-40 GB only at a smaller micro-batch).  Host RAM steady,
+  53 GB free with `CTRL_REITER_BATCHES=2500`.
+- **What this does and does not establish.**  It establishes the phase-2 code path on REAL OXE RLDS data: labeller on
+  OXE frames, the fixed-window patch (without which 7 sources deliver 3-frame windows), memory and throughput.  It is
+  not the §3 smoke: that one runs the full 29-source `acdc_oxe29` mixture and still has to pass.
+- **Next.** Full-mixture smoke when the copy finishes, then arm A (`p2_ours`) and arm B (`p2_univla`), 30k steps x 64,
+  ~21 h each at the measured step time; then post-training on Object and Long plus the no-phase-2 and no-latent
+  controls of §6.
+
 ## Registered next method: intervention first, real pairs second
 
 
