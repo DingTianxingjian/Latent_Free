@@ -12,8 +12,9 @@
 # stopped where tc_cont was (--stop-at 65000); --resume makes a walltime-cut leg restartable with the same command.
 # Writes ckpt/tc_cont_d${LD}.pt and results/tc_cont_d${LD}_val.npz.
 source /anvil/scratch/x-tding2/latent_free/acdc_la/scripts/common.sh
-LD=${LD:?set LD}; TAG=tc_cont_d${LD}
-COMMON="--tc endpointdyn --bottleneck continuous --n-tokens 4 --codebook 16 --latent-dim $LD --width 768 --enc-layers 6
+LD=${LD:-64}; TC=${TC:-endpointdyn}
+TAG=${TAG:-tc_cont_d${LD}}       # TC=endpoint TAG=tc_endpoint: the CoMo-style [F_0, N] arm (phase-2 arm C)
+COMMON="--tc $TC --bottleneck continuous --n-tokens 4 --codebook 16 --latent-dim $LD --width 768 --enc-layers 6
         --heads 12 --layers 4 --d 64 --d-u 8 --beta-z 2e-4 --beta-u 0.1 --lam-commit 0.25 --restart-every 5000
         --pool acdc --modes 2 --lr 3e-4 --warmup 4000 --seed 0 --stride 4 --val-per-source 400"
 if [ ! -f acdc_la/ckpt/${TAG}.pt ]; then          # smoke only on a fresh start
