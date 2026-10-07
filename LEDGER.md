@@ -4392,3 +4392,24 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   nothing from above.  Consequence for phase 2: the A1 part of TERRA's labels may act mostly as target noise for a
   single-frame policy unless the policy gets velocity context (previous frame or proprioception); the decisive test is
   a phase-2 arm with endpoint-only (N) labels against N+A1 labels at the same budget.
+
+### 2026-10-07 — phase 2 at 1/10 of UniVLA's scale: unblocked and smoke submitted (job 21165072)
+
+- **Decision (user).**  Start with the 1/10 point on the `ai` allocation (489.9 SU): LoRA recipe registered 2026-09-20
+  (`run_vla_phase2.sh`: latent-only, flow head, 4 query tokens, 30k steps x global batch 64 = 1.92M samples ~ 1/10.7 of
+  UniVLA's 20.5M).  Full fine-tuning (UniVLA's recipe) is deferred to the full-scale run: Adam state alone is ~112 GB
+  for 7B, i.e. multi-GPU FSDP on 80 GB cards.
+- **Two blockers found and fixed before any GPU time.**  (i) UniVLA's `omni_magic_soup_plus_plus` = 29 robot/navigation
+  sources + 4 Ego4D splits, and Ego4D is not on disk -> new mixture `acdc_oxe29` in the vendored `oxe/mixtures.py`:
+  the same 29 sources and weights, without Ego4D (also the stated difference from UniVLA: our tokenizer never saw
+  human video).  (ii) The 2026-09-20 fixed-window patch existed only on the workstation; on Anvil only its
+  LIBERO_TRAIN_FRAC hunk had been applied.  The window hunk (`UNIVLA_FIXED_WINDOW`) is now in
+  `third_party/UniVLA/prismatic/vla/datasets/rlds/dataset.py`, and `run_vla_phase2.sh` exports it.
+- **Smoke.**  `acdc_la/scripts/run_vla_phase2_smoke.sh`: 20 steps per arm (TERRA labels, UniVLA labels) on ONE GPU at
+  micro-batch 8, GPU memory sampled every minute (`acdc_la/logs/p2_mem_*.csv`) -- the single-card requirement has
+  never been measured.  The 30k-step runs go only after both arms exit 0.
+- **Arms at 1/10.**  A TERRA labels; B UniVLA labels (`univla_cont`, `s2mix_1ep`); C endpoint-only labels (needs the
+  CoMo-style `--tc endpoint` tokenizer first, ~8 GPU-h on the `gpu` account).  Each post-trained on Object + Long and
+  compared with no-phase-2 and no-latent controls.
+- **Budget note.**  Queued job 20828934 (UniVLA latent + flow + q4, Goal, no phase 2; registered 2026-09-20) started
+  today and will use ~25-30 SU with its evaluations; it doubles as an Anvil seed of the no-phase-2 control.
