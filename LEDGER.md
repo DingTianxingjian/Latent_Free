@@ -3438,6 +3438,62 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   ~21 h each at the measured step time; then post-training on Object and Long plus the no-phase-2 and no-latent
   controls of §6.
 
+### 2026-10-08 (17:50) — §3 full-mixture smoke FAILED (OOM), and why: the 29-source statistics need 39 GB in ONE process, and the cache key contains the `data_dir` spelling
+
+- **Run and failure.**  `acdc_la/scripts/p2_smoke_mix.sh` (arm A, `tc_cont`/`latp2_inv`, 2 GPUs x batch 8 x accum 4,
+  20 steps, full `acdc_oxe29`) started 2026-10-08 ~03:15 UTC and was **killed after 1 h 40 m with exitcode -9**
+  (host OOM, 62 GB RAM), inside "Computing dataset statistics", before step 1.  Arm B was killed by hand because it
+  would have repeated the failure.  **Conclusion — invalid run**: no training signal, nothing to compare.
+- **Cause 1, cost.**  The RLDS statistics for the mixture are computed by a full pass over every source's records, and
+  **each DDP rank does it independently** while holding its own 7B model.  Measured in one process with no GPU and no
+  model (`acdc_la/scripts/warm_stats.py`): **4 h 05 m (14,680 s) for 29 sources, peak RSS 39 GB** of 62 GB
+  (`logs_migrate/warm_stats_mem.log`).  Two ranks at 39 GB cannot coexist here.  Anvil never showed this: its nodes
+  have 400 GB and `run_vla_phase2.sh` asks for `--mem=400G`.
+- **Cause 2, the cache key.**  `get_dataset_statistics` (`rlds/utils/data_utils.py:197`) keys the cache on
+  `sha256(str(builder.info) + str(state_obs_keys) + source(standardize_fn))`, and `str(builder.info)` contains
+  `data_dir=...` **verbatim, unresolved**.  So `data/oxe_raw` (the spelling in `next_task.md` §3/§4) and
+  `/home/ti874297/Projects/latent_free/data/oxe_raw` (the spelling `warm_stats.py` used, via `acdc_la.paths.LF`) are
+  **different keys**, and the symlink target `/data/ti874297/oxe_raw` is a third.  Probed with the real code path
+  (scratch `hash_probe.py`): the absolute spelling is **29/29 HIT**, the relative one **9/29** (exactly the big
+  sources the failed smoke had got through) and then MISS on `toto`.  The Anvil `dataset_statistics_*.json` files that
+  came along with the 3.9 TB rsync are likewise dead weight — Anvil's absolute path is a fourth key.
+- **Fix.**  Statistics are computed once, out of band, in one process (done, exit 0, 09:04 UTC), and every phase-2 run
+  passes the **absolute** data root so it reads that cache: `acdc_la/scripts/p2_smoke_mix.sh` updated, and the new
+  workstation runner `acdc_la/scripts/run_vla_phase2_ws.sh` (the twin of Anvil's `acdc_la/scripts/run_vla_phase2.sh`) hard-codes
+  `$PWD/data/oxe_raw`.  This is a path spelling, identical for both arms — no arm-specific setting changed.
+- **Artifacts.**  `acdc_la/scripts/warm_stats.{py,sh}`, `logs_migrate/warm_stats.log`, `logs_migrate/warm_stats_mem.log`,
+  `acdc_la/scripts/run_vla_phase2_ws.sh`, `acdc_la/scripts/p2_smoke_mix.sh`; cache at
+  `/data/ti874297/oxe_raw/<source>/<version>/dataset_statistics_<hash>.json`.
+- **Second wall, measured (18:00-18:50).**  With the statistics cached (45 s instead of 4 h), the relaunched smoke was
+  SIGKILLed again, 80 s later, inside tf.data pipeline construction -- both arms, exit -9.  A data-only probe
+  (`acdc_la/scripts/mix_mem_probe.py`: one process, no model, no GPU, watchdog at 8 GB available) prices one rank's
+  `acdc_oxe29` pipeline:
+
+  | shuffle buffer | one rank |
+  |---|---|
+  | 16000 (the `Cfg` default, used by every LIBERO cell) | 54 GB -> 1 GB available in ~2 min, **before the first sample** |
+  | 3000 | peak RSS 47.4 G, aborted at the floor |
+  | 1000 | 49.8 G, aborted |
+  | 256 | 48.0 G, aborted |
+
+  So the shuffle buffer is **not** the cost: the floor is ~48 GB per rank, ~1.7 GB per source, spent while the 29
+  per-source pipelines fill.  2-rank DDP of the full mixture therefore cannot run on this 62 GB host at any buffer
+  size, and one rank plus its 7B model is already marginal.  The LIBERO cells never showed this because a single
+  10 %-split source never fills the buffer and has one pipeline, not 29.
+- **Cause, and the fix it implies.**  `finetune_libero_ctrl.py:348` passes `training_phase="post-training"`, which
+  selects `chunk_act_obs_libero` ("load all obs. within a window") with `window_size = 12 + 2 = 14`: every encoded
+  image is gathered **14 times** per trajectory.  UniVLA's own cross-embodiment pretraining takes the other branch,
+  `chunk_act_obs`, which keeps only the first and last frame of the window -- 2 images, 7x less -- which is why their
+  256k-frame shuffle buffer is affordable and ours is not.  Our labellers read only 4 of those 14 frames
+  (`imgs[k * stride]`, `stride = window_size // (T - 1) = 4`, i.e. 0/4/8/12), 8 with the `ro` in {0,1} jitter, so a
+  strided gather is both cheaper and sufficient.  **Conclusion -- invalid run** (no training signal); the configuration
+  prescribed in `next_task.md` §4 (2 GPUs on this host) is not runnable as written.
+- **Next.**  Implement the strided obs gather (identical for both arms, with a label-equality test against the current
+  path before any production run); if it does not bring one rank under ~20 GB, move arms A and B to Anvil
+  (`acdc_la/scripts/run_vla_phase2.sh`, `--mem=400G`, 4 GPUs, micro-batch 4 x accum 4 for 40 GB cards) and keep the
+  workstation for post-training, controls and evals.  Any host: run `warm_stats.sh` first and never change the
+  data-root spelling afterwards.
+
 ## Registered next method: intervention first, real pairs second
 
 
