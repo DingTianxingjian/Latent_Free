@@ -1,13 +1,14 @@
 #!/bin/bash
-#SBATCH --account=cis250950-ai
-#SBATCH --partition=ai
-#SBATCH --gres=gpu:1
+#SBATCH --account=ytian
+#SBATCH --partition=normal
+#SBATCH --gres=gpu:nvidia_h100_pcie:1
+#SBATCH --exclude=evc22,evc26,evc38,evc40,evc43,evc44,evc45,evc48
 #SBATCH -N 1 -n 8 --mem=60G
 #SBATCH -t 00:40:00
 #SBATCH -J acdc_smoke
-#SBATCH -o /anvil/scratch/x-tding2/latent_free/acdc_la/logs/smoke_%j.out
+#SBATCH -o /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/logs/smoke_%j.out
 # Plumbing test of the whole repo on the GPU: the three trainers (tiny), the legacy-init path, every probe.  Not a result.
-source /anvil/scratch/x-tding2/latent_free/acdc_la/scripts/common.sh
+source /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/scripts/common.sh
 COMMON="--limit-eps 200 --val-per-source 20 --batch 16 --steps 60 --warmup 20 --workers 8"
 run stage1_preserve.train --tag smoke_s1 $COMMON || exit 1
 run stage1_preserve.train --tag smoke_s1mean --pool mean $COMMON || exit 1

@@ -1,14 +1,15 @@
 #!/bin/bash
-#SBATCH --account=cis250950-ai
-#SBATCH --partition=ai
-#SBATCH --gres=gpu:1
+#SBATCH --account=ytian
+#SBATCH --partition=normal
+#SBATCH --gres=gpu:nvidia_h100_pcie:1
+#SBATCH --exclude=evc22,evc26,evc38,evc40,evc43,evc44,evc45,evc48
 #SBATCH -N 1 -n 8 --mem=80G
 #SBATCH -t 00:20:00
 #SBATCH -J acdc_tcsmoke
-#SBATCH -o /anvil/scratch/x-tding2/latent_free/acdc_la/logs/tcsmoke_%j.out
+#SBATCH -o /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/logs/tcsmoke_%j.out
 # Cheap correctness check for the deployment-prior term before it costs 8 h of a P0 tokenizer slot.
 # (1) shapes + gradient reach of prior_code, (2) a handful of real training steps with --lam-prior on.
-source /anvil/scratch/x-tding2/latent_free/acdc_la/scripts/common.sh
+source /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/scripts/common.sh
 $PY - <<'PYEOF'
 import torch, torch.nn.functional as F
 from acdc_la.common.tcvq import TCVQ

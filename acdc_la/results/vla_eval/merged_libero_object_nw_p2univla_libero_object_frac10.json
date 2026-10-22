@@ -1,0 +1,55 @@
+{
+ "suite": "libero_object",
+ "note": "nw_p2univla_libero_object_frac10",
+ "kind": "cont",
+ "files": [
+  "cont_libero_object_nw_p2univla_libero_object_frac10_t0_1_2_3_4.json",
+  "cont_libero_object_nw_p2univla_libero_object_frac10_t5_6_7_8_9.json"
+ ],
+ "per_task": {
+  "pick up the alphabet soup and place it in the basket": {
+   "successes": 0,
+   "episodes": 50
+  },
+  "pick up the cream cheese and place it in the basket": {
+   "successes": 0,
+   "episodes": 50
+  },
+  "pick up the salad dressing and place it in the basket": {
+   "successes": 0,
+   "episodes": 50
+  },
+  "pick up the bbq sauce and place it in the basket": {
+   "successes": 0,
+   "episodes": 50
+  },
+  "pick up the ketchup and place it in the basket": {
+   "successes": 0,
+   "episodes": 50
+  },
+  "pick up the tomato sauce and place it in the basket": {
+   "successes": 0,
+   "episodes": 50
+  },
+  "pick up the butter and place it in the basket": {
+   "successes": 0,
+   "episodes": 50
+  },
+  "pick up the milk and place it in the basket": {
+   "successes": 0,
+   "episodes": 50
+  },
+  "pick up the chocolate pudding and place it in the basket": {
+   "successes": 0,
+   "episodes": 50
+  },
+  "pick up the orange juice and place it in the basket": {
+   "successes": 0,
+   "episodes": 50
+  }
+ },
+ "successes": 0,
+ "episodes": 500,
+ "success_rate": 0.0,
+ "complete": true
+}

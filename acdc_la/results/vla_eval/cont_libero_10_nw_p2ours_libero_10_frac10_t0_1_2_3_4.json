@@ -1,0 +1,20 @@
+{
+ "checkpoint": "acdc_la/ckpt/vla_runs/tc_cont+libero_10_no_noops+b32x2+lr0.00035+r32+s15000+fm+q4--p2ours_libero_10_frac10",
+ "suite": "libero_10",
+ "trials": 50,
+ "per_task": {
+  "put both the alphabet soup and the tomato sauce in the basket": 0.42,
+  "put both the cream cheese box and the butter in the basket": 0.82,
+  "turn on the stove and put the moka pot on it": 0.84,
+  "put the black bowl in the bottom drawer of the cabinet and close it": 0.7,
+  "put the white mug on the left plate and put the yellow and white mug on the right plate": 0.54
+ },
+ "task_ids": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "success": 0.664
+}

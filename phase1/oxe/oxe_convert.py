@@ -24,9 +24,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import univla_transforms as T
 
 tf.config.set_visible_devices([], "GPU")
-RAW  = "/anvil/scratch/x-tding2/latent_free/data/oxe_raw"
-OUT  = os.environ.get("OXE_OUT", "/anvil/scratch/x-tding2/latent_free/cache/oxe")   # OXE_OUT=.../cache/oxe_full for uncapped conversions
-CFG  = "/anvil/scratch/x-tding2/latent_free/third_party/UniVLA/prismatic/vla/datasets/rlds/oxe/configs.py"
+RAW  = "/lustre/fs1/home/ti874297/lf/latent_free/data/oxe_raw"
+OUT  = os.environ.get("OXE_OUT", "/lustre/fs1/home/ti874297/lf/latent_free/cache/oxe")   # OXE_OUT=.../cache/oxe_full for uncapped conversions
+CFG  = "/lustre/fs1/home/ti874297/lf/latent_free/third_party/UniVLA/prismatic/vla/datasets/rlds/oxe/configs.py"
 IMG  = 256
 
 
@@ -122,7 +122,14 @@ def main(a):
                       decoders={"steps": tfds.decode.SkipDecoding()})
     print(f"[oxe:{a.name}] {ver} split={split} episodes_available={n_avail} taking<= {a.max_eps} "
           f"img={img_key} action_encoding={enc}", flush=True)
-    raw = open(os.path.join(out, "frames.raw"), "wb")
+    # Newton (2026-10-16): write frames.npy directly -- a fixed-length (128-byte) .npy v1 header holding a placeholder
+    # shape, rewritten in place at the end -- instead of frames.raw + a full copy, which doubled peak disk and I/O.
+    npy = os.path.join(out, "frames.npy")
+    def npy_header(n):
+        h = "{'descr': '|u1', 'fortran_order': False, 'shape': (%d, %d, %d, 3), }" % (n, IMG, IMG)
+        h = h.ljust(128 - 10 - 1) + "\n"; assert len(h) == 118, len(h)
+        return b"\x93NUMPY\x01\x00" + len(h).to_bytes(2, "little") + h.encode("latin1")
+    raw = open(npy + ".part", "wb"); raw.write(npy_header(0))
     lengths, acts, langs, file_paths = [], [], [], []
     t0, nf, bad = time.time(), 0, 0
     ds = ds.take(a.max_eps).map(make_prep(img_key, transform), num_parallel_calls=a.threads, deterministic=True).prefetch(2 * a.threads)
@@ -137,17 +144,11 @@ def main(a):
         lengths.append(len(img)); acts.append(act); langs.append(lang); file_paths.append(file_path); nf += len(img)
         if (k + 1) % 200 == 0:
             print(f"[oxe:{a.name}] {k+1} eps {nf} frames {time.time()-t0:.0f}s", flush=True)
-    raw.close()
+    raw.seek(0); raw.write(npy_header(nf)); raw.close(); os.replace(npy + ".part", npy)
     lengths = np.asarray(lengths, np.int64); starts = np.concatenate([[0], np.cumsum(lengths)[:-1]]).astype(np.int64)
     actions = np.concatenate(acts, 0).astype(np.float32); assert len(actions) == nf == int(lengths.sum())
     rs = np.random.RandomState(a.seed); is_val = np.zeros(len(lengths), bool)
     is_val[rs.choice(len(lengths), max(1, len(lengths) // 10), replace=False)] = True
-    # wrap the raw bytes as a real .npy (header + data) so np.load(mmap_mode="r") works
-    npy = os.path.join(out, "frames.npy")
-    with open(npy, "wb") as f:
-        np.lib.format.write_array_header_2_0(f, {"descr": "|u1", "fortran_order": False, "shape": (nf, IMG, IMG, 3)})
-        with open(os.path.join(out, "frames.raw"), "rb") as r: shutil.copyfileobj(r, f, 64 << 20)
-    os.remove(os.path.join(out, "frames.raw"))
     chk = np.load(npy, mmap_mode="r"); assert chk.shape == (nf, IMG, IMG, 3), chk.shape
     np.savez(os.path.join(out, "index.npz"), starts=starts, lengths=lengths, is_val=is_val, actions=actions, seed=np.int64(a.seed))
     np.savez(os.path.join(out, "scene_meta.npz"), instruction=np.array(langs, dtype=object), file_path=np.array(file_paths, dtype=object),

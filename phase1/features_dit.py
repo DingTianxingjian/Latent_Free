@@ -28,8 +28,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import data                                    # noqa: E402
 from features_wan import IMG_SIZE, load_vae    # noqa: E402  (224 -> latent 14x14)
 
-DREAMZERO_ROOT = "/anvil/scratch/x-tding2/surgical_world/dreamzero"   # so `import groot` resolves
-WAN_MOD = ("/anvil/scratch/x-tding2/surgical_world/dreamzero/"
+DREAMZERO_ROOT = "/lustre/fs1/home/ti874297/lf/surgical_world/dreamzero"   # so `import groot` resolves
+WAN_MOD = ("/lustre/fs1/home/ti874297/lf/surgical_world/dreamzero/"
            "groot/vla/model/dreamzero/modules")
 DIT_DIR = os.path.join(data.CACHE_DIR, "wan", "dit")
 LAYERS = (5, 14, 22, 29)                        # 0-indexed blocks: early/mid/late

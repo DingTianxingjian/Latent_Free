@@ -6,19 +6,19 @@
 # Writes to a _cpupreview suffix on purpose: the authoritative table comes from
 # the single GPU run, so these rows are never merged into it.
 #SBATCH --job-name=lf_exp4_cls
-#SBATCH --account=cis250950-ai
-#SBATCH --partition=ai
+#SBATCH --account=ytian
+#SBATCH --partition=normal
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --time=01:00:00
-#SBATCH --output=/anvil/scratch/x-tding2/latent_free/logs/%x_%j.out
-#SBATCH --error=/anvil/scratch/x-tding2/latent_free/logs/%x_%j.out
+#SBATCH --output=/lustre/fs1/home/ti874297/lf/latent_free/logs/%x_%j.out
+#SBATCH --error=/lustre/fs1/home/ti874297/lf/latent_free/logs/%x_%j.out
 
 set -euo pipefail
-cd /anvil/scratch/x-tding2/latent_free
+cd /lustre/fs1/home/ti874297/lf/latent_free
 
-PY=/anvil/scratch/x-tding2/envs/latent_free/bin/python
+PY=/lustre/fs1/home/ti874297/lf/envs/latent_free/bin/python
 export OMP_NUM_THREADS=16
 export PYTHONUNBUFFERED=1
 export LF_OUT_SUFFIX=_cpupreview

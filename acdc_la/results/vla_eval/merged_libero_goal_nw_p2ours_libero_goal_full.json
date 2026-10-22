@@ -1,0 +1,57 @@
+{
+ "suite": "libero_goal",
+ "note": "nw_p2ours_libero_goal_full",
+ "kind": "cont",
+ "files": [
+  "cont_libero_goal_nw_p2ours_libero_goal_full_t0_4_8.json",
+  "cont_libero_goal_nw_p2ours_libero_goal_full_t1_5_9.json",
+  "cont_libero_goal_nw_p2ours_libero_goal_full_t2_6.json",
+  "cont_libero_goal_nw_p2ours_libero_goal_full_t3_7.json"
+ ],
+ "per_task": {
+  "open the middle drawer of the cabinet": {
+   "successes": 40,
+   "episodes": 50
+  },
+  "put the bowl on top of the cabinet": {
+   "successes": 43,
+   "episodes": 50
+  },
+  "put the bowl on the plate": {
+   "successes": 50,
+   "episodes": 50
+  },
+  "put the bowl on the stove": {
+   "successes": 49,
+   "episodes": 50
+  },
+  "push the plate to the front of the stove": {
+   "successes": 50,
+   "episodes": 50
+  },
+  "put the wine bottle on the rack": {
+   "successes": 47,
+   "episodes": 50
+  },
+  "put the wine bottle on top of the cabinet": {
+   "successes": 50,
+   "episodes": 50
+  },
+  "put the cream cheese in the bowl": {
+   "successes": 49,
+   "episodes": 50
+  },
+  "open the top drawer and put the bowl inside": {
+   "successes": 44,
+   "episodes": 50
+  },
+  "turn on the stove": {
+   "successes": 50,
+   "episodes": 50
+  }
+ },
+ "successes": 472,
+ "episodes": 500,
+ "success_rate": 0.944,
+ "complete": true
+}

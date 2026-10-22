@@ -1,0 +1,14 @@
+{
+ "checkpoint": "acdc_la/ckpt/vla_runs/tc_cont+libero_goal_no_noops+b32x4+lr0.00035+r32+s30000+fm+q4--p2ours_libero_goal_full",
+ "suite": "libero_goal",
+ "trials": 50,
+ "per_task": {
+  "put the wine bottle on top of the cabinet": 1.0,
+  "put the cream cheese in the bowl": 0.98
+ },
+ "task_ids": [
+  2,
+  6
+ ],
+ "success": 0.99
+}

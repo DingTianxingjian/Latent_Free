@@ -1,0 +1,16 @@
+{
+ "checkpoint": "acdc_la/ckpt/vla_runs/tc_cont+libero_object_no_noops+b32x4+lr0.00035+r32+s30000+fm+q4--p2ours_libero_object_full",
+ "suite": "libero_object",
+ "trials": 50,
+ "per_task": {
+  "pick up the cream cheese and place it in the basket": 0.96,
+  "pick up the tomato sauce and place it in the basket": 0.98,
+  "pick up the orange juice and place it in the basket": 1.0
+ },
+ "task_ids": [
+  1,
+  5,
+  9
+ ],
+ "success": 0.98
+}

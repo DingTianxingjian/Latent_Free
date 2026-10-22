@@ -2,19 +2,19 @@
 # exp1 + exp2 are pure CPU (sklearn on cached features), so they do not need to
 # wait behind the GPU queue.  `debug` allows 2 h and is nearly empty.
 #SBATCH --job-name=lf_analysis
-#SBATCH --account=cis250950-gpu
-#SBATCH --partition=debug
+#SBATCH --account=ytian
+#SBATCH --partition=normal
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 #SBATCH --time=02:00:00
-#SBATCH --output=/anvil/scratch/x-tding2/latent_free/logs/%x_%j.out
-#SBATCH --error=/anvil/scratch/x-tding2/latent_free/logs/%x_%j.out
+#SBATCH --output=/lustre/fs1/home/ti874297/lf/latent_free/logs/%x_%j.out
+#SBATCH --error=/lustre/fs1/home/ti874297/lf/latent_free/logs/%x_%j.out
 
 set -euo pipefail
-cd /anvil/scratch/x-tding2/latent_free
+cd /lustre/fs1/home/ti874297/lf/latent_free
 
-PY=/anvil/scratch/x-tding2/envs/latent_free/bin/python
+PY=/lustre/fs1/home/ti874297/lf/envs/latent_free/bin/python
 export OMP_NUM_THREADS=16
 export MKL_NUM_THREADS=16
 export PYTHONUNBUFFERED=1

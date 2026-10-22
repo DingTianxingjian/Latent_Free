@@ -1,15 +1,16 @@
 #!/bin/bash
-#SBATCH --account=cis250950-ai
-#SBATCH --partition=ai
-#SBATCH --gres=gpu:1
+#SBATCH --account=ytian
+#SBATCH --partition=normal
+#SBATCH --gres=gpu:nvidia_h100_pcie:1
+#SBATCH --exclude=evc22,evc26,evc38,evc40,evc43,evc44,evc45,evc48
 #SBATCH -N 1 -n 8 --mem=80G
 #SBATCH -t 00:20:00
 #SBATCH -J acdc_latp2sm
-#SBATCH -o /anvil/scratch/x-tding2/latent_free/acdc_la/logs/latp2smoke_%j.out
+#SBATCH -o /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/logs/latp2smoke_%j.out
 # Plumbing check for LATP v2 with a synthetic batch: no checkpoint, no data, no loader.
 # Asserts the three things that would silently ruin the run: the EMA target actually lags, L_recover reaches
 # the ONLINE ENCODER (the whole point of v2), and RTC reaches the decoder but NOT the encoder.
-source /anvil/scratch/x-tding2/latent_free/acdc_la/scripts/common.sh
+source /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/scripts/common.sh
 $PY - <<'PYEOF'
 import argparse, torch, copy
 from acdc_la.common.tcvq import TCVQ

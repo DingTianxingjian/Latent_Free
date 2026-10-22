@@ -27,8 +27,8 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-RAW = "/anvil/scratch/x-tding2/latent_free/data/bridge_raw"
-OUT = "/anvil/scratch/x-tding2/latent_free/cache/bridge"
+RAW = "/lustre/fs1/home/ti874297/lf/latent_free/data/bridge_raw"
+OUT = "/lustre/fs1/home/ti874297/lf/latent_free/cache/bridge"
 MAX_EPISODES = 1500          # subset cap; 12 shards give ~this many
 VAL_FRAC = 0.2
 SEED = 0

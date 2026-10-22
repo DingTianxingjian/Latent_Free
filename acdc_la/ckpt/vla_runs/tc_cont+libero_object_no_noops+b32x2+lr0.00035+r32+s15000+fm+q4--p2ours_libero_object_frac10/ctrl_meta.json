@@ -1,0 +1,24 @@
+{
+ "latent": "tc_cont",
+ "n_tokens": 4,
+ "codebook_size": 0,
+ "dz": 256,
+ "window_size": 12,
+ "step": 15000,
+ "vla_path": "/lustre/fs1/home/ti874297/lf/latent_free/cache/vla/openvla-7b",
+ "lam_path": "/lustre/fs1/home/ti874297/lf/latent_free/claude_survey/ckpt/s2mix_1ep.pt",
+ "acdc_tag": "s1_acdc_1ep",
+ "acdc_codebook": "vq_s1_acdc_1ep_K64.npz",
+ "tc_tag": "latp2_inv",
+ "dataset_name": "libero_object_no_noops",
+ "train_frac": "10",
+ "override": {},
+ "head": "flow",
+ "query_tokens": 4,
+ "flow": {
+  "width": 512,
+  "layers": 4,
+  "z_tok": 32,
+  "steps": 10
+ }
+}

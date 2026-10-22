@@ -12,7 +12,7 @@ What is NOT here (decisions recorded in ../../../SUMMARY.md):
   "3% of samples" estimate that ignored balance_weights; they are included now.)
 """
 import json, os, sys, urllib.request, concurrent.futures as cf, subprocess, time
-ROOT = "/anvil/scratch/x-tding2/latent_free/data/oxe_raw"
+ROOT = "/lustre/fs1/home/ti874297/lf/latent_free/data/oxe_raw"
 BUCKET = "https://storage.googleapis.com/gresearch/robotics"
 # (name, version, UniVLA sampling weight)
 DATASETS = [

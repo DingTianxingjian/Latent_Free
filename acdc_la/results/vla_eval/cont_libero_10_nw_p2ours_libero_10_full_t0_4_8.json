@@ -1,0 +1,16 @@
+{
+ "checkpoint": "acdc_la/ckpt/vla_runs/tc_cont+libero_10_no_noops+b32x4+lr0.00035+r32+s40000+fm+q4--p2ours_libero_10_full",
+ "suite": "libero_10",
+ "trials": 50,
+ "per_task": {
+  "put both the alphabet soup and the tomato sauce in the basket": 0.84,
+  "put the white mug on the left plate and put the yellow and white mug on the right plate": 0.9,
+  "put both moka pots on the stove": 0.72
+ },
+ "task_ids": [
+  0,
+  4,
+  8
+ ],
+ "success": 0.82
+}

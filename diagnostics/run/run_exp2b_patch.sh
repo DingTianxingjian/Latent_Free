@@ -1,14 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=lf_2bp
-#SBATCH --account=cis250950-ai
-#SBATCH --partition=ai
+#SBATCH --account=ytian
+#SBATCH --partition=normal
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
-#SBATCH --gpus-per-node=1
+#SBATCH --gres=gpu:nvidia_h100_pcie:1
+#SBATCH --exclude=evc22,evc26,evc38,evc40,evc43,evc44,evc45,evc48
 #SBATCH --time=00:30:00
-#SBATCH --output=/anvil/scratch/x-tding2/latent_free/logs/%x_%j.out
-#SBATCH --error=/anvil/scratch/x-tding2/latent_free/logs/%x_%j.out
+#SBATCH --output=/lustre/fs1/home/ti874297/lf/latent_free/logs/%x_%j.out
+#SBATCH --error=/lustre/fs1/home/ti874297/lf/latent_free/logs/%x_%j.out
 #
 # Exp 2B on patch tokens.  Pure CPU linear algebra on cached clean patch
 # features, but the `cis250950-gpu`/`-ai` accounts are pinned to GPU partitions
@@ -16,8 +17,8 @@
 # Short (~5 min real) with a 30-min wall, so it backfills ahead of longer jobs.
 # The real cost is the 12288-d pg4 ridge Gram + randomized PCA, a few minutes.
 set -euo pipefail
-cd /anvil/scratch/x-tding2/latent_free
-PY=/anvil/scratch/x-tding2/envs/latent_free/bin/python
+cd /lustre/fs1/home/ti874297/lf/latent_free
+PY=/lustre/fs1/home/ti874297/lf/envs/latent_free/bin/python
 
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-32}
 # widen the ridge grid: pg4's full-D optimum sits at ~1e4 (see exp4), while the

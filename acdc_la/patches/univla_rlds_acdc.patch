@@ -1,6 +1,8 @@
+diff --git a/prismatic/vla/datasets/rlds/dataset.py b/prismatic/vla/datasets/rlds/dataset.py
+index 2b2ff47..03dc004 100644
 --- a/prismatic/vla/datasets/rlds/dataset.py
 +++ b/prismatic/vla/datasets/rlds/dataset.py
-@@ -4,6 +4,7 @@
+@@ -4,6 +4,7 @@ dataset.py
  Core interface script for configuring and initializing RLDS datasets.
  """
  
@@ -8,7 +10,7 @@
  import copy
  import inspect
  import json
-@@ -247,7 +248,12 @@
+@@ -247,7 +248,12 @@ def make_dataset_from_rlds(
  
      # construct the dataset
      if "val" not in builder.info.splits:
@@ -22,7 +24,7 @@
      else:
          split = "train" if train else "val"
  
-@@ -360,10 +366,14 @@
+@@ -360,10 +366,14 @@ def apply_trajectory_transforms(
      if 'ego4d' in name:
          window_size = 2
  
@@ -39,9 +41,11 @@
          window_size = random.randint(15,20) if training_phase == 'lam' else 15
  
          
+diff --git a/prismatic/vla/datasets/rlds/oxe/mixtures.py b/prismatic/vla/datasets/rlds/oxe/mixtures.py
+index 4fc5496..6a4f939 100644
 --- a/prismatic/vla/datasets/rlds/oxe/mixtures.py
 +++ b/prismatic/vla/datasets/rlds/oxe/mixtures.py
-@@ -120,6 +120,42 @@
+@@ -120,6 +120,42 @@ OXE_NAMED_MIXTURES: Dict[str, List[Tuple[str, float]]] = {
          ("ego4d_split_4", 1.0),
      ],
  
@@ -75,12 +79,38 @@
 +        ("bc_z", 0.2),                                          
 +        ("fmb", 1.0),
 +        ("dobbe", 0.2),                   
-+        ("berkeley_gnm_recon", 2.0),
-+        ("berkeley_gnm_cory_hall", 2.0),
-+        ("berkeley_gnm_sac_son", 2.0),
++        ("berkeley_gnm_recon", 1.0),
++        ("berkeley_gnm_cory_hall", 1.0),
++        ("berkeley_gnm_sac_son", 1.0),
 +    ],
 +
 +
      # === T-DROID Dataset ===
      "tdroid_carrot_in_bowl": [
          ("tdroid_carrot_in_bowl", 1.0),
+diff --git a/prismatic/vla/datasets/rlds/traj_transforms.py b/prismatic/vla/datasets/rlds/traj_transforms.py
+index 0bb5562..e015866 100644
+--- a/prismatic/vla/datasets/rlds/traj_transforms.py
++++ b/prismatic/vla/datasets/rlds/traj_transforms.py
+@@ -6,6 +6,7 @@ that represents a single trajectory, meaning each tensor has the same leading di
+ """
+ 
+ import logging
++import os
+ from typing import Dict
+ 
+ import tensorflow as tf
+@@ -80,6 +81,13 @@ def chunk_act_obs_libero(traj: Dict, window_size: int, future_action_window_size
+         tf.range(traj_len)[:, None], [traj_len, window_size]
+     )
+     print('chunk_indices', chunk_indices)
++    # acdc_la (2026-10-16): CTRL_OBS_KEEP="0,1,4,5,..." keeps only those window positions of the OBSERVATIONS (actions keep
++    # the full window).  The labellers read a few of the 14 frames; gathering only those before the frames are decoded cuts
++    # the host memory of the full-mixture pipeline.  Unset = unchanged behaviour.  The kept frames are bit-identical to the
++    # same positions of the full window (same indices, same gather), so the labels do not change.
++    _keep = os.environ.get("CTRL_OBS_KEEP")
++    if _keep:
++        chunk_indices = tf.gather(chunk_indices, [int(k) for k in _keep.split(",")], axis=1)
+     action_chunk_indices = tf.broadcast_to(
+         tf.range(-window_size + 1, 1 + future_action_window_size),
+         [traj_len, window_size + future_action_window_size],

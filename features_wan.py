@@ -30,7 +30,7 @@ import torch.nn.functional as F
 import data
 import features
 
-WAN_MOD = ("/anvil/scratch/x-tding2/surgical_world/dreamzero/"
+WAN_MOD = ("/lustre/fs1/home/ti874297/lf/surgical_world/dreamzero/"
            "groot/vla/model/dreamzero/modules")
 WAN_CKPT = os.path.join(data.ROOT, "cache", "wan", "Wan2.2_VAE.pth")
 IMG_SIZE = 224

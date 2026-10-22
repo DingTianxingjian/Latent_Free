@@ -1,21 +1,22 @@
 #!/bin/bash
 #SBATCH --job-name=latent_free
-#SBATCH --account=cis250950-gpu
-#SBATCH --partition=gpu
+#SBATCH --account=ytian
+#SBATCH --partition=normal
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
-#SBATCH --gpus-per-node=1
+#SBATCH --gres=gpu:nvidia_h100_pcie:1
+#SBATCH --exclude=evc22,evc26,evc38,evc40,evc43,evc44,evc45,evc48
 #SBATCH --time=04:00:00
-#SBATCH --output=/anvil/scratch/x-tding2/latent_free/logs/%x_%j.out
-#SBATCH --error=/anvil/scratch/x-tding2/latent_free/logs/%x_%j.out
+#SBATCH --output=/lustre/fs1/home/ti874297/lf/latent_free/logs/%x_%j.out
+#SBATCH --error=/lustre/fs1/home/ti874297/lf/latent_free/logs/%x_%j.out
 
 set -euo pipefail
-cd /anvil/scratch/x-tding2/latent_free
+cd /lustre/fs1/home/ti874297/lf/latent_free
 
-PY=/anvil/scratch/x-tding2/envs/latent_free/bin/python
-export TORCH_HOME=/anvil/scratch/x-tding2/latent_free/cache/torch
-export HF_HOME=/anvil/scratch/x-tding2/hf_cache
+PY=/lustre/fs1/home/ti874297/lf/envs/latent_free/bin/python
+export TORCH_HOME=/lustre/fs1/home/ti874297/lf/latent_free/cache/torch
+export HF_HOME=/lustre/fs1/home/ti874297/lf/hf_cache
 export HF_HUB_OFFLINE=1
 export OMP_NUM_THREADS=16
 export MKL_NUM_THREADS=16
@@ -25,7 +26,7 @@ echo "=================================================================="
 echo "host        : $(hostname)"
 echo "job         : ${SLURM_JOB_ID:-none}"
 echo "started     : $(date -Is)"
-echo "git commit  : $(git -C /anvil/scratch/x-tding2/latent_free rev-parse HEAD 2>/dev/null || echo 'not a repo')"
+echo "git commit  : $(git -C /lustre/fs1/home/ti874297/lf/latent_free rev-parse HEAD 2>/dev/null || echo 'not a repo')"
 echo "python      : $PY"
 echo "seed        : 0 (episode-level 80/20 split, per task)"
 echo "=================================================================="

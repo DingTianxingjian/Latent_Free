@@ -3494,6 +3494,58 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   workstation for post-training, controls and evals.  Any host: run `warm_stats.sh` first and never change the
   data-root spelling afterwards.
 
+### 2026-10-12 → 10-17 — Newton (UCF): phase 2 at 1/10 scale run end-to-end; post-training at 10 % and full data; phase-1 full-data continuation does NOT help
+
+- **Host.** Moved to UCF ARCC Newton (branch `newton`, paths `/lustre/fs1/home/ti874297/lf/{latent_free,envs}`).  OXE RLDS
+  (29 `acdc_oxe29` sources, 3.90 TB, every shard checked against `dataset_info.json`) at `data/oxe_raw` (symlink into
+  `/lustre/fs1/groups/ytian`).  Mixture GNM weights set to UniVLA's `omni_magic_soup_plus` (1.0, were 2.0) on 10-15 --
+  AFTER the phase-2 runs below, which used 2.0.  RLDS statistics recomputed on Newton under the absolute data root (26 min).
+  Bad GPU nodes found and excluded: evc22/26/38/40/43/44/45/48 (normal), evc104 (highgpu); `acdc_la/logs/bad_nodes.txt`.
+- **Phase 2, 1/10 scale (next_task.md §4 recipe, 2 GPUs x 8 x accum 4 = 64, 30k steps, LoRA r32, latent-only).**
+  Host RAM of the full-mixture pipeline grows ~3 GB/min for 2 ranks even with `CTRL_REITER_BATCHES=2500`, so runs were
+  done in memory-bounded segments (`acdc_la/scripts/run_vla_phase2_newton.sh`: restart with `--resume` at the next
+  checkpoint once RSS > 380 GB).  Arm A (`latp2_inv`, job 900546): 20 segments, final latent_r2 0.795, latent_loss
+  0.824.  Arm B (`s2mix_1ep`, 900547 -> 907887): **INVALID** -- the wrapper killed the trainer while `trainer_state.pt`
+  (1.2 GB) was being written (truncated at 287 MB, step 19000); resumed from the step-19000 adapter/heads with AdamW
+  moments reset.  Its post-training never learned actions (action L1 stuck ~0.15 vs 0.03 for every healthy run) and
+  scored 0/500 on Object; cause (reset vs phase 2 itself) not determined -- the arm was dropped (user: compare against
+  UniVLA's published numbers instead).  Fixes: atomic `trainer_state.pt` (tmp + rename); wrapper waits until the
+  checkpoint is 60 s old.
+- **Post-training of arm A (flow head, 4 query tokens), 500 episodes each, evaluator = UniVLA's protocol (checked
+  line by line: max_steps, seed 7, center crop, 10 wait steps, benchmark init states).**
+
+  | suite | 10 % demos (64 x 15k) | UniVLA paper 10 % (Fig. 10) | full split (128 x 30k, Long 40k = UniVLA's budget) | UniVLA paper full (Table I) |
+  |---|---|---|---|---|
+  | Object | 442/500 = 88.4 % | -- | 494/500 = **98.8 %** | 96.8 |
+  | Long | 308/500 = 61.6 % | 62.4 | 445/500 = 89.0 % | 92.0 |
+  | Spatial | -- | -- | 486/500 = **97.2 %** | 96.5 |
+  | Goal | -- | 86.3 | queued | 95.6 |
+
+  **Not attributable to phase 2:** no matched no-phase-2 / no-latent control was run (user decision), and the head
+  (flow + query tokens, OFT-like) differs from UniVLA's; the 2026-09-18 71.2 % Object run had no query tokens.
+- **Phase 1 continued on the FULL data (job 944428).** UNCAPPED caches for all 29 sources (`cache/oxe_full`, 33.1 M
+  frames, 6.5 TB, 17.4 M train clips; converter now writes `frames.npy` directly).  `train_v2 --init-from latp2_inv`,
+  identical args to `latp2_inv` (lam_effect 1, lam_recover 0, lam_rel 0.5, lam_inv 1, batch 64, 15k steps).
+  `data/distractor_video.npy` was missing on Newton and was REBUILT from `imageio:cockatoo.mp4` (first 200 frames,
+  720x1280) -- the original frame choice is undocumented.  Probes, both tokenizers dumped on the SAME full-cache
+  validation set (11,456 clips; the model-free block A is identical for both, which confirms it):
+
+  | code z (256-d) | r2_net | seg1 | prof | seq | patch_drop |
+  |---|---|---|---|---|---|
+  | `latp2_inv` (re-dumped as `latp2_inv_ref`) | 0.363 | 0.301 | 0.099 | 0.264 | **20.4 %** |
+  | `latp2_inv_full` (+15k on full data) | 0.372 | 0.307 | 0.100 | 0.263 | 24.6 % |
+
+  +0.009 r2_net (the 09-16 plain-reconstruction control bought +0.003; the LATP objective +0.064), prof unchanged, and
+  nuisance robustness WORSE by 4.2 points.  One seed; 15k x 64 is ~5.5 % of the full data.  **Conclusion: at this
+  recipe and budget, data volume is not phase 1's bottleneck.  Decision: keep `latp2_inv` for phase 2.**
+  Results: `acdc_la/results/stage1_probes_latp2_full_vs_ref.json`, `latp2_inv_full{,_ref}.json`.
+- **Next (user priority): full-parameter phase 2 at UniVLA's scale** with `latp2_inv` labels.  Trainer now has
+  `--full_ft True` (FSDP FULL_SHARD, fp32 shards / bf16 compute, activation checkpointing on LLaMA layers, KV cache off,
+  sharded model+optimiser checkpoints via torch.distributed.checkpoint, full bf16 `vla_full.pt` at the end) and
+  `CTRL_OBS_KEEP=0,1,3,4,6,7,9,10,12,13` (only the 10 window frames `latp2_inv` reads, T=K+1=5, stride 3; equality test
+  `acdc_la/scripts/test_obs_keep.py` reads T from the checkpoint).  Smoke (2 GPUs, batch 1): 30 steps, sharded saves and
+  final weights OK; `--resume` OOMs on 2 GPUs (61 GB/GPU of fp32 state) -- still to be tested on >= 4 GPUs.
+
 ## Registered next method: intervention first, real pairs second
 
 

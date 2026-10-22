@@ -6,16 +6,16 @@ two paths agree bit for bit on the same input, i.e. that the labels are the task
 model was trained to emit, and reports exactly how much of the checkpoint came from the released stage 1."""
 import sys, torch
 
-sys.path.insert(0, "/anvil/scratch/x-tding2/latent_free/third_party/UniVLA")
-sys.path.insert(0, "/anvil/scratch/x-tding2/latent_free/claude_survey")
-torch.hub.set_dir("/anvil/scratch/x-tding2/latent_free/cache/torch/hub")
+sys.path.insert(0, "/lustre/fs1/home/ti874297/lf/latent_free/third_party/UniVLA")
+sys.path.insert(0, "/lustre/fs1/home/ti874297/lf/latent_free/claude_survey")
+torch.hub.set_dir("/lustre/fs1/home/ti874297/lf/latent_free/cache/torch/hub")
 from latent_action_model.genie.modules.lam import ControllableDINOLatentActionModel
 import eval_rala2 as E
 
 dev = "cuda"
-ck = torch.load("/anvil/scratch/x-tding2/latent_free/claude_survey/ckpt/s2mix_1ep.pt", map_location="cpu", weights_only=False)
+ck = torch.load("/lustre/fs1/home/ti874297/lf/latent_free/claude_survey/ckpt/s2mix_1ep.pt", map_location="cpu", weights_only=False)
 sd = {k.replace("lam.", "", 1): v for k, v in ck["state_dict"].items()}
-s1 = torch.load("/anvil/scratch/x-tding2/latent_free/cache/univla/lam-stage-1.ckpt", map_location="cpu", weights_only=False)["state_dict"]
+s1 = torch.load("/lustre/fs1/home/ti874297/lf/latent_free/cache/univla/lam-stage-1.ckpt", map_location="cpu", weights_only=False)["state_dict"]
 s1 = {k.replace("lam.", "", 1): v for k, v in s1.items() if k.startswith("lam.")}
 init = {k: v for k, v in s1.items() if ("vq" in k or "action_latent" in k)}      # genie/model.py:66-71, what stage 2 inherits
 print(f"[check] stage-2 params {sum(v.numel() for v in sd.values())}; inherited at init {sum(v.numel() for v in init.items().__iter__().__next__()[1].reshape(-1).unsqueeze(0)) if False else sum(v.numel() for v in init.values())} "

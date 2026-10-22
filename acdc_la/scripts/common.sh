@@ -1,7 +1,7 @@
 # sourced by every run script
 set -u -o pipefail
-cd /anvil/scratch/x-tding2/latent_free
-PY=/anvil/scratch/x-tding2/envs/latent_free/bin/python
+cd /lustre/fs1/home/ti874297/lf/latent_free
+PY=/lustre/fs1/home/ti874297/lf/envs/latent_free/bin/python
 QUIET='xFormers|warnings.warn|Using cache|UserWarning|enable_nested'
 run() {   # run <module> <args...>  -- python -m acdc_la.<module>, noise filtered, exit code preserved
   local mod=$1; shift

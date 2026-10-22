@@ -3,7 +3,7 @@
 labeller: `latent="univla"` encodes (frame ro, frame ro+window-1) with their LAM -> 4 tokens; `latent="acdc"` encodes
 the T = 5 frames ro, ro+3, ..., ro+12 with ours -> 8 tokens.  The RLDS window is loaded with window_size + 2 frames for
 BOTH arms so that the sampling of windows is identical."""
-import random
+import os, random
 from dataclasses import dataclass
 from typing import Any, Dict, Type
 
@@ -15,6 +15,22 @@ from prismatic.models.backbones.vision import ImageTransform
 from transformers import PreTrainedTokenizerBase
 
 IGNORE_INDEX = -100
+
+
+class KeptFrames:
+    """The window's frames when the RLDS pipeline kept only CTRL_OBS_KEEP positions (rlds/traj_transforms.py): indexed by
+    the ORIGINAL window position, so every labeller reads exactly the frame it read from the full window.  Asking for a
+    position that was not kept is an error, never a silent substitute."""
+    def __init__(self, imgs, keep):
+        assert len(imgs) == len(keep), (len(imgs), keep)
+        self.imgs, self.pos = imgs, {k: i for i, k in enumerate(keep)}
+
+    def __getitem__(self, k):
+        if k not in self.pos: raise KeyError(f"window frame {k} not in CTRL_OBS_KEEP={sorted(self.pos)}")
+        return self.imgs[self.pos[k]]
+
+
+_KEEP = [int(k) for k in os.environ["CTRL_OBS_KEEP"].split(",")] if os.environ.get("CTRL_OBS_KEEP") else None
 
 
 @dataclass
@@ -49,6 +65,7 @@ class RLDSBatchTransformCtrl:
     def __call__(self, rlds_batch: Dict[str, Any]) -> Dict[str, Any]:
         dataset_name = rlds_batch["dataset_name"]; lang = rlds_batch["task"]["language_instruction"].decode().lower()
         imgs = rlds_batch["observation"]["image_primary"]
+        if _KEEP is not None: imgs = KeptFrames(imgs, _KEEP)
         ro = random.randint(0, 1)
         pixel_values = self.image_transform(Image.fromarray(imgs[ro]))
         with torch.no_grad():

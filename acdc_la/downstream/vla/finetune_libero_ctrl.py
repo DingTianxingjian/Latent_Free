@@ -8,6 +8,7 @@ W&B is replaced by a jsonl log (compute nodes have no network).
   torchrun --standalone --nproc-per-node 4 -m acdc_la.downstream.vla.finetune_libero_ctrl --latent acdc --max_steps 15000
 """
 import os, sys, gc, json, time, math
+from functools import partial
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -17,6 +18,11 @@ import torchvision.transforms as transforms
 from accelerate import PartialState
 from peft import LoraConfig, PeftModel, get_peft_model
 from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.distributed.fsdp import FullyShardedDataParallel as FSDP, MixedPrecision, ShardingStrategy, StateDictType, FullStateDictConfig
+from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+from torch.distributed.algorithms._checkpoint.checkpoint_wrapper import apply_activation_checkpointing, checkpoint_wrapper, CheckpointImpl
+import torch.distributed.checkpoint as dcp
+from torch.distributed.checkpoint.optimizer import load_sharded_optimizer_state_dict
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from transformers import AutoModelForVision2Seq, AutoProcessor, AutoConfig, AutoImageProcessor
@@ -222,6 +228,12 @@ class Cfg:
     batch_size: int = 8; grad_accumulation_steps: int = 2; max_steps: int = 15000; save_steps: int = 5000; learning_rate: float = 3.5e-4
     image_aug: bool = True; shuffle_buffer_size: int = 16000; window_size: int = 12
     lora_rank: int = 32; lora_dropout: float = 0.0
+    # FULL-PARAMETER training (2026-10-15, phase 2 at UniVLA's scale: their stage 2 trains the whole 7B with FSDP).
+    # No LoRA: every VLA weight trains, fp32 master weights sharded by FSDP over the ranks, bf16 compute, activation
+    # checkpointing on the LLaMA layers -- the settings of UniVLA's prismatic/training/strategies/fsdp.py.  Saves the
+    # full VLA state dict (bf16) as vla_full.pt next to the heads; --init_from_run reads it back.
+    full_ft: bool = False
+    univla_optim: bool = False                             # UniVLA's stage-2 optimiser (prismatic/conf/vla.py): weight decay 0, CONSTANT lr (no 0.1 step at 80 %)
     log_every: int = 25
 
 
@@ -287,7 +299,7 @@ def finetune(cfg: Cfg) -> None:
     if ov_d: print(f"[ctrl] OVERRIDE {ov}: {ov_d}", flush=True)
     assert torch.cuda.is_available(); assert cfg.latent in ("univla", "univla_cont", "acdc", "acdc_cont", "none", "tc_cont", "tc_vq")
     state = PartialState(); torch.cuda.set_device(device_id := state.local_process_index); torch.cuda.empty_cache()
-    exp_id = f"{cfg.latent}+{cfg.dataset_name}+b{cfg.batch_size * cfg.grad_accumulation_steps}x{state.num_processes}+lr{cfg.learning_rate}+r{cfg.lora_rank}+s{cfg.max_steps}" + {"flow": "+fm", "reg_text": "+rt"}.get(cfg.head, "") + (f"+q{cfg.query_tokens}" if cfg.query_tokens else "") + (f"--{cfg.run_id_note}" if cfg.run_id_note else "")
+    exp_id = f"{cfg.latent}+{cfg.dataset_name}+b{cfg.batch_size * cfg.grad_accumulation_steps}x{state.num_processes}+lr{cfg.learning_rate}+" + ("fft" if cfg.full_ft else f"r{cfg.lora_rank}") + f"+s{cfg.max_steps}" + {"flow": "+fm", "reg_text": "+rt"}.get(cfg.head, "") + (f"+q{cfg.query_tokens}" if cfg.query_tokens else "") + (f"--{cfg.run_id_note}" if cfg.run_id_note else "")
     run_dir = cfg.run_root_dir / exp_id; adapter_dir = cfg.run_root_dir / "adapters" / exp_id; os.makedirs(run_dir, exist_ok=True); os.makedirs(adapter_dir, exist_ok=True)
     if state.is_main_process: print(f"[ctrl] {exp_id} -> {run_dir}", flush=True)
 
@@ -295,7 +307,8 @@ def finetune(cfg: Cfg) -> None:
     AutoProcessor.register(OpenVLAConfig, PrismaticProcessor); AutoModelForVision2Seq.register(OpenVLAConfig, OpenVLAForActionPrediction)
     time.sleep(int(os.environ.get("CTRL_STAGGER_SEC", "0")) * state.local_process_index)   # small-RAM hosts: stagger the 7B loads across ranks
     processor = AutoProcessor.from_pretrained(cfg.vla_path, trust_remote_code=True)
-    vla = AutoModelForVision2Seq.from_pretrained(cfg.vla_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True)
+    vla = AutoModelForVision2Seq.from_pretrained(cfg.vla_path, torch_dtype=torch.float32 if cfg.full_ft else torch.bfloat16,
+                                                low_cpu_mem_usage=True, trust_remote_code=True)
 
     labeller, n_tokens, codebook_size = build_labeller(cfg, device_id)
     cont = cfg.latent in ("acdc_cont", "none", "tc_cont", "univla_cont"); dz = getattr(labeller, "dz", 0) if cfg.latent in ("acdc_cont", "tc_cont", "univla_cont") else 0
@@ -306,7 +319,7 @@ def finetune(cfg: Cfg) -> None:
         assert len(processor.tokenizer) == LATENT_TOKEN_BASE + 1, len(processor.tokenizer)
         processor.tokenizer.add_special_tokens({"additional_special_tokens": [f"<ACT_{i}>" for i in range(nq or codebook_size)]})
         vla.resize_token_embeddings(len(processor.tokenizer))
-    vla = vla.to(device_id)
+    if not cfg.full_ft: vla = vla.to(device_id)
     lora = LoraConfig(r=cfg.lora_rank, lora_alpha=min(cfg.lora_rank, 16), lora_dropout=cfg.lora_dropout, target_modules="all-linear",
                       init_lora_weights="gaussian", modules_to_save=(["embed_tokens"] if nq else None) if cont else ["embed_tokens", "lm_head"])
     # Where this run's weights start: its own last save (--resume, for Slurm walltime chunks), else another run's
@@ -315,30 +328,74 @@ def finetune(cfg: Cfg) -> None:
     src_run = str(run_dir) if (cfg.resume and os.path.exists(run_dir / "action_decoder.pt")) else cfg.init_from_run
     src_ad = (str(adapter_dir) if src_run == str(run_dir) else
               os.path.join(cfg.run_root_dir, "adapters", os.path.basename(str(src_run).rstrip("/")))) if src_run else None
-    if src_ad and os.path.exists(os.path.join(src_ad, "adapter_config.json")):
+    if cfg.full_ft:
+        if src_run == str(run_dir) and os.path.isdir(run_dir / "fsdp_ckpt"): pass     # --resume: the sharded checkpoint below restores everything
+        elif src_run and os.path.exists(os.path.join(src_run, "vla_full.pt")):
+            vla.load_state_dict(torch.load(os.path.join(src_run, "vla_full.pt"), map_location="cpu"))
+            if state.is_main_process: print(f"[ctrl] full VLA weights from {src_run}/vla_full.pt", flush=True)
+        else: assert not src_run or src_run == str(run_dir), f"--full_ft: no vla_full.pt in {src_run}"
+        vla.requires_grad_(True)
+        # no KV cache in training: with activation checkpointing the recomputed layer would see its own cached keys
+        # twice (attention mask 289 vs keys 578, smoke 927105); UniVLA's FSDP training runs with use_cache=False too
+        vla.config.use_cache = False; vla.language_model.config.use_cache = False
+    elif src_ad and os.path.exists(os.path.join(src_ad, "adapter_config.json")):
         vla = PeftModel.from_pretrained(vla, src_ad, is_trainable=True)
         if state.is_main_process: print(f"[ctrl] LoRA from {src_ad}", flush=True)
     else:
         assert not src_run, f"no adapter at {src_ad}"
         vla = get_peft_model(vla, lora)
-    vla.print_trainable_parameters()
+    if not cfg.full_ft: vla.print_trainable_parameters()
+    elif state.is_main_process: print(f"[ctrl] FULL fine-tuning: {sum(p.numel() for p in vla.parameters()) / 1e9:.2f}B trainable VLA parameters", flush=True)
     assert cfg.head in ("reg", "reg_text", "flow") and (cfg.head == "reg" or cont), (cfg.head, cfg.latent)
     model = WrappedModel(vla, cfg.window_size, n_tokens, continuous=cont, dz=dz, head=cfg.head,
-                         flow_kw=dict(width=cfg.flow_width, layers=cfg.flow_layers, z_tok=cfg.flow_z_tok), query_tokens=nq).to(device_id)
+                         flow_kw=dict(width=cfg.flow_width, layers=cfg.flow_layers, z_tok=cfg.flow_z_tok), query_tokens=nq)
+    model = model if cfg.full_ft else model.to(device_id)
     if src_run:                                                     # the heads travel with the adapter
         hp = os.path.join(src_run, "action_decoder.pt")
         (model.heads if cont else model.action_decoder).load_state_dict(torch.load(hp, map_location="cpu"), strict=False)
         if state.is_main_process: print(f"[ctrl] heads from {hp}", flush=True)
-    model = DDP(model, device_ids=[device_id], find_unused_parameters=True, gradient_as_bucket_view=True)
-    opt = AdamW([p for p in model.parameters() if p.requires_grad], lr=cfg.learning_rate)
-    sched = torch.optim.lr_scheduler.StepLR(opt, step_size=int(cfg.max_steps * 0.8), gamma=0.1)
+    if cfg.full_ft:
+        from transformers.models.llama.modeling_llama import LlamaDecoderLayer
+        from timm.models.vision_transformer import Block as ViTBlock
+        from prismatic.extern.hf.modeling_prismatic import PrismaticProjector
+        layers = {LlamaDecoderLayer, ViTBlock, PrismaticProjector}
+        # the VLA in bf16 compute over fp32 shards; the small heads stay a plain fp32 root unit (they take fp32 inputs)
+        model.vla = FSDP(model.vla, auto_wrap_policy=partial(transformer_auto_wrap_policy, transformer_layer_cls=layers),
+                         mixed_precision=MixedPrecision(param_dtype=torch.bfloat16, reduce_dtype=torch.float32, buffer_dtype=torch.float32),
+                         sharding_strategy=ShardingStrategy.FULL_SHARD, device_id=device_id, limit_all_gathers=True, use_orig_params=True)
+        apply_activation_checkpointing(model.vla, checkpoint_wrapper_fn=partial(checkpoint_wrapper, checkpoint_impl=CheckpointImpl.NO_REENTRANT),
+                                       check_fn=lambda m: isinstance(m, LlamaDecoderLayer))
+        model = FSDP(model, sharding_strategy=ShardingStrategy.FULL_SHARD, device_id=device_id, use_orig_params=True)
+        dist.barrier()
+        if state.is_main_process: print(f"[ctrl] FSDP ready, {torch.cuda.memory_allocated(device_id) / 2**30:.1f} GiB on GPU 0", flush=True)
+    else:
+        model = DDP(model, device_ids=[device_id], find_unused_parameters=True, gradient_as_bucket_view=True)
+    opt = AdamW([p for p in model.parameters() if p.requires_grad], lr=cfg.learning_rate, **(dict(weight_decay=0.0) if cfg.univla_optim else {}))
+    sched = torch.optim.lr_scheduler.StepLR(opt, step_size=int(cfg.max_steps * 0.8), gamma=1.0 if cfg.univla_optim else 0.1)
     step0, tstate = 0, run_dir / "trainer_state.pt"                 # --resume: optimiser, schedule and step count
     if cfg.resume and not tstate.exists() and state.is_main_process:
         # exp_id carries max_steps: a chunked run must pass the SAME --max_steps every time, or it resumes nothing.
         print(f"[ctrl] --resume: no {tstate}, starting from scratch", flush=True)
     if cfg.resume and tstate.exists():
         st = torch.load(tstate, map_location="cpu")
-        opt.load_state_dict(st["opt"]); sched.load_state_dict(st["sched"]); step0 = int(st["step"])
+        step0 = int(st["step"])
+        if cfg.full_ft:
+            # per-rank shards of the fp32 weights (+ heads) and AdamW state; needs the SAME number of ranks as the save
+            ck = str(run_dir / "fsdp_ckpt")
+            with FSDP.state_dict_type(model, StateDictType.SHARDED_STATE_DICT):
+                msd = {"model": model.state_dict()}
+                dcp.load_state_dict(msd, storage_reader=dcp.FileSystemReader(ck)); model.load_state_dict(msd["model"])
+                osd = load_sharded_optimizer_state_dict(model_state_dict=msd["model"], optimizer_key="optim", storage_reader=dcp.FileSystemReader(ck))
+                opt.load_state_dict(FSDP.optim_state_dict_to_load(model, opt, osd["optim"]))
+            sched.load_state_dict(st["sched"]); del msd, osd
+        elif "opt" in st: opt.load_state_dict(st["opt"]); sched.load_state_dict(st["sched"])
+        else:
+            # Optimiser state lost (a rebuilt trainer_state.pt holding only the step): the adapter and heads are the
+            # checkpoint's, the step count and the StepLR position are restored, AdamW's moments restart from zero.
+            lr = cfg.learning_rate * sched.gamma ** (step0 // sched.step_size)
+            for g in opt.param_groups: g["lr"] = lr
+            sched.last_epoch, sched._step_count, sched._last_lr = step0, step0 + 1, [lr] * len(opt.param_groups)
+            if state.is_main_process: print(f"[ctrl] WARNING optimiser state lost ({st.get('opt_lost')}): AdamW moments reset at step {step0}, lr={lr}", flush=True)
         if state.is_main_process: print(f"[ctrl] resumed at step {step0}", flush=True)
 
     transform = RLDSBatchTransformCtrl(labeller, cfg.latent, processor.tokenizer, image_transform=processor.image_processor.apply_transform,
@@ -368,7 +425,7 @@ def finetune(cfg: Cfg) -> None:
             l1_buf.append(float(loss_1 if cfg.head == "flow" else act_loss))   # flow: one-step action L1, not the flow loss
         step = step0 + bi // cfg.grad_accumulation_steps
         if (bi + 1) % cfg.grad_accumulation_steps == 0:
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step(); opt.zero_grad(); sched.step()
+            (model.clip_grad_norm_(1.0) if cfg.full_ft else torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)); opt.step(); opt.zero_grad(); sched.step()
             if state.is_main_process and (step + 1) % cfg.log_every == 0:
                 key = "latent_r2" if model.module.continuous else "token_acc"
                 rec = {"step": step + 1, key: sum(acc_buf) / len(acc_buf), "latent_loss" if model.module.continuous else "token_loss": sum(loss_buf) / len(loss_buf),
@@ -376,19 +433,46 @@ def finetune(cfg: Cfg) -> None:
                 print(f"[ctrl:{cfg.latent}] " + " ".join(f"{k}={v:.4f}" if isinstance(v, float) else f"{k}={v}" for k, v in rec.items()), flush=True); log.write(json.dumps(rec) + "\n"); log.flush()
                 acc_buf, l1_buf, loss_buf = [], [], []
             if (step + 1) % cfg.save_steps == 0 or step + 1 == cfg.max_steps:
+                if cfg.full_ft:
+                    # (1) every save: sharded fp32 weights + AdamW state, written to a temp dir and swapped in only when complete
+                    ck, tmp = run_dir / "fsdp_ckpt", run_dir / "fsdp_ckpt.tmp"
+                    if state.is_main_process and tmp.exists(): import shutil; shutil.rmtree(tmp)
+                    dist.barrier()
+                    with FSDP.state_dict_type(model, StateDictType.SHARDED_STATE_DICT):
+                        dcp.save_state_dict({"model": model.state_dict(), "optim": FSDP.optim_state_dict(model, opt)}, storage_writer=dcp.FileSystemWriter(str(tmp)))
+                    dist.barrier()
+                    if state.is_main_process:
+                        import shutil
+                        if ck.exists(): shutil.rmtree(ck)
+                        os.replace(tmp, ck)
+                        torch.save(dict(sched=sched.state_dict(), step=step + 1), str(tstate) + ".tmp"); os.replace(str(tstate) + ".tmp", tstate)
+                    dist.barrier()
+                if cfg.full_ft and step + 1 == cfg.max_steps:    # (2) at the end: full bf16 VLA for post-training / evaluation
+                    with FSDP.state_dict_type(model, StateDictType.FULL_STATE_DICT, FullStateDictConfig(offload_to_cpu=True, rank0_only=True)):
+                        full_sd = model.state_dict()
+                    if state.is_main_process:
+                        vsd = {k[len("vla."):]: v.to(torch.bfloat16) for k, v in full_sd.items() if k.startswith("vla.")}
+                        hsd = {k[len("heads."):]: v for k, v in full_sd.items() if k.startswith("heads.")}
+                        torch.save(vsd, run_dir / "vla_full.pt.tmp"); os.replace(run_dir / "vla_full.pt.tmp", run_dir / "vla_full.pt")
+                        torch.save(hsd, run_dir / "action_decoder.pt")
+                    del full_sd
                 if state.is_main_process:
-                    model.module.vla.save_pretrained(adapter_dir)
-                    torch.save((model.module.heads if cont else model.module.action_decoder).state_dict(), run_dir / "action_decoder.pt")
+                    if not cfg.full_ft:
+                        model.module.vla.save_pretrained(adapter_dir)
+                        torch.save((model.module.heads if cont else model.module.action_decoder).state_dict(), run_dir / "action_decoder.pt")
                     json.dump(dict(latent=cfg.latent, n_tokens=n_tokens, codebook_size=codebook_size, dz=dz, window_size=cfg.window_size, step=step + 1, vla_path=cfg.vla_path,
                                    lam_path=cfg.lam_path, acdc_tag=cfg.acdc_tag, acdc_codebook=cfg.acdc_codebook, tc_tag=cfg.tc_tag, dataset_name=cfg.dataset_name,
                                    train_frac=os.environ.get("LIBERO_TRAIN_FRAC"), override=ov_d, head=cfg.head, query_tokens=nq,
                                    flow=dict(width=cfg.flow_width, layers=cfg.flow_layers, z_tok=cfg.flow_z_tok, steps=cfg.flow_steps)), open(run_dir / "ctrl_meta.json", "w"), indent=1)
-                    torch.save(dict(opt=opt.state_dict(), sched=sched.state_dict(), step=step + 1), tstate)
-                    print(f"[ctrl] saved adapter + decoder at step {step + 1}", flush=True)
+                    # written to a temp file and renamed: a job killed mid-write (1.2 GB) otherwise leaves a truncated
+                    # trainer_state.pt that --resume cannot load (arm B of phase 2, Newton, 2026-10-13, step 19000)
+                    if not cfg.full_ft:   # full_ft saves its own (sharded) trainer state above
+                        torch.save(dict(opt=opt.state_dict(), sched=sched.state_dict(), step=step + 1), str(tstate) + ".tmp"); os.replace(str(tstate) + ".tmp", tstate)
+                    print(f"[ctrl] saved {'full VLA' if cfg.full_ft else 'adapter'} + decoder at step {step + 1}", flush=True)
                 dist.barrier()
             if step + 1 >= cfg.max_steps: break
     del batch; gc.collect()                                         # release the data iterator's memory before the merge reloads the 7B base
-    if cfg.merge and state.is_main_process:                         # merge LoRA into a standalone checkpoint for the evaluator
+    if cfg.merge and not cfg.full_ft and state.is_main_process:                         # merge LoRA into a standalone checkpoint for the evaluator
         base = AutoModelForVision2Seq.from_pretrained(cfg.vla_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True)
         if not cont or nq: base.resize_token_embeddings(len(processor.tokenizer))
         merged = PeftModel.from_pretrained(base, adapter_dir).merge_and_unload(); merged.save_pretrained(run_dir)

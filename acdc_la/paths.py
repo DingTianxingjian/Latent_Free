@@ -1,6 +1,6 @@
 """Filesystem constants for the ACDC-LA repo.  Everything else imports from here.
 
-Layout (all under /anvil/scratch/x-tding2):
+Layout (all under /lustre/fs1/home/ti874297/lf):
     latent_free/cache/{bridge_big, oxe/<source>}   frozen OXE caches: frames.npy + index.npz (+ lang_t5.npz, meta.json)
     latent_free/cache/torch/hub                     pre-fetched DINOv2 weights (compute nodes have no network)
     latent_free/data/distractor_video.npy           natural video used by the moving-patch nuisance
@@ -12,7 +12,7 @@ import os
 
 ACDC = os.path.dirname(os.path.abspath(__file__))
 LF = os.path.dirname(ACDC)                                   # latent_free/
-SCRATCH = os.path.dirname(LF)                                # /anvil/scratch/x-tding2
+SCRATCH = os.path.dirname(LF)                                # /lustre/fs1/home/ti874297/lf
 CACHE = os.path.join(LF, "cache")
 TORCH_HUB = os.path.join(CACHE, "torch", "hub")
 DISTRACTOR_VIDEO = os.path.join(LF, "data", "distractor_video.npy")
