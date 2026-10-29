@@ -7,6 +7,9 @@
 #   - a Python env like Newton's univla_vla: torch 2.2, transformers 4.40-4.44, tensorflow (CPU is fine), robosuite /
 #     mujoco / bddl as LIBERO-plus requires
 #   - LIBERO-plus (github sylvestf/LIBERO-plus) with assets.zip unzipped into libero/libero (HF Sylvest/LIBERO-plus)
+#     (the zip carries the uploader's absolute path: the tree to move up is inspire/hdd/.../LIBERO-plus-0/assets)
+#   - ImageMagick for Wand, which env_wrapper.py imports at module level.  From the system package manager it
+#     just works; from a conda prefix it needs MAGICK_HOME + LD_PRELOAD, see run_liberoplus_eval_ws.sh
 #   - the post-trained run dir (merged model + action_decoder.pt + dataset_statistics.json)
 # Shards are dealt round-robin over GPUS; each GPU runs its shards one after another (one 7B policy per GPU, ~20 GB).
 # Results: acdc_la/results/vla_eval_plus/cont_<suite>_plus_<NOTE>_s<k>of<NSHARD>.json (copy back to Newton, then

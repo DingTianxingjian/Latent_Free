@@ -3693,6 +3693,44 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Artifacts.** `acdc_la/results/vla_eval/merged_libero_10_nw_p2fft5000_libero_10_frac10.json`, logs
   `acdc_la/logs/p3_1080187.out`, `acdc_la/logs/p2_fft_1086074.out`.
 
+### 2026-10-29 (17:35) — LIBERO-Plus Long moved to the UCF workstation: environment up and the pipeline verified end to end on one task; the suite itself has not run yet
+
+- **Configuration.**  LIBERO-Plus `libero_10` = **2519 tasks**, 1 trial each, the same 8 strided shards and note
+  `p2ours_full` Newton used for the other three suites, dealt over the workstation's 2 GPUs; policy
+  `tc_cont+libero_10_no_noops+b32x4+lr0.00035+r32+s40000+fm+q4--p2ours_libero_10_full` (Newton, full-data post-training).
+  Launcher `acdc_la/scripts/run_liberoplus_eval_ws.sh` (new) wrapping `run_liberoplus_eval_portable.sh`.
+- **Two forced deviations from Newton's environment.**  Neither touches the policy, the task set or the init states.
+  (i) LIBERO-plus comes from upstream instead of Newton: `github sylvestf/LIBERO-plus` @ `4976dc3` plus the HF
+  `assets.zip` (6,395,849,578 B, sha256 `96764a4b…`).  The zip carries the uploader's absolute path, so the real tree
+  sits at `inspire/hdd/.../LIBERO-plus-0/assets` and was moved up to `libero/libero/assets`: 9.5 GB / 448,799 files,
+  9.7 GB for the whole tree, the same size Newton reports for its copy.  (ii) ImageMagick **7** from conda-forge in a
+  private prefix instead of apt's 6.9 (no sudo on this host), with `MAGICK_HOME` and an `LD_PRELOAD` of conda's glib
+  and libjpeg so the conda libraries win the soname lookup against the ones cv2 and torchvision bundle (both error
+  messages are recorded in the launcher header).  The ImageMagick version reaches only the Sensor Noise motion blur,
+  whose angle is drawn uniformly at random per call, so it is far inside the category's own stochasticity.
+- **Pipeline check — NOT a result.**  The September 10 %-demo Goal arm
+  (`tc_cont+libero_goal_no_noops+…--latp2inv_fmq4_frac10`) on two LIBERO-Plus **Goal** tasks: builds the perturbed env
+  with the new assets, renders offscreen under EGL, loads the flow head (10 Euler steps), 2/2 success, writes
+  `per_task_id` and the shard json, 11–13 s per successful task.  The json was deleted: that policy is not the one
+  under test and its number means nothing.  The same policy on `libero_10` stops at `unnorm_key` (its
+  `dataset_statistics.json` has only `libero_goal_no_noops`) — expected, and the reason the real run needs Newton's
+  Long policy.
+- **Conclusion — planned.**  The Long suite is blocked only on the 15 GB policy: Newton accepts
+  `password,keyboard-interactive` and refuses public keys, and Claude Code's shell has no tty
+  (`read_passphrase: can't open /dev/tty`), so the copy needs an ssh ControlMaster the user opens in a real terminal.
+- **Disk (user decision, 2026-10-29).**  Deleted `/data/ti874297/oxe_raw` (3.6 TB, the 29-source phase-2 RLDS mixture —
+  phase 2 runs on Newton now) and two superseded 2026-09-14 smoke run dirs (30 GB).  /data 1.8 → 5.4 TB free, / 167 →
+  194 GB.  **Kept** the stage-1/2 feature cache (`latent_free_cache/oxe` 1.8 TB + `bridge_big` 95 GB), which the
+  registered low-bottleneck TC sweep would need.
+- **Also.**  The workstation's uncommitted 2026-10-08 phase-2 memory work (`ACDC_WINDOW_KEEP` + `ACDC_MIX_SHARDS`, with
+  the measurement that the 29-source pipeline needs ~48 GB per rank under `chunk_act_obs_libero`) is parked on the
+  local branch `ws-oct08-memfix`, superseded by this branch's `CTRL_OBS_KEEP`, which keeps both `ro` windows.
+- **Artifacts.**  `acdc_la/scripts/run_liberoplus_eval_ws.sh`, header note in `run_liberoplus_eval_portable.sh`;
+  `/data/ti874297/liberoplus/{LIBERO-plus,magick,get_liberoplus.log,pipecheck.log}`;
+  `acdc_la/logs/liberoplus_pipecheck_libero_goal_s0of2000.log`.
+- **Next.**  Copy the run dir from Newton, run all 8 shards, then copy the shard jsons back to
+  `acdc_la/results/vla_eval_plus/` on Newton and run `liberoplus_summary --note p2ours_full` for the four-suite table.
+
 ## Registered next method: intervention first, real pairs second
 
 
