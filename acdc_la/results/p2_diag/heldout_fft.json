@@ -1,0 +1,20 @@
+{
+ "tag": "latp2_inv",
+ "suite": "libero_10",
+ "split": "train[95%:]",
+ "n": 2000,
+ "dz": 256,
+ "vla": "acdc_la/ckpt/vla_runs/tc_cont+libero_10_no_noops+b32x2+lr0.00035+r32+s15000+fm+q4--p2fft5000_libero_10_frac10",
+ "flow_steps": 10,
+ "r2_prior": null,
+ "r2_prior_per_token": null,
+ "prior_rms": NaN,
+ "target_rms": 0.8463252782821655,
+ "r2_vla": 0.22654211521148682,
+ "vla_rms": 0.8049942255020142,
+ "r2_prior_vs_vla": null,
+ "act_l1_chunk": 0.1644602253213525,
+ "act_l1_first": 0.16451448696572332,
+ "act_l1_first_arm": 0.17789475587569178,
+ "gripper_err_first": 0.08423285124101676
+}

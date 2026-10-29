@@ -1,0 +1,62 @@
+{
+ "libero_spatial": {
+  "Camera": 6.382978723404255,
+  "Robot": 57.42857142857143,
+  "Language": 86.7579908675799,
+  "Light": 94.52054794520548,
+  "Background": 98.83720930232558,
+  "Noise": 17.613636363636363,
+  "Layout": 91.66666666666667,
+  "category_mean": 64.74394304248425,
+  "all": 59.114735002912056,
+  "n": 1717
+ },
+ "libero_object": {
+  "Camera": 0.0,
+  "Robot": 53.0,
+  "Language": NaN,
+  "Light": NaN,
+  "Background": 88.70967741935483,
+  "Noise": NaN,
+  "Layout": NaN,
+  "category_mean": 47.23655913978494,
+  "all": 50.23255813953488,
+  "n": 215
+ },
+ "libero_goal": {
+  "Camera": NaN,
+  "Robot": NaN,
+  "Language": NaN,
+  "Light": NaN,
+  "Background": NaN,
+  "Noise": NaN,
+  "Layout": NaN,
+  "category_mean": NaN,
+  "all": NaN,
+  "n": 0
+ },
+ "libero_10": {
+  "Camera": NaN,
+  "Robot": NaN,
+  "Language": NaN,
+  "Light": NaN,
+  "Background": NaN,
+  "Noise": NaN,
+  "Layout": NaN,
+  "category_mean": NaN,
+  "all": NaN,
+  "n": 0
+ },
+ "ALL": {
+  "Camera": 5.594405594405594,
+  "Robot": 56.44444444444444,
+  "Language": 86.7579908675799,
+  "Light": 94.52054794520548,
+  "Background": 96.875,
+  "Noise": 17.613636363636363,
+  "Layout": 91.66666666666667,
+  "category_mean": 64.21038455456264,
+  "all": 58.126293995859214,
+  "n": 1932
+ }
+}

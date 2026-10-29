@@ -1,0 +1,100 @@
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+Using cache found in /lustre/fs1/home/ti874297/lf/latent_free/cache/torch/hub/facebookresearch_dinov2_main
+10/29 [07:20:34] INFO     | >> using MLP layer as FFN  vision_transformer.py:125
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:17<00:53, 17.94s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:19<00:17,  8.51s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:21<00:05,  5.56s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:22<00:00,  3.45s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:22<00:00,  5.53s/it]
+10/29 [07:21:41] INFO     | >> Load dataset info from        dataset_info.py:599
+                          /lustre/fs1/home/ti874297/lf/laten                    
+                          t_free/data/libero_rlds/libero_10_                    
+                          no_noops/1.0.0                                        
+                 INFO     | >> Constructing tf.data.Dataset logging_logger.py:49
+                          liber_o10 for split all, from                         
+                          /lustre/fs1/home/ti874297/lf/late                     
+                          nt_free/data/libero_rlds/libero_1                     
+                          0_no_noops/1.0.0                                      
+10/29 [07:21:42] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/libero_rlds/libero_10_no_n                  
+                          oops/1.0.0/dataset_statistics_486287                  
+                          70a43b779389f0b557ddf8044bae3564b697                  
+                          e83941332b31d4b7dcdfd5.json.                          
+                 INFO     | >> Constructing tf.data.Dataset logging_logger.py:49
+                          liber_o10 for split train[95%:],                      
+                          from                                                  
+                          /lustre/fs1/home/ti874297/lf/late                     
+                          nt_free/data/libero_rlds/libero_1                     
+                          0_no_noops/1.0.0                                      
+
+######################################################################################
+# Loading the following 1 datasets (incl. sampling weight):                         #
+# libero_10_no_noops: ======================================================1.000000 #
+######################################################################################
+
+                 INFO     | >> [*] Threads per Dataset: [1]       dataset.py:581
+                 INFO     | >> [*] Reads per Dataset: [1]         dataset.py:582
+                 INFO     | >> [*] Constructing datasets...       dataset.py:585
+                 INFO     | >> Load dataset info from        dataset_info.py:599
+                          /lustre/fs1/home/ti874297/lf/laten                    
+                          t_free/data/libero_rlds/libero_10_                    
+                          no_noops/1.0.0                                        
+                 INFO     | >> Constructing tf.data.Dataset logging_logger.py:49
+                          liber_o10 for split train[95%:],                      
+                          from                                                  
+                          /lustre/fs1/home/ti874297/lf/late                     
+                          nt_free/data/libero_rlds/libero_1                     
+                          0_no_noops/1.0.0                                      
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+10/29 [07:21:43] INFO     | >> [*] Applying frame transforms on   dataset.py:627
+                          dataset...                                            
+  actions = [torch.from_numpy(instance["actions"]) for instance in instances]
+image_names {'primary'}
+keys dict_keys(['language_instruction', 'pad_mask_dict', 'image_primary', 'timestep'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+{
+ "tag": "latp2_inv",
+ "suite": "libero_10",
+ "split": "train[95%:]",
+ "n": 2000,
+ "dz": 256,
+ "vla": "acdc_la/ckpt/vla_runs/tc_cont+libero_10_no_noops+b32x2+lr0.00035+r32+s15000+fm+q4--p2fft5000_libero_10_frac10",
+ "flow_steps": 10,
+ "r2_prior": null,
+ "r2_prior_per_token": null,
+ "prior_rms": NaN,
+ "target_rms": 0.8463252782821655,
+ "r2_vla": 0.22654211521148682,
+ "vla_rms": 0.8049942255020142,
+ "r2_prior_vs_vla": null,
+ "act_l1_chunk": 0.1644602253213525,
+ "act_l1_first": 0.16451448696572332,
+ "act_l1_first_arm": 0.17789475587569178,
+ "gripper_err_first": 0.08423285124101676
+}
+[prior-gate] wrote acdc_la/results/p2_diag/heldout_fft.json

@@ -7,7 +7,7 @@ W&B is replaced by a jsonl log (compute nodes have no network).
 
   torchrun --standalone --nproc-per-node 4 -m acdc_la.downstream.vla.finetune_libero_ctrl --latent acdc --max_steps 15000
 """
-import os, sys, gc, json, time, math
+import os, sys, gc, json, time, math, subprocess
 from functools import partial
 from dataclasses import dataclass
 from pathlib import Path
@@ -234,6 +234,12 @@ class Cfg:
     # full VLA state dict (bf16) as vla_full.pt next to the heads; --init_from_run reads it back.
     full_ft: bool = False
     univla_optim: bool = False                             # UniVLA's stage-2 optimiser (prismatic/conf/vla.py): weight decay 0, CONSTANT lr (no 0.1 step at 80 %)
+    # LR-DECAY BRANCH (2026-10-29, WSD-style): UniVLA's stage 2 keeps the lr constant; a branch run starts from another
+    # full_ft run's sharded checkpoint (hard links into its own run dir, then the usual --resume) and decays the lr
+    # linearly from learning_rate at step decay_start to 0 at max_steps.  The source run is left untouched.
+    branch_from: Optional[str] = None                      # source run dir (full_ft only); its checkpoint must be at step decay_start
+    decay_start: int = -1                                  # >= 0: linear lr decay to 0 over [decay_start, max_steps)
+    warmup_steps: int = 0                                  # > 0: linear lr warmup from 0 over the first warmup_steps updates (2026-10-29)
     log_every: int = 25
 
 
@@ -319,6 +325,14 @@ def finetune(cfg: Cfg) -> None:
         assert len(processor.tokenizer) == LATENT_TOKEN_BASE + 1, len(processor.tokenizer)
         processor.tokenizer.add_special_tokens({"additional_special_tokens": [f"<ACT_{i}>" for i in range(nq or codebook_size)]})
         vla.resize_token_embeddings(len(processor.tokenizer))
+    # Post-training a FULL-parameter phase-2 run (2026-10-27): its whole VLA (vla_full.pt) is the BASE and a LoRA goes on
+    # top, as UniVLA post-trains its fully pretrained model.  Loaded from --init_from_run on every start, so a --resume
+    # (adapter from this run) sits on the same base, and the final merge uses it too.
+    full_init = None
+    if not cfg.full_ft and cfg.init_from_run and os.path.exists(os.path.join(cfg.init_from_run, "vla_full.pt")):
+        full_init = os.path.join(cfg.init_from_run, "vla_full.pt")
+        vla.load_state_dict(torch.load(full_init, map_location="cpu"))
+        if state.is_main_process: print(f"[ctrl] base VLA from {full_init}", flush=True)
     if not cfg.full_ft: vla = vla.to(device_id)
     lora = LoraConfig(r=cfg.lora_rank, lora_alpha=min(cfg.lora_rank, 16), lora_dropout=cfg.lora_dropout, target_modules="all-linear",
                       init_lora_weights="gaussian", modules_to_save=(["embed_tokens"] if nq else None) if cont else ["embed_tokens", "lm_head"])
@@ -341,6 +355,9 @@ def finetune(cfg: Cfg) -> None:
     elif src_ad and os.path.exists(os.path.join(src_ad, "adapter_config.json")):
         vla = PeftModel.from_pretrained(vla, src_ad, is_trainable=True)
         if state.is_main_process: print(f"[ctrl] LoRA from {src_ad}", flush=True)
+    elif full_init and src_run == cfg.init_from_run:
+        vla = get_peft_model(vla, lora)                              # fresh LoRA on the full phase-2 base loaded above
+        if state.is_main_process: print(f"[ctrl] fresh LoRA on the full phase-2 base", flush=True)
     else:
         assert not src_run, f"no adapter at {src_ad}"
         vla = get_peft_model(vla, lora)
@@ -373,6 +390,20 @@ def finetune(cfg: Cfg) -> None:
     opt = AdamW([p for p in model.parameters() if p.requires_grad], lr=cfg.learning_rate, **(dict(weight_decay=0.0) if cfg.univla_optim else {}))
     sched = torch.optim.lr_scheduler.StepLR(opt, step_size=int(cfg.max_steps * 0.8), gamma=1.0 if cfg.univla_optim else 0.1)
     step0, tstate = 0, run_dir / "trainer_state.pt"                 # --resume: optimiser, schedule and step count
+    seed = [bool(cfg.branch_from) and not tstate.exists()]       # rank 0 decides: the others must not race its copy
+    if cfg.branch_from: dist.broadcast_object_list(seed, src=0)
+    if seed[0]:
+        assert cfg.full_ft and cfg.resume and cfg.decay_start >= 0, "--branch_from needs --full_ft, --resume and --decay_start"
+        src = Path(cfg.branch_from)
+        if state.is_main_process:
+            src_step = int(torch.load(src / "trainer_state.pt", map_location="cpu")["step"])
+            assert src_step == cfg.decay_start, f"--branch_from {src} is at step {src_step}, not --decay_start {cfg.decay_start}"
+            import shutil
+            if (run_dir / "fsdp_ckpt").exists(): shutil.rmtree(run_dir / "fsdp_ckpt")
+            subprocess.run(["cp", "-al", str(src / "fsdp_ckpt"), str(run_dir / "fsdp_ckpt")], check=True)   # hard links: no copy, source untouched
+            shutil.copy2(src / "trainer_state.pt", str(tstate) + ".tmp"); os.replace(str(tstate) + ".tmp", tstate)
+            print(f"[ctrl] branch from {src} at step {src_step}", flush=True)
+        dist.barrier()
     if cfg.resume and not tstate.exists() and state.is_main_process:
         # exp_id carries max_steps: a chunked run must pass the SAME --max_steps every time, or it resumes nothing.
         print(f"[ctrl] --resume: no {tstate}, starting from scratch", flush=True)
@@ -425,6 +456,10 @@ def finetune(cfg: Cfg) -> None:
             l1_buf.append(float(loss_1 if cfg.head == "flow" else act_loss))   # flow: one-step action L1, not the flow loss
         step = step0 + bi // cfg.grad_accumulation_steps
         if (bi + 1) % cfg.grad_accumulation_steps == 0:
+            if cfg.decay_start >= 0 and step >= cfg.decay_start:     # set before every update; StepLR (gamma 1) keeps it
+                for g in opt.param_groups: g["lr"] = cfg.learning_rate * (cfg.max_steps - step) / (cfg.max_steps - cfg.decay_start)
+            if 0 < cfg.warmup_steps and step <= cfg.warmup_steps:   # StepLR's chainable form keeps the group lr between its steps
+                for g in opt.param_groups: g["lr"] = cfg.learning_rate * min(1.0, (step + 1) / cfg.warmup_steps)
             (model.clip_grad_norm_(1.0) if cfg.full_ft else torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)); opt.step(); opt.zero_grad(); sched.step()
             if state.is_main_process and (step + 1) % cfg.log_every == 0:
                 key = "latent_r2" if model.module.continuous else "token_acc"
@@ -475,6 +510,7 @@ def finetune(cfg: Cfg) -> None:
     if cfg.merge and not cfg.full_ft and state.is_main_process:                         # merge LoRA into a standalone checkpoint for the evaluator
         base = AutoModelForVision2Seq.from_pretrained(cfg.vla_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True)
         if not cont or nq: base.resize_token_embeddings(len(processor.tokenizer))
+        if full_init: base.load_state_dict(torch.load(full_init, map_location="cpu"))     # the phase-2 base the LoRA was trained on
         merged = PeftModel.from_pretrained(base, adapter_dir).merge_and_unload(); merged.save_pretrained(run_dir)
         print(f"[ctrl-done] merged checkpoint at {run_dir} ({int(time.time() - t0)}s)", flush=True)
     dist.barrier()

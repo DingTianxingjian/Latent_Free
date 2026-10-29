@@ -3546,6 +3546,147 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   `acdc_la/scripts/test_obs_keep.py` reads T from the checkpoint).  Smoke (2 GPUs, batch 1): 30 steps, sharded saves and
   final weights OK; `--resume` OOMs on 2 GPUs (61 GB/GPU of fp32 state) -- still to be tested on >= 4 GPUs.
 
+### 2026-10-27 — REGISTERED (not run): counterfactual evaluation of the latent by simulator replay
+
+- **Why.** Every encoder measurement so far is indirect: real data has no counterfactual (the same action executed in
+  another scene), so the probes measure whether a donor's action semantics SURVIVE in a recipient scene, never whether
+  the predicted future is RIGHT (paper limitations say so).  A simulator can produce the counterfactual exactly.
+- **Main experiment (factorial replay, LIBERO / robosuite).**  Replay demo i's action sequence (EEF deltas) open-loop
+  from another scene's initial state; N actions x M scenes, the 2x2 cell being (A,a) (A,b) (B,a) (B,b).
+  Two perturbation families, reported SEPARATELY: (i) appearance only -- DomainRandomizationWrapper with color/texture +
+  lighting ON, camera + dynamics OFF, so physics and outcome are identical and only pixels change; (ii) geometry --
+  another demo's initial state (object positions differ), so the open-loop outcome really differs.
+  Metrics: invariance z(A,a) ~ z(B,a); separability z(A,a) != z(A,b) (incl. retrieval); TRANSPORT with ground truth --
+  decode(f0_B, z(A,a)) vs the replayed (B,a) future in DINO feature space, against copy-donor / zero-effect / own-z
+  references; relational consistency (a - b effect difference in A vs in B, the L_rel claim).  Plus the PROXY ERROR:
+  the gap between the donor effect EAT anchors to (dF_i) and the true counterfactual dF_{B,a} -- expected ~0 for (i)
+  and large for (ii) because Psi is computed per 4x4 cell, which states where the EAT assumption holds.
+  Tokenizers: tc_cont (reconstruction only), latp2_anchor (EAT without L_inv), latp2_inv (full), UniVLA LAM
+  (s2mix_1ep), optionally latp2_inv_full.  Zero-shot first.  Prerequisite: replay determinism (same scene + same
+  actions -> identical frames) checked before any number is read.
+- **Side experiments.**  Scene-leakage linear probes on z (scene/task/source id: lower is better; action: higher is
+  better) for the same tokenizers -- cheap, indirect.  Real-data cross-scene action retrieval on Bridge/DROID (near-
+  identical action chunks, distant first frames by DINO distance) if time allows.  LIBERO-Plus has systematic scene
+  perturbations but no replay pairs, so it cannot supply the transport ground truth.
+- **Status.** LIBERO HDF5 demos downloading to `data/LIBERO_hdf5` (job 1079786).  No result yet.
+
+### 2026-10-27 — scene-leakage linear probes (the cheap side experiment): no within-source scene information in z; the pooled "leakage" is dataset/embodiment identity
+
+- **Setup.** `acdc_la/stage1_preserve/leakage_probes.py` on the full-cache validation dumps (11,456 clips, 29 sources;
+  one episode-disjoint 70/30 split shared by all tags; ridge with LOO-CV alpha, logistic for source id).  Tags dumped
+  on the same split: `tc_cont_ref` (reconstruction only), `latp2_anchor_ref` (EAT, no L_inv), `latp2_inv_ref` (full),
+  `latp2_inv_full`.  First version used a fixed ridge alpha=10 and over-fit the per-source sets (all R^2 < 0) --
+  superseded by the CV version below.
+
+  | z (256-d) | pooled: source bal. acc | pooled: appearance R^2 | within-source: appearance R^2 | within: action net R^2 | within: action seq R^2 |
+  |---|---|---|---|---|---|
+  | tc_cont | 0.598 | 0.167 | -0.446 | 0.270 | 0.199 |
+  | latp2_anchor | 0.681 | 0.229 | -0.094 | 0.317 | 0.232 |
+  | latp2_inv | 0.782 | 0.254 | -0.025 | 0.340 | 0.240 |
+  | latp2_inv_full | 0.818 | 0.266 | 0.031 | 0.358 | 0.268 |
+  | F0Q (first frame, reference) | 1.000 | 1.000 | 0.998 | -0.118 | -0.194 |
+
+  (chance source acc 0.034; appearance = PCA of F0Q, 32 pooled / 16 per source; 26 sources with >= 80 test clips.)
+- **Reading.** Within a source, NO tokenizer carries linearly decodable first-frame appearance (R^2 <= 0.03), while
+  the action information rises tc_cont < anchor < inv < inv_full.  The pooled increase of source accuracy and
+  appearance R^2 with the LATP objectives is therefore between-source: z identifies the dataset/robot better, which
+  goes with encoding its actions better (source id carries embodiment and action space).  **Conclusion status: no
+  evidence of scene leakage, and no evidence FOR the invariance claim either** -- a linear probe that already reads
+  ~0 for the reconstruction-only baseline cannot show an invariance gain.  The counterfactual replay experiment is the
+  direct test.  Results: `acdc_la/results/leakage_probes.json`, logs `acdc_la/logs/leak_probes_*.out`.
+
+### 2026-10-28 — LIBERO-PRO (robustness) on the full-data post-trained arm-A policies: language robust, object replacement weak, position/task ~0 with the few successes concentrated in single tasks
+
+- **Setup.** LIBERO-PRO (arXiv 2510.03827; code Zxy-MLlab/LIBERO-PRO @ eafdb80; bddl/init files HF zhouxueyang/LIBERO-Pro)
+  with our evaluator (`run_libero_eval_cont`, center crop, seed 7, base-suite max steps, base-suite action stats),
+  launcher `acdc_la/scripts/run_liberopro_eval_newton.sh`, separate LIBERO config dir.  Policies: the four
+  full-split post-trained runs (1/10-scale LoRA phase 2, latp2_inv labels; standard LIBERO 97.2/98.8/94.4/89.0).
+  10 trials x 10 tasks = 100 episodes per cell.  The env perturbation (runtime scene generation) was not run.
+
+  | suite | lan (Sem) | object (Obj) | swap (Pos) | task (Task) |
+  |---|---|---|---|---|
+  | Spatial | 0.93 | 0.96 | 0.00 | 0.00 |
+  | Object | 0.97 | 0.83 | 0.11 | 0.00 |
+  | Goal | 0.98 | 0.61 | 0.11 | 0.09 |
+  | Long | 0.90 | 0.55 | 0.03 | 0.07 |
+
+  Leaderboard (authors' settings, not ours): OpenVLA Pos/Task 0.00 everywhere, Obj 0.81-0.98; Pi0.5 Pos 0.08-0.38,
+  Task 0.00-0.01, Obj 0.92-0.98; X-VLA Task 0.00-0.10.
+- **Per task.** The non-zero swap/task cells are each ONE task: Goal swap 9/10 "open the top drawer and put the bowl
+  inside" (all others <= 2/10), Object swap 10/10 cream cheese (others <= 1/10), Long swap 3/10 book, Goal task 9/10
+  "turn on the stove", Long task 7/10 "put both moka pots on the stove".  Object-replacement failures sit on specific
+  targets (alphabet soup 0/10 in Object and Long, book 0/10, bowl tasks in Goal 0-1/10) while tasks whose target is
+  unchanged stay at 9-10/10.
+- **Reading.** The pattern is that of a policy replaying memorised trajectories: success under swap/task where the
+  perturbation leaves the memorised motion's end point valid, failure elsewhere -- the LIBERO-PRO thesis, which our
+  policy does not escape.  The Pos/Task cells above OpenVLA are therefore NOT evidence of spatial generalisation.
+  Obj is clearly below OpenVLA/Pi0.5 on Goal and Long.  High Sem is consistent with the paper's observation that
+  policies largely ignore the instruction.  Not a fair head-to-head: different evaluators; a same-evaluator baseline
+  (e.g. UniVLA's released LIBERO checkpoints) is needed before any comparison is claimed.
+- **Artifacts.** `acdc_la/results/vla_eval_pro/merged_*_pro_p2ours_full.json`, logs `acdc_la/logs/liberopro_*`.
+  The first Object-suite attempt failed (a stale empty run dir matched the same glob); rerun with the explicit path.
+
+### 2026-10-28 — full-parameter phase 2: intermediate check at step 5000 (10 % Long 57.6 vs 61.6 at 1/10 LoRA, within noise); crash at 5250 and in-allocation retry
+
+- **Setup.** Snapshot of the UniVLA-scale full-parameter phase-2 run (FSDP, acdc_oxe29, latp2_inv labels, global batch
+  1024, lr 2e-5 constant) at step 5000 of 20k, consolidated (`consolidate_fft_ckpt.py`), then the SAME downstream recipe
+  as the 1/10-scale LoRA cell: 10 % LIBERO-Long post-training, 500 episodes (job 1080187, `p2fft_midcheck_newton.sh`).
+- **Result.** 288/500 = **57.6 %** vs 61.6 % (1/10-scale LoRA phase 2).  Per task (fft5000 / LoRA): 0 22/42, 1 80/82,
+  2 92/84, 3 78/70, 4 40/54, 5 4/36, 6 66/76, 7 86/72, 8 42/24, 9 66/76.  Difference 4.0 points, about 1.3 sigma of
+  two independent 500-episode rates; mixed signs per task; task 5 (book) carries most of it.  Reading: no evidence
+  that the full-parameter run is better OR worse at 25 % of training; the decision waits for step 20k.
+- **Phase-2 objective vs downstream.** At step 5000 the full-parameter run has seen 5.1M samples (5000 x 1024), 2.7x
+  the LoRA run's 1.9M (30000 x 64), and its training latent R2 is already higher (0.820 at 4.5-5k vs 0.807 at the
+  LoRA run's end, after its 10x lr decay at 24k; the full run's lr stays 2e-5 by UniVLA's recipe).  A better phase-2
+  fit did not give a better 10 % Long policy.  (`p_oracle` in the log has no effect with `--head flow`.)
+- **Decided 2026-10-29: LR-decay branch after 20k.**  The main run stays UniVLA's recipe (constant 2e-5) to 20k for the
+  head-to-head; then a WSD-style branch from the 20k checkpoint, 2k more steps with lr linear 2e-5 -> 0, in its own run
+  dir (`finetune_libero_ctrl.py --branch_from <run> --decay_start 20000 --max_steps 22000`, launcher usage in
+  `run_vla_phase2_fft_newton.sh`).  Both are post-trained and evaluated the same way; the branch is reported as a
+  recipe variant (10 % more phase-2 steps than UniVLA).  Not queued yet: submit when the main run reaches 20k.
+
+### 2026-10-29 — why full-parameter phase 2 (step 5000) post-trains worse than the 1/10 LoRA: the first post-training update wipes its latent head (optimisation shock), warmup prevents it
+
+- **Question (user).** 10 % Long: fft step 5000 57.6 % vs 1/10 LoRA 61.6 % although the fft run saw 2.7x the samples
+  and fits phase 2 better.  Is it really worse, why, can it be reversed?
+- **Ruled out.**  (1) Config differences: the two post-training runs are identical (ctrl_meta, env, launcher) except
+  that the LoRA arm CONTINUES its phase-2 adapter while the fft arm gets a fresh LoRA on the full base (by design).
+  (2) Consolidation bug: the sharded checkpoint holds exactly the 1,073 `model.*` keys the skeleton expects (no wrapper
+  prefixes); heads load strictly; at lr 0 the consolidated model reproduces its phase-2 objective on OXE (R2 0.829 vs
+  0.82 in the training log).  (3) "Full FT drifts further": relative weight change vs openvla-7b is SMALLER for fft
+  (LLM attn/mlp 6.1/7.0 %, projector 11 %, DINO/SigLIP 2.1/2.0 %) than for the LoRA delta (12.4/10.6 %, 19 %,
+  9.1/10.4 %); head weight RMS 0.027 (fft) vs 0.049 (LoRA).  (4) Poor transfer: zero-shot latent R2 on LIBERO at
+  lr 0 is 0.603 (fft) vs 0.637 (LoRA) -- a small gap, not a failure.
+- **The cause: optimisation shock at the first post-training update.**  Replay of the first 50 updates (1 GPU,
+  batch 64, lr 3.5e-4, fresh AdamW): fft R2 0.70 before the first step, **-0.04 after it** (mean 0.085 over updates
+  2-10), one-step action L1 0.46 -> **1.23**; R2 back to 0.45 by update 50.  LoRA arm: 0.58-0.74 throughout, max L1
+  0.51.  Reproduced in the real runs: first 25 logged steps R2 0.158 (fft) and 0.074 (fft replicate) vs 0.658 / 0.653
+  (LoRA, LoRA replicate); 0.125 for the no-phase-2 control.  The fft curve then sits between LoRA and no-phase-2
+  (steps 100-300: 0.70 / 0.62 / 0.51) and all three converge by ~1.5k steps.  Reading: the fft model (heads and
+  backbone) was trained at lr 2e-5; post-training's lr is 17x larger and a fresh Adam's first steps move every
+  parameter by ~lr, which its solution does not survive.  The LoRA arm was trained at 3.5e-4 already, so post-training
+  is a continuation of its own regime.  The phase-2 latent knowledge of the fft arm is therefore largely discarded
+  and re-learned from LIBERO's 10 % demos.
+- **Held-out split (train[95%:], 2000 windows, flow-sampled as deployed) of the two FINAL 10 % Long policies.**
+  Latent R2 0.227 (fft) vs 0.184 (LoRA); action L1 over the chunk 0.165 vs 0.154; first-step arm L1 0.178 vs 0.169;
+  **first-step gripper error 0.084 vs 0.048**.  Small action deficit, mostly gripper; consistent with, not proof of,
+  the closed-loop gap.
+- **Fix, offline check.**  `--warmup_steps` (linear lr warmup, new trainer flag): with 200 warmup updates the fft
+  arm's R2 stays 0.59-0.69 for all 310 logged updates while action L1 falls 0.51 -> 0.14 -- no collapse.
+- **Running (decides "really worse" and "reversible").**  Replicates without warmup: LoRA (1090393), fft (1091573);
+  no-phase-2 control (1090395); fft + 500-step warmup (1091917).  All 10 % Long, 15k steps, 500-episode evaluation.
+  Post-training of every full-parameter base (incl. the final 20k / decay models) should use warmup.
+- **Artifacts.** `acdc_la/results/p2_diag/` (zs_lib_*, ft_lib_*, zs_oxe_* logs, heldout_*.json, weights.json),
+  `acdc_la/logs/p2_diag_wu200_1091619.out`, scripts `acdc_la/scripts/p2_diag_newton.sh`, `p2_diag_weights.py`;
+  `prior_gate.py` gained `--no_prior` and held-out action errors.
+- **Crash.** Segment 21 of job 951668 died at 02:55 inside the dcp resume at step 5250 (ranks out of
+  step in a collective, an impossible >1 EB allocation, NCCL timeout); the checkpoint was intact.  The wrapper treated
+  a non-zero exit as final and released the node, so the run had to queue again.  `run_vla_phase2_fft_newton.sh`
+  now retries a crashed trainer in the same allocation (give up after 3 crashes on the same checkpoint).  Resubmitted
+  as job 1086074 (4 x H100 HBM3, evc101, started 19:43); resumed at step 5250 with continuous metrics.
+- **Artifacts.** `acdc_la/results/vla_eval/merged_libero_10_nw_p2fft5000_libero_10_frac10.json`, logs
+  `acdc_la/logs/p3_1080187.out`, `acdc_la/logs/p2_fft_1086074.out`.
+
 ## Registered next method: intervention first, real pairs second
 
 

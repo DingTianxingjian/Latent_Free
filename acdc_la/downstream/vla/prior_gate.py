@@ -90,12 +90,13 @@ def main():
     ap.add_argument("--vla", default=None, help="run dir of a trained continuous arm: adds z_VLA on the same rows")
     ap.add_argument("--flow_steps", type=int, default=0); ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--no_prior", action="store_true", help="VLA rows only: skip LATP's prior (and T5)")
     a = ap.parse_args()
     dev = "cuda"
     torch.manual_seed(a.seed)
 
     labeller = TCVQLatentTokenizer(a.tag, dev=dev)
-    lang = LangT5(dev)
+    lang = None if a.no_prior else LangT5(dev)
     ds_name = f"{a.suite}_no_noops"
 
     vla = heads = None
@@ -126,7 +127,7 @@ def main():
     base = RLDSBatchTransformCtrl(labeller, "tc_cont", processor.tokenizer, image_transform=processor.image_processor.apply_transform,
                                   image_transform_lam=transforms.ToTensor(), prompt_builder_fn=PurePromptBuilder,
                                   window_size=meta.get("window_size", 12), query_tokens=nq)
-    tf = PriorProbeTransform(labeller, base, lang, meta.get("window_size", 12) // (labeller.T - 1), labeller.T)
+    tf = base if a.no_prior else PriorProbeTransform(labeller, base, lang, meta.get("window_size", 12) // (labeller.T - 1), labeller.T)
     ds = RLDSDataset(os.path.join(LF, "data", "libero_rlds"), ds_name, tf, resize_resolution=(IMG, IMG),
                      shuffle_buffer_size=2048, image_aug=False, window_size=meta.get("window_size", 12) + 2,
                      training_phase="post-training", train=False)        # train=False -> train[95%:], the held-out side
@@ -136,10 +137,11 @@ def main():
     gen = torch.Generator(device=dev).manual_seed(a.seed)
 
     Z, P, V, buf = [], [], [], []
+    AE = []                                                  # held-out action error of the sampled chunk (2026-10-29)
     for s in ds:
         buf.append(s)
         if len(buf) < a.batch: continue
-        Z += [b["latent_action_idx"].numpy() for b in buf]; P += [b["z_prior"].numpy() for b in buf]
+        Z += [b["latent_action_idx"].numpy() for b in buf]; P += [] if a.no_prior else [b["z_prior"].numpy() for b in buf]
         if vla is not None:
             batch = collator(buf)
             with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
@@ -149,20 +151,28 @@ def main():
             vis = out.hidden_states[-1][:, :npatch].float(); txt = out.hidden_states[-1][:, npatch:]
             m = batch["input_ids"].to(dev) > 32000
             txt = torch.stack([txt[i][m[i]] for i in range(len(txt))]).float()
-            zv = (heads.sample(vis, txt, steps, gen)[1] if meta.get("head") == "flow" else heads(vis, txt)[1])
+            if meta.get("head") == "flow":
+                xa, zv = heads.sample(vis, txt, steps, gen)
+                err = (xa.float() - batch["actions"].to(dev).float()).abs()                    # (B, W, 7), normalised actions
+                AE += [np.array([e.mean().item(), e[0].mean().item(), e[0, :6].mean().item(), e[0, 6].item()]) for e in err]
+            else:
+                zv = heads(vis, txt)[1]
             V += list(zv.float().cpu().numpy())
         buf = []
         if len(Z) >= a.n: break
-    Z, P = np.stack(Z[:a.n]), np.stack(P[:a.n])
+    Z = np.stack(Z[:a.n]); P = np.stack(P[:a.n]) if P else Z * np.nan
     res = dict(tag=a.tag, suite=a.suite, split="train[95%:]", n=len(Z), dz=int(Z.shape[1]), vla=a.vla,
-               flow_steps=steps if a.vla else None, r2_prior=_r2(Z, P),
-               r2_prior_per_token=[_r2(Z[:, i * (Z.shape[1] // labeller.tok.n_tokens):(i + 1) * (Z.shape[1] // labeller.tok.n_tokens)],
+               flow_steps=steps if a.vla else None, r2_prior=None if a.no_prior else _r2(Z, P),
+               r2_prior_per_token=None if a.no_prior else [_r2(Z[:, i * (Z.shape[1] // labeller.tok.n_tokens):(i + 1) * (Z.shape[1] // labeller.tok.n_tokens)],
                                        P[:, i * (Z.shape[1] // labeller.tok.n_tokens):(i + 1) * (Z.shape[1] // labeller.tok.n_tokens)])
                                    for i in range(labeller.tok.n_tokens)],
                prior_rms=float(np.sqrt((P ** 2).mean())), target_rms=float(np.sqrt((Z ** 2).mean())))
     if V:
         V = np.stack(V[:a.n]); res["r2_vla"] = _r2(Z, V); res["vla_rms"] = float(np.sqrt((V ** 2).mean()))
-        res["r2_prior_vs_vla"] = _r2(V, P)
+        res["r2_prior_vs_vla"] = None if a.no_prior else _r2(V, P)
+    if AE:                                                   # chunk L1, first-step L1, first-step arm (6) L1, first-step gripper |err|
+        AE = np.stack(AE[:a.n]).mean(0)
+        res.update(act_l1_chunk=float(AE[0]), act_l1_first=float(AE[1]), act_l1_first_arm=float(AE[2]), gripper_err_first=float(AE[3]))
     out = a.out or os.path.join(RESULTS, f"prior_gate_{a.tag}_{a.suite}.json")
     json.dump(res, open(out, "w"), indent=1)
     print(json.dumps(res, indent=1), flush=True); print(f"[prior-gate] wrote {out}", flush=True)

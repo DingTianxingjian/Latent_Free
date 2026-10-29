@@ -1,0 +1,20 @@
+{
+ "checkpoint": "acdc_la/ckpt/vla_runs/tc_cont+libero_goal_no_noops+b32x4+lr0.00035+r32+s30000+fm+q4--p2ours_libero_goal_full",
+ "suite": "libero_goal_object",
+ "trials": 10,
+ "per_task": {
+  "put the bowl on the stove": 0.7,
+  "open the top drawer and put the bowl inside": 0.5,
+  "push the plate to the front of the stove": 0.9,
+  "turn on the stove": 1.0,
+  "put the wine bottle on the rack": 0.8
+ },
+ "task_ids": [
+  1,
+  3,
+  5,
+  7,
+  9
+ ],
+ "success": 0.78
+}

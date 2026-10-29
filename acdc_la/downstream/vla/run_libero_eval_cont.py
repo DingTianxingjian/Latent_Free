@@ -42,6 +42,11 @@ def center_crop(img, crop_scale=0.9):
 MAX_STEPS = {"libero_spatial": 240, "libero_object": 300, "libero_goal": 320, "libero_10": 550, "libero_90": 420}
 
 
+def max_steps(suite):
+    """LIBERO-PRO suites (libero_goal_swap, libero_10_lan, ...) keep their base suite's step budget (LIBERO-PRO README)."""
+    return MAX_STEPS[suite] if suite in MAX_STEPS else MAX_STEPS[next(b for b in MAX_STEPS if suite.startswith(b + "_"))]
+
+
 class Ensembler:
     """UniVLA's temporal aggregation of overlapping chunks (run_libero_eval.py:118-165), verbatim in behaviour."""
     def __init__(self, window):
@@ -87,7 +92,9 @@ def main():
     steps = int(a.flow_steps or fk.get("steps", 10)) if flow else 0
     print(f"[cont-eval] head {'flow, ' + str(steps) + ' Euler steps' if flow else 'regression, text_direct=' + str(meta.get('head') == 'reg_text')}", flush=True)
     n_patches = vla.vision_backbone.featurizer.patch_embed.num_patches
-    unnorm_key = a.task_suite_name if a.task_suite_name in vla.norm_stats else f"{a.task_suite_name}_no_noops"
+    base = a.task_suite_name if a.task_suite_name in MAX_STEPS else next(b for b in MAX_STEPS if a.task_suite_name.startswith(b + "_"))
+    # LIBERO-PRO suites (libero_goal_swap, ...) act with the statistics of the base suite the policy was trained on
+    unnorm_key = next(k for k in (a.task_suite_name, f"{a.task_suite_name}_no_noops", base, f"{base}_no_noops") if k in vla.norm_stats)
     stats = vla.get_action_stats(unnorm_key); mask = np.array(stats.get("mask", np.ones_like(stats["q01"], dtype=bool)))
     low, high = np.array(stats["q01"]), np.array(stats["q99"])
 
@@ -97,12 +104,23 @@ def main():
     ens = Ensembler(W); t0 = time.time(); tot = succ = 0
     ids = os.environ.get("LIBERO_TASK_IDS")                      # see the note in run_libero_eval_ctrl.py
     ids = [int(x) for x in re.split(r"[,_]", ids)] if ids else list(range(suite.n_tasks))   # "_" as well as "," : sbatch --export splits on commas
+    shard = os.environ.get("LIBERO_TASK_SHARD")                  # "k/n": every n-th task from k (LIBERO-Plus: ~2,500 tasks per suite)
+    if shard: k, n = map(int, shard.split("/")); ids = ids[k::n]
     assert all(0 <= i < suite.n_tasks for i in ids), (ids, suite.n_tasks)
     out["task_ids"] = ids
     out_name = "cont_" + a.task_suite_name + (f"_{a.run_id_note}" if a.run_id_note else "")
     if os.environ.get("LIBERO_TASK_IDS"): out_name += "_t" + "_".join(str(i) for i in ids)
+    if shard: out_name += f"_s{k}of{n}"
+    out["per_task_id"] = {}                                      # keyed by task index: LIBERO-Plus variants share their instruction
     if os.environ.get("LIBERO_PAD_TO"): out_name += "_pad" + os.environ["LIBERO_PAD_TO"]
     out_name += ".json"
+    # LIBERO_RESUME=1 (2026-10-29, off-Newton LIBERO-Plus runs): keep the tasks an earlier run of the same shard finished
+    if os.environ.get("LIBERO_RESUME") and os.path.exists(os.path.join(a.local_log_dir, out_name)):
+        prev = json.load(open(os.path.join(a.local_log_dir, out_name)))
+        if prev.get("task_ids") == ids and prev.get("trials") == a.num_trials_per_task:
+            out["per_task"], out["per_task_id"] = prev.get("per_task", {}), prev.get("per_task_id", {})
+            tot = len(out["per_task_id"]) * a.num_trials_per_task; succ = round(sum(out["per_task_id"].values()) * a.num_trials_per_task)
+            print(f"[cont-eval] resuming {out_name}: {len(out['per_task_id'])}/{len(ids)} tasks already done", flush=True)
     # LIBERO_PAD_TO=max (2026-09-18, diagnostic): training batches right-pad shorter prompts to the batch's longest, and the
     # heads pool over ALL text positions, pads included (pad states attend to the whole instruction).  Evaluation has no
     # pads.  This pads each prompt to the suite's longest prompt, the typical training condition, to test whether that
@@ -115,6 +133,7 @@ def main():
         pad_to = max(_plen(suite.get_task(i).language) for i in range(suite.n_tasks)) if os.environ["LIBERO_PAD_TO"] == "max" else int(os.environ["LIBERO_PAD_TO"])
         out["pad_to"] = pad_to; print(f"[cont-eval] prompts right-padded to {pad_to} tokens (training-like)", flush=True)
     for ti in ids:
+        if str(ti) in out["per_task_id"]: continue                 # LIBERO_RESUME: done already
         task = suite.get_task(ti); inits = suite.get_task_init_states(ti)
         env, desc = get_libero_env(task, "openvla", resolution=256)
         nq = int(meta.get("query_tokens") or 0)
@@ -125,7 +144,7 @@ def main():
         for ep in range(a.num_trials_per_task):
             env.reset(); ens.reset(); obs = env.set_init_state(inits[ep]); t, done = 0, False
             gen = torch.Generator(device=dev).manual_seed(a.seed * 1_000_003 + ti * 1_000 + ep)   # flow noise: fixed per episode
-            while t < MAX_STEPS[a.task_suite_name] + a.num_steps_wait and not done:
+            while t < max_steps(a.task_suite_name) + a.num_steps_wait and not done:
                 if t < a.num_steps_wait:
                     obs, _, done, _ = env.step(get_libero_dummy_action("openvla")); t += 1; continue
                 img = center_crop(Image.fromarray(get_libero_image(obs, 224)).convert("RGB"))
@@ -145,11 +164,11 @@ def main():
                 act = invert_gripper_action(normalize_gripper_action(act, binarize=True))
                 obs, _, done, _ = env.step(act.tolist()); t += 1
             tsucc += int(done); tot += 1; succ += int(done)
-        env.close(); out["per_task"][desc] = tsucc / a.num_trials_per_task
+        env.close(); out["per_task"][desc] = tsucc / a.num_trials_per_task; out["per_task_id"][str(ti)] = tsucc / a.num_trials_per_task
         print(f"[cont-eval] task {ti} {desc[:44]}: {tsucc}/{a.num_trials_per_task}  running total {succ}/{tot} ({time.time()-t0:.0f}s)", flush=True)
         out["success"] = succ / tot
         json.dump(out, open(os.path.join(a.local_log_dir, out_name), "w"), indent=1)
-    print(f"[cont-eval] Current total success rate: {succ / tot:.3f} ({succ}/{tot})", flush=True)
+    print(f"[cont-eval] Current total success rate: {succ / max(tot, 1):.3f} ({succ}/{tot})", flush=True)
 
 
 if __name__ == "__main__":

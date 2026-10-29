@@ -1,0 +1,117 @@
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+[ctrl] tc_cont+libero_10_no_noops+b64x1+lr0.00035+r32+s50+fm+q4--diag_ft_lib_fft -> acdc_la/ckpt/diag_runs/tc_cont+libero_10_no_noops+b64x1+lr0.00035+r32+s50+fm+q4--diag_ft_lib_fft
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:00<00:00,  3.09it/s]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:00<00:00,  3.74it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00,  4.22it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00,  3.99it/s]
+Using cache found in /lustre/fs1/home/ti874297/lf/latent_free/cache/torch/hub/facebookresearch_dinov2_main
+10/29 [06:03:39] INFO     | >> using MLP layer as FFN  vision_transformer.py:125
+[ctrl] base VLA from acdc_la/ckpt/vla_runs/p2fft_ours_step5000/vla_full.pt
+[ctrl] fresh LoRA on the full phase-2 base
+trainable params: 241,918,880 || all params: 7,782,672,736 || trainable%: 3.1084
+[ctrl] heads from acdc_la/ckpt/vla_runs/p2fft_ours_step5000/action_decoder.pt
+10/29 [06:04:59] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/libero_rlds/libero_10_no_n                  
+                          oops/1.0.0/dataset_statistics_486287                  
+                          70a43b779389f0b557ddf8044bae3564b697                  
+                          e83941332b31d4b7dcdfd5.json.                          
+
+######################################################################################
+# Loading the following 1 datasets (incl. sampling weight):                         #
+# libero_10_no_noops: ======================================================1.000000 #
+######################################################################################
+
+                 INFO     | >> [*] Threads per Dataset: [1]       dataset.py:581
+                 INFO     | >> [*] Reads per Dataset: [1]         dataset.py:582
+                 INFO     | >> [*] Constructing datasets...       dataset.py:585
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+10/29 [06:05:00] INFO     | >> [*] Applying frame transforms on   dataset.py:627
+                          dataset...                                            
+image_names {'primary'}
+keys dict_keys(['language_instruction', 'pad_mask_dict', 'image_primary', 'timestep'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+10/29 [06:05:02] INFO     | >> [*] Saved dataset statistics    data_utils.py:293
+                          file at path                                          
+                          acdc_la/ckpt/diag_runs/tc_cont+liber                  
+                          o_10_no_noops+b64x1+lr0.00035+r32+s5                  
+                          0+fm+q4--diag_ft_lib_fft/dataset_sta                  
+                          tistics.json                                          
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+  actions = [torch.from_numpy(instance["actions"]) for instance in instances]
+[ctrl:tc_cont] step=1 latent_r2=0.7013 latent_loss=0.9219 action_l1_1step=0.4551 p_oracle=1.0000 lr=0.0003 seconds=9
+[ctrl:tc_cont] step=2 latent_r2=-0.0395 latent_loss=2.0490 action_l1_1step=1.2331 p_oracle=0.9667 lr=0.0003 seconds=16
+[ctrl:tc_cont] step=3 latent_r2=-0.0256 latent_loss=1.7921 action_l1_1step=0.6840 p_oracle=0.9333 lr=0.0003 seconds=22
+[ctrl:tc_cont] step=4 latent_r2=-0.0193 latent_loss=1.7892 action_l1_1step=0.5252 p_oracle=0.9000 lr=0.0003 seconds=29
+[ctrl:tc_cont] step=5 latent_r2=0.1483 latent_loss=1.6996 action_l1_1step=0.4375 p_oracle=0.8667 lr=0.0003 seconds=36
+[ctrl:tc_cont] step=6 latent_r2=0.1364 latent_loss=1.6810 action_l1_1step=0.3882 p_oracle=0.8333 lr=0.0003 seconds=43
+[ctrl:tc_cont] step=7 latent_r2=0.0473 latent_loss=1.6889 action_l1_1step=0.4265 p_oracle=0.8000 lr=0.0003 seconds=49
+[ctrl:tc_cont] step=8 latent_r2=0.2068 latent_loss=1.6969 action_l1_1step=0.3841 p_oracle=0.7667 lr=0.0003 seconds=56
+[ctrl:tc_cont] step=9 latent_r2=0.1688 latent_loss=1.6636 action_l1_1step=0.3733 p_oracle=0.7333 lr=0.0003 seconds=62
+[ctrl:tc_cont] step=10 latent_r2=0.1414 latent_loss=1.7094 action_l1_1step=0.3839 p_oracle=0.7000 lr=0.0003 seconds=69
+[ctrl:tc_cont] step=11 latent_r2=0.1583 latent_loss=1.6731 action_l1_1step=0.3714 p_oracle=0.6667 lr=0.0003 seconds=76
+[ctrl:tc_cont] step=12 latent_r2=0.0617 latent_loss=1.7226 action_l1_1step=0.4115 p_oracle=0.6333 lr=0.0003 seconds=82
+[ctrl:tc_cont] step=13 latent_r2=0.0245 latent_loss=1.6776 action_l1_1step=0.3810 p_oracle=0.6000 lr=0.0003 seconds=89
+[ctrl:tc_cont] step=14 latent_r2=0.2061 latent_loss=1.6802 action_l1_1step=0.3415 p_oracle=0.5667 lr=0.0003 seconds=95
+[ctrl:tc_cont] step=15 latent_r2=-0.1217 latent_loss=1.6251 action_l1_1step=0.3739 p_oracle=0.5333 lr=0.0003 seconds=102
+[ctrl:tc_cont] step=16 latent_r2=0.1871 latent_loss=1.6390 action_l1_1step=0.3075 p_oracle=0.5000 lr=0.0003 seconds=109
+[ctrl:tc_cont] step=17 latent_r2=0.3013 latent_loss=1.6305 action_l1_1step=0.2738 p_oracle=0.4667 lr=0.0003 seconds=115
+[ctrl:tc_cont] step=18 latent_r2=0.3403 latent_loss=1.6035 action_l1_1step=0.2399 p_oracle=0.4333 lr=0.0003 seconds=122
+[ctrl:tc_cont] step=19 latent_r2=0.3709 latent_loss=1.5315 action_l1_1step=0.2584 p_oracle=0.4000 lr=0.0003 seconds=129
+[ctrl:tc_cont] step=20 latent_r2=0.2388 latent_loss=1.5008 action_l1_1step=0.2561 p_oracle=0.3667 lr=0.0003 seconds=135
+[ctrl:tc_cont] step=21 latent_r2=0.3327 latent_loss=1.5093 action_l1_1step=0.2537 p_oracle=0.3333 lr=0.0003 seconds=142
+[ctrl:tc_cont] step=22 latent_r2=0.0943 latent_loss=1.4758 action_l1_1step=0.2675 p_oracle=0.3000 lr=0.0003 seconds=149
+[ctrl:tc_cont] step=23 latent_r2=0.2598 latent_loss=1.5265 action_l1_1step=0.2786 p_oracle=0.2667 lr=0.0003 seconds=155
+[ctrl:tc_cont] step=24 latent_r2=0.2186 latent_loss=1.4591 action_l1_1step=0.2515 p_oracle=0.2333 lr=0.0003 seconds=162
+[ctrl:tc_cont] step=25 latent_r2=0.2667 latent_loss=1.4368 action_l1_1step=0.2437 p_oracle=0.2000 lr=0.0003 seconds=169
+[ctrl:tc_cont] step=26 latent_r2=0.2109 latent_loss=1.4591 action_l1_1step=0.2403 p_oracle=0.1667 lr=0.0003 seconds=176
+[ctrl:tc_cont] step=27 latent_r2=0.1222 latent_loss=1.3922 action_l1_1step=0.2351 p_oracle=0.1333 lr=0.0003 seconds=182
+[ctrl:tc_cont] step=28 latent_r2=0.2069 latent_loss=1.3704 action_l1_1step=0.2144 p_oracle=0.1000 lr=0.0003 seconds=189
+[ctrl:tc_cont] step=29 latent_r2=0.2570 latent_loss=1.4077 action_l1_1step=0.2342 p_oracle=0.0667 lr=0.0003 seconds=196
+[ctrl:tc_cont] step=30 latent_r2=0.3081 latent_loss=1.4093 action_l1_1step=0.2422 p_oracle=0.0333 lr=0.0003 seconds=202
+[ctrl:tc_cont] step=31 latent_r2=0.2643 latent_loss=1.3848 action_l1_1step=0.2317 p_oracle=0.0000 lr=0.0003 seconds=209
+[ctrl:tc_cont] step=32 latent_r2=0.3157 latent_loss=1.3219 action_l1_1step=0.2245 p_oracle=0.0000 lr=0.0003 seconds=216
+[ctrl:tc_cont] step=33 latent_r2=0.4061 latent_loss=1.3489 action_l1_1step=0.1955 p_oracle=0.0000 lr=0.0003 seconds=222
+[ctrl:tc_cont] step=34 latent_r2=0.4091 latent_loss=1.3030 action_l1_1step=0.1852 p_oracle=0.0000 lr=0.0003 seconds=229
+[ctrl:tc_cont] step=35 latent_r2=0.3441 latent_loss=1.3092 action_l1_1step=0.2232 p_oracle=0.0000 lr=0.0003 seconds=235
+[ctrl:tc_cont] step=36 latent_r2=0.3677 latent_loss=1.2783 action_l1_1step=0.2271 p_oracle=0.0000 lr=0.0003 seconds=242
+[ctrl:tc_cont] step=37 latent_r2=0.4055 latent_loss=1.2902 action_l1_1step=0.1983 p_oracle=0.0000 lr=0.0003 seconds=249
+[ctrl:tc_cont] step=38 latent_r2=0.4521 latent_loss=1.2674 action_l1_1step=0.2309 p_oracle=0.0000 lr=0.0003 seconds=256
+[ctrl:tc_cont] step=39 latent_r2=0.3740 latent_loss=1.2783 action_l1_1step=0.2347 p_oracle=0.0000 lr=0.0003 seconds=262
+[ctrl:tc_cont] step=40 latent_r2=0.4626 latent_loss=1.2844 action_l1_1step=0.1957 p_oracle=0.0000 lr=0.0000 seconds=269
+[ctrl:tc_cont] step=41 latent_r2=0.3601 latent_loss=1.2150 action_l1_1step=0.2139 p_oracle=0.0000 lr=0.0000 seconds=276
+[ctrl:tc_cont] step=42 latent_r2=0.5148 latent_loss=1.2659 action_l1_1step=0.1882 p_oracle=0.0000 lr=0.0000 seconds=282
+[ctrl:tc_cont] step=43 latent_r2=0.4149 latent_loss=1.2160 action_l1_1step=0.2134 p_oracle=0.0000 lr=0.0000 seconds=289
+[ctrl:tc_cont] step=44 latent_r2=0.4281 latent_loss=1.2483 action_l1_1step=0.1884 p_oracle=0.0000 lr=0.0000 seconds=296
+[ctrl:tc_cont] step=45 latent_r2=0.5754 latent_loss=1.2425 action_l1_1step=0.1644 p_oracle=0.0000 lr=0.0000 seconds=302
+[ctrl:tc_cont] step=46 latent_r2=0.4995 latent_loss=1.2313 action_l1_1step=0.1853 p_oracle=0.0000 lr=0.0000 seconds=309
+[ctrl:tc_cont] step=47 latent_r2=0.4302 latent_loss=1.1889 action_l1_1step=0.1917 p_oracle=0.0000 lr=0.0000 seconds=316
+[ctrl:tc_cont] step=48 latent_r2=0.3783 latent_loss=1.1528 action_l1_1step=0.2053 p_oracle=0.0000 lr=0.0000 seconds=322
+[ctrl:tc_cont] step=49 latent_r2=0.3387 latent_loss=1.1435 action_l1_1step=0.2202 p_oracle=0.0000 lr=0.0000 seconds=329
+[ctrl:tc_cont] step=50 latent_r2=0.5116 latent_loss=1.2254 action_l1_1step=0.1766 p_oracle=0.0000 lr=0.0000 seconds=336
+[ctrl] saved adapter + decoder at step 50

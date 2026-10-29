@@ -1,0 +1,20 @@
+{
+ "checkpoint": "acdc_la/ckpt/vla_runs/tc_cont+libero_object_no_noops+b32x4+lr0.00035+r32+s30000+fm+q4--p2ours_libero_object_full",
+ "suite": "libero_object_object",
+ "trials": 10,
+ "per_task": {
+  "pick up the alphabet soup and place it in the basket": 0.0,
+  "pick up the salad dressing and place it in the basket": 1.0,
+  "pick up the ketchup and place it in the basket": 0.3,
+  "pick up the butter and place it in the basket": 1.0,
+  "pick up the chocolate pudding and place it in the basket": 1.0
+ },
+ "task_ids": [
+  0,
+  2,
+  4,
+  6,
+  8
+ ],
+ "success": 0.66
+}

@@ -1,0 +1,55 @@
+{
+ "suite": "libero_goal_object",
+ "note": "pro_p2ours_full",
+ "kind": "cont",
+ "files": [
+  "cont_libero_goal_object_pro_p2ours_full_t0_2_4_6_8.json",
+  "cont_libero_goal_object_pro_p2ours_full_t1_3_5_7_9.json"
+ ],
+ "per_task": {
+  "open the middle drawer of the cabinet": {
+   "successes": 10,
+   "episodes": 10
+  },
+  "put the wine bottle on top of the cabinet": {
+   "successes": 10,
+   "episodes": 10
+  },
+  "put the bowl on top of the cabinet": {
+   "successes": 0,
+   "episodes": 10
+  },
+  "put the cream cheese in the bowl": {
+   "successes": 1,
+   "episodes": 10
+  },
+  "put the bowl on the plate": {
+   "successes": 1,
+   "episodes": 10
+  },
+  "put the bowl on the stove": {
+   "successes": 7,
+   "episodes": 10
+  },
+  "open the top drawer and put the bowl inside": {
+   "successes": 5,
+   "episodes": 10
+  },
+  "push the plate to the front of the stove": {
+   "successes": 9,
+   "episodes": 10
+  },
+  "turn on the stove": {
+   "successes": 10,
+   "episodes": 10
+  },
+  "put the wine bottle on the rack": {
+   "successes": 8,
+   "episodes": 10
+  }
+ },
+ "successes": 61,
+ "episodes": 100,
+ "success_rate": 0.61,
+ "complete": true
+}

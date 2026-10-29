@@ -1,0 +1,358 @@
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+[ctrl] tc_cont+acdc_oxe29+b32x1+lr0.0+r32+s25+fm+q4--diag_zs_oxe_lora -> /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/ckpt/vla_runs/tc_cont+acdc_oxe29+b32x1+lr0.0+r32+s25+fm+q4--diag_zs_oxe_lora
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:00<00:00,  3.09it/s]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:00<00:00,  3.72it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00,  4.23it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00,  3.99it/s]
+Using cache found in /lustre/fs1/home/ti874297/lf/latent_free/cache/torch/hub/facebookresearch_dinov2_main
+10/29 [07:16:44] INFO     | >> using MLP layer as FFN  vision_transformer.py:125
+[ctrl] LoRA from /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/ckpt/vla_runs/adapters/tc_cont+acdc_oxe29+b32x2+lr0.00035+r32+s30000+fm+q4--p2_ours
+trainable params: 241,918,880 || all params: 7,782,672,736 || trainable%: 3.1084
+[ctrl] heads from acdc_la/ckpt/vla_runs/tc_cont+acdc_oxe29+b32x2+lr0.00035+r32+s30000+fm+q4--p2_ours/action_decoder.pt
+10/29 [07:17:11] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/fractal20220817_da                  
+                          ta/0.1.0/dataset_statistics_020e40d4                  
+                          db5f579cec2f55d21334588cb17464b3ba6d                  
+                          5686e7052981f48329d9.json.                            
+10/29 [07:17:13] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/kuka/0.1.0/dataset                  
+                          _statistics_6729559e12737278f9da22c6                  
+                          abca4fbfdf7fb1db42c461688c229d5f5de4                  
+                          9136.json.                                            
+bridge dict_keys(['reward', 'observation', 'action', 'is_last', 'is_first', 'is_terminal', 'traj_metadata', '_len', '_traj_index', '_frame_index', 'language_instruction'])
+10/29 [07:17:14] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/bridge_oxe/0.1.0/d                  
+                          ataset_statistics_f873d8dafe3d5b479a                  
+                          71f3ac138a01655808c02eeb7e54b447f25a                  
+                          3f74594cd4.json.                                      
+bridge dict_keys(['reward', 'observation', 'action', 'is_last', 'is_first', 'is_terminal', 'traj_metadata', '_len', '_traj_index', '_frame_index', 'language_instruction'])
+                 INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/taco_play/0.1.0/da                  
+                          taset_statistics_8211012cb38fe1ac47e                  
+                          6c016b42bfa8413958ee48cb71e9d281c3e2                  
+                          23df2f13c.json.                                       
+10/29 [07:17:15] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/jaco_play/0.1.0/da                  
+                          taset_statistics_c8edc1f452149ad8e7a                  
+                          997c0362682039f4ada8a657d5dc3ac05352                  
+                          b277adbec.json.                                       
+                 INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/berkeley_cable_rou                  
+                          ting/0.1.0/dataset_statistics_08412a                  
+                          f4c67b9e5cfb19f3f125a51bc346a90363da                  
+                          be362ad9ce1007529d7e8c.json.                          
+10/29 [07:17:16] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/roboturk/0.1.0/dat                  
+                          aset_statistics_a2afbedd7628afe3f56b                  
+                          b62e2e192766801fe08fc656d7eebe0333ef                  
+                          1454a0b9.json.                                        
+                 INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/viola/0.1.0/datase                  
+                          t_statistics_99e0b25151d987cc07dcd32                  
+                          f4c2547f8166000edb572e4c2986d7dd26c9                  
+                          db47a.json.                                           
+10/29 [07:17:17] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/berkeley_autolab_u                  
+                          r5/0.1.0/dataset_statistics_4c81bd2b                  
+                          2df5d292a4fc946732d607940e3a5e876246                  
+                          b934da0a366a44290a06.json.                            
+                 INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/toto/0.1.0/dataset                  
+                          _statistics_93c0e9e04b9b932123c86656                  
+                          6e8a7ed598fdc1728ac8acc627aa47d79118                  
+                          0c1f.json.                                            
+10/29 [07:17:18] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/language_table/0.1                  
+                          .0/dataset_statistics_4fc704b929c94e                  
+                          8d89e79ada949d3d2592ec3fb6151e461949                  
+                          dbc948d5dfdc37.json.                                  
+                 INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/stanford_hydra_dat                  
+                          aset_converted_externally_to_rlds/0.                  
+                          1.0/dataset_statistics_4c333510372d4                  
+                          9e8a1276efd52ae4214a2715cafc8f15c0f7                  
+                          38b387ef65af510.json.                                 
+10/29 [07:17:19] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/austin_buds_datase                  
+                          t_converted_externally_to_rlds/0.1.0                  
+                          /dataset_statistics_50de06ddec9b7561                  
+                          5e2da23161b8e23344d7ecb0a1f16e79f8dd                  
+                          df8787c6a0bc.json.                                    
+nyu dict_keys(['is_terminal', 'action', 'reward', 'observation', 'discount', 'language_embedding', 'is_last', 'language_instruction', 'is_first', 'traj_metadata', '_len', '_traj_index', '_frame_index'])
+nyu obs dict_keys(['depth_additional_view', 'state', 'image', 'depth', 'image_additional_view', 'eef_state'])
+                 INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/nyu_franka_play_da                  
+                          taset_converted_externally_to_rlds/0                  
+                          .1.0/dataset_statistics_8c9bbab86dee                  
+                          28f0f4f067c36e1fcfcbbf71a567edfdc54a                  
+                          8292ed5a471ebed9.json.                                
+nyu dict_keys(['is_terminal', 'action', 'reward', 'observation', 'discount', 'language_embedding', 'is_last', 'language_instruction', 'is_first', 'traj_metadata', '_len', '_traj_index', '_frame_index'])
+nyu obs dict_keys(['depth_additional_view', 'state', 'image', 'depth', 'image_additional_view', 'eef_state'])
+10/29 [07:17:21] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/furniture_bench_da                  
+                          taset_converted_externally_to_rlds/0                  
+                          .1.0/dataset_statistics_40dabcb9859e                  
+                          4b868f64583b409803bfc0af1b9aa24b4fe4                  
+                          9fbbc7c5935c09f5.json.                                
+10/29 [07:17:22] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/ucsd_kitchen_datas                  
+                          et_converted_externally_to_rlds/0.1.                  
+                          0/dataset_statistics_6ede602cf9ba665                  
+                          f1d03732f47d9a84d9c30802d8fe07de956f                  
+                          9c62451615796.json.                                   
+                 INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/austin_sailor_data                  
+                          set_converted_externally_to_rlds/0.1                  
+                          .0/dataset_statistics_f95d83689ab209                  
+                          d362c07a71c0943f631a981e51f070643db6                  
+                          50f8bd58fcbdad.json.                                  
+                 INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/austin_sirius_data                  
+                          set_converted_externally_to_rlds/0.1                  
+                          .0/dataset_statistics_550d026b4de407                  
+                          b73883a04971e9f2a2e787403f91c33640bd                  
+                          9f58529f77628e.json.                                  
+10/29 [07:17:23] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/dlr_edan_shared_co                  
+                          ntrol_converted_externally_to_rlds/0                  
+                          .1.0/dataset_statistics_1fb18c0baba8                  
+                          7e063f221bc3de1b85df24488be40c336250                  
+                          46adaba084113b94.json.                                
+                 INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/iamlab_cmu_pickup_                  
+                          insert_converted_externally_to_rlds/                  
+                          0.1.0/dataset_statistics_260560967e3                  
+                          f4e21886aa6c3220c515dbe25cac4b1d9da9                  
+                          ec3469e2170fdfcc9.json.                               
+10/29 [07:17:24] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/utaustin_mutex/0.1                  
+                          .0/dataset_statistics_aa13d0dbe7eeac                  
+                          caec6fcbe7280b9162a743425c00a4d953b4                  
+                          fbd1000209d0a0.json.                                  
+                 INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/berkeley_fanuc_man                  
+                          ipulation/0.1.0/dataset_statistics_c                  
+                          89b83ab5d8131f7f3d51fad477800c61199f                  
+                          8341df4423a9e92137b62e249d1.json.                     
+10/29 [07:17:25] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/cmu_stretch/0.1.0/                  
+                          dataset_statistics_572626087a6ccfef1                  
+                          0fece640785b2b6d7238af6e084f86cd9b5c                  
+                          b615221e1a8.json.                                     
+                 INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/bc_z/0.1.0/dataset                  
+                          _statistics_af789fba843e64882065813a                  
+                          42fa395d0a438e679e5d280c40d2558b97e5                  
+                          fab7.json.                                            
+10/29 [07:17:26] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/fmb/0.0.1/dataset_                  
+                          statistics_021a8275d1268fbcf4f4b1f12                  
+                          6f6028af7dd3678cc3bf5ae5e5c1e4da8372                  
+                          bcb.json.                                             
+10/29 [07:17:27] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/dobbe/0.0.1/datase                  
+                          t_statistics_2185fabdae488a5986043db                  
+                          5648f0ba27fd53aed48dbbdebcbc39674af8                  
+                          92416.json.                                           
+                 INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/berkeley_gnm_recon                  
+                          /0.1.0/dataset_statistics_d10d6212a3                  
+                          10fd5c82b6dad641004b5e25f8e1d3e2ca7d                  
+                          8b459369bf354c2c62.json.                              
+10/29 [07:17:28] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/berkeley_gnm_cory_                  
+                          hall/0.1.0/dataset_statistics_eee1ff                  
+                          55d953d976454887f013bef9f7376f81fba7                  
+                          bedf1c0fe2e84ca2b9c6c4.json.                          
+                 INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/oxe_raw/berkeley_gnm_sac_s                  
+                          on/0.1.0/dataset_statistics_5199b633                  
+                          7e55a569627a27542555155f74ea90830c85                  
+                          8155d3e3c40920e6da56.json.                            
+
+######################################################################################
+# Loading the following 29 datasets (incl. sampling weight):                         #
+# fractal20220817_data: ====================================================0.155295 #
+# kuka: ====================================================================0.070413 #
+# bridge_oxe: ==============================================================0.075878 #
+# taco_play: ===============================================================0.039012 #
+# jaco_play: ===============================================================0.006395 #
+# berkeley_cable_routing: ==================================================0.003472 #
+# roboturk: ================================================================0.030762 #
+# viola: ===================================================================0.012521 #
+# berkeley_autolab_ur5: ====================================================0.016067 #
+# toto: ====================================================================0.026716 #
+# language_table: ==========================================================0.057793 #
+# stanford_hydra_dataset_converted_externally_to_rlds: =====================0.058770 #
+# austin_buds_dataset_converted_externally_to_rlds: ========================0.002798 #
+# nyu_franka_play_dataset_converted_externally_to_rlds: ====================0.011043 #
+# furniture_bench_dataset_converted_externally_to_rlds: ====================0.032385 #
+# ucsd_kitchen_dataset_converted_externally_to_rlds: =======================0.000651 #
+# austin_sailor_dataset_converted_externally_to_rlds: ======================0.028964 #
+# austin_sirius_dataset_converted_externally_to_rlds: ======================0.022963 #
+# dlr_edan_shared_control_converted_externally_to_rlds: ====================0.000732 #
+# iamlab_cmu_pickup_insert_converted_externally_to_rlds: ===================0.011996 #
+# utaustin_mutex: ==========================================================0.029684 #
+# berkeley_fanuc_manipulation: =============================================0.010272 #
+# cmu_stretch: =============================================================0.002052 #
+# bc_z: ====================================================================0.098688 #
+# fmb: =====================================================================0.093294 #
+# dobbe: ===================================================================0.018701 #
+# berkeley_gnm_recon: ======================================================0.050111 #
+# berkeley_gnm_cory_hall: ==================================================0.012797 #
+# berkeley_gnm_sac_son: ====================================================0.019774 #
+######################################################################################
+
+10/29 [07:17:29] INFO     | >> [*] Threads per Dataset: [1 1 1 1  dataset.py:581
+                          1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1               
+                          1 1 1 1 1]                                            
+                 INFO     | >> [*] Reads per Dataset: [1 1 1 1 1  dataset.py:582
+                          1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1               
+                          1 1 1 1]                                              
+                 INFO     | >> [*] Constructing datasets...       dataset.py:585
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+bridge dict_keys(['reward', 'observation', 'action', 'is_last', 'is_first', 'is_terminal', 'traj_metadata', '_len', '_traj_index', '_frame_index', 'language_instruction'])
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+nyu dict_keys(['is_terminal', 'action', 'reward', 'observation', 'discount', 'language_embedding', 'is_last', 'language_instruction', 'is_first', 'traj_metadata', '_len', '_traj_index', '_frame_index'])
+nyu obs dict_keys(['depth_additional_view', 'state', 'image', 'depth', 'image_additional_view', 'eef_state'])
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+10/29 [07:17:41] INFO     | >> [*] Applying frame transforms on   dataset.py:627
+                          dataset...                                            
+image_names {'primary'}
+keys dict_keys(['language_instruction', 'pad_mask_dict', 'image_primary', 'timestep'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+10/29 [07:17:43] INFO     | >> [*] Saved dataset statistics    data_utils.py:293
+                          file at path                                          
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/acdc_la/ckpt/vla_runs/tc_cont+a                  
+                          cdc_oxe29+b32x1+lr0.0+r32+s25+fm+q4-                  
+                          -diag_zs_oxe_lora/dataset_statistics                  
+                          .json                                                 
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+  actions = [torch.from_numpy(instance["actions"]) for instance in instances]
+[ctrl:tc_cont] step=1 latent_r2=0.8109 latent_loss=0.7403 action_l1_1step=0.5774 p_oracle=1.0000 lr=0.0000 seconds=33
+[ctrl:tc_cont] step=2 latent_r2=0.8068 latent_loss=0.7704 action_l1_1step=0.4980 p_oracle=0.9333 lr=0.0000 seconds=37
+[ctrl:tc_cont] step=3 latent_r2=0.7349 latent_loss=0.7878 action_l1_1step=0.5524 p_oracle=0.8667 lr=0.0000 seconds=40
+[ctrl:tc_cont] step=4 latent_r2=0.8796 latent_loss=0.8212 action_l1_1step=0.4318 p_oracle=0.8000 lr=0.0000 seconds=44
+[ctrl:tc_cont] step=5 latent_r2=0.7754 latent_loss=0.8203 action_l1_1step=0.4771 p_oracle=0.7333 lr=0.0000 seconds=47
+[ctrl:tc_cont] step=6 latent_r2=0.7965 latent_loss=0.7970 action_l1_1step=0.4589 p_oracle=0.6667 lr=0.0000 seconds=50
+[ctrl:tc_cont] step=7 latent_r2=0.8228 latent_loss=0.8135 action_l1_1step=0.4903 p_oracle=0.6000 lr=0.0000 seconds=54
+[ctrl:tc_cont] step=8 latent_r2=0.8246 latent_loss=0.8364 action_l1_1step=0.4480 p_oracle=0.5333 lr=0.0000 seconds=57
+[ctrl:tc_cont] step=9 latent_r2=0.8840 latent_loss=0.9055 action_l1_1step=0.3161 p_oracle=0.4667 lr=0.0000 seconds=60
+[ctrl:tc_cont] step=10 latent_r2=0.8079 latent_loss=0.8411 action_l1_1step=0.4952 p_oracle=0.4000 lr=0.0000 seconds=64
+[ctrl:tc_cont] step=11 latent_r2=0.7940 latent_loss=0.8170 action_l1_1step=0.4525 p_oracle=0.3333 lr=0.0000 seconds=67
+[ctrl:tc_cont] step=12 latent_r2=0.8346 latent_loss=0.7862 action_l1_1step=0.4199 p_oracle=0.2667 lr=0.0000 seconds=71
+[ctrl:tc_cont] step=13 latent_r2=0.7699 latent_loss=0.8154 action_l1_1step=0.4768 p_oracle=0.2000 lr=0.0000 seconds=74
+[ctrl:tc_cont] step=14 latent_r2=0.8195 latent_loss=0.8309 action_l1_1step=0.4643 p_oracle=0.1333 lr=0.0000 seconds=77
+[ctrl:tc_cont] step=15 latent_r2=0.7391 latent_loss=0.7936 action_l1_1step=0.4868 p_oracle=0.0667 lr=0.0000 seconds=81
+[ctrl:tc_cont] step=16 latent_r2=0.8060 latent_loss=0.7626 action_l1_1step=0.4894 p_oracle=0.0000 lr=0.0000 seconds=84
+[ctrl:tc_cont] step=17 latent_r2=0.7882 latent_loss=0.8303 action_l1_1step=0.4593 p_oracle=0.0000 lr=0.0000 seconds=88
+[ctrl:tc_cont] step=18 latent_r2=0.8197 latent_loss=0.7759 action_l1_1step=0.4645 p_oracle=0.0000 lr=0.0000 seconds=91
+[ctrl:tc_cont] step=19 latent_r2=0.8306 latent_loss=0.7599 action_l1_1step=0.4682 p_oracle=0.0000 lr=0.0000 seconds=95
+[ctrl:tc_cont] step=20 latent_r2=0.8343 latent_loss=0.7847 action_l1_1step=0.4395 p_oracle=0.0000 lr=0.0000 seconds=98
+[ctrl:tc_cont] step=21 latent_r2=0.8265 latent_loss=0.7548 action_l1_1step=0.5514 p_oracle=0.0000 lr=0.0000 seconds=102
+[ctrl:tc_cont] step=22 latent_r2=0.7663 latent_loss=0.7888 action_l1_1step=0.5401 p_oracle=0.0000 lr=0.0000 seconds=105
+[ctrl:tc_cont] step=23 latent_r2=0.8037 latent_loss=0.7996 action_l1_1step=0.4478 p_oracle=0.0000 lr=0.0000 seconds=109
+[ctrl:tc_cont] step=24 latent_r2=0.7775 latent_loss=0.7362 action_l1_1step=0.4964 p_oracle=0.0000 lr=0.0000 seconds=112
+[ctrl:tc_cont] step=25 latent_r2=0.7783 latent_loss=0.7546 action_l1_1step=0.4677 p_oracle=0.0000 lr=0.0000 seconds=116
+[ctrl] saved adapter + decoder at step 25

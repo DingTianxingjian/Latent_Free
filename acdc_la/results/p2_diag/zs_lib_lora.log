@@ -1,0 +1,92 @@
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+[ctrl] tc_cont+libero_10_no_noops+b32x1+lr0.0+r32+s25+fm+q4--diag_zs_lib_lora -> /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/ckpt/vla_runs/tc_cont+libero_10_no_noops+b32x1+lr0.0+r32+s25+fm+q4--diag_zs_lib_lora
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:00<00:00,  2.59it/s]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:00<00:00,  2.90it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00,  3.58it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00,  3.32it/s]
+Using cache found in /lustre/fs1/home/ti874297/lf/latent_free/cache/torch/hub/facebookresearch_dinov2_main
+10/29 [07:04:41] INFO     | >> using MLP layer as FFN  vision_transformer.py:125
+[ctrl] LoRA from /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/ckpt/vla_runs/adapters/tc_cont+acdc_oxe29+b32x2+lr0.00035+r32+s30000+fm+q4--p2_ours
+trainable params: 241,918,880 || all params: 7,782,672,736 || trainable%: 3.1084
+[ctrl] heads from acdc_la/ckpt/vla_runs/tc_cont+acdc_oxe29+b32x2+lr0.00035+r32+s30000+fm+q4--p2_ours/action_decoder.pt
+10/29 [07:05:08] INFO     | >> [*] Loading existing dataset    data_utils.py:208
+                          statistics from                                       
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/data/libero_rlds/libero_10_no_n                  
+                          oops/1.0.0/dataset_statistics_486287                  
+                          70a43b779389f0b557ddf8044bae3564b697                  
+                          e83941332b31d4b7dcdfd5.json.                          
+
+######################################################################################
+# Loading the following 1 datasets (incl. sampling weight):                         #
+# libero_10_no_noops: ======================================================1.000000 #
+######################################################################################
+
+10/29 [07:05:09] INFO     | >> [*] Threads per Dataset: [1]       dataset.py:581
+                 INFO     | >> [*] Reads per Dataset: [1]         dataset.py:582
+                 INFO     | >> [*] Constructing datasets...       dataset.py:585
+chunk_indices Tensor("add:0", shape=(None, 14), dtype=int32)
+10/29 [07:05:10] INFO     | >> [*] Applying frame transforms on   dataset.py:627
+                          dataset...                                            
+image_names {'primary'}
+keys dict_keys(['language_instruction', 'pad_mask_dict', 'image_primary', 'timestep'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+image_names {'primary'}
+keys dict_keys(['image_primary', 'timestep', 'pad_mask_dict', 'pad_mask'])
+10/29 [07:05:12] INFO     | >> [*] Saved dataset statistics    data_utils.py:293
+                          file at path                                          
+                          /lustre/fs1/home/ti874297/lf/latent_                  
+                          free/acdc_la/ckpt/vla_runs/tc_cont+l                  
+                          ibero_10_no_noops+b32x1+lr0.0+r32+s2                  
+                          5+fm+q4--diag_zs_lib_lora/dataset_st                  
+                          atistics.json                                         
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+  actions = [torch.from_numpy(instance["actions"]) for instance in instances]
+[ctrl:tc_cont] step=1 latent_r2=0.7340 latent_loss=0.8630 action_l1_1step=0.3583 p_oracle=1.0000 lr=0.0000 seconds=6
+[ctrl:tc_cont] step=2 latent_r2=0.6760 latent_loss=0.9015 action_l1_1step=0.4325 p_oracle=0.9333 lr=0.0000 seconds=9
+[ctrl:tc_cont] step=3 latent_r2=0.5999 latent_loss=0.8160 action_l1_1step=0.5136 p_oracle=0.8667 lr=0.0000 seconds=13
+[ctrl:tc_cont] step=4 latent_r2=0.6947 latent_loss=0.8495 action_l1_1step=0.4097 p_oracle=0.8000 lr=0.0000 seconds=16
+[ctrl:tc_cont] step=5 latent_r2=0.6412 latent_loss=0.8166 action_l1_1step=0.4793 p_oracle=0.7333 lr=0.0000 seconds=19
+[ctrl:tc_cont] step=6 latent_r2=0.6223 latent_loss=0.8726 action_l1_1step=0.4723 p_oracle=0.6667 lr=0.0000 seconds=22
+[ctrl:tc_cont] step=7 latent_r2=0.5675 latent_loss=0.7546 action_l1_1step=0.5255 p_oracle=0.6000 lr=0.0000 seconds=26
+[ctrl:tc_cont] step=8 latent_r2=0.7398 latent_loss=0.8755 action_l1_1step=0.3734 p_oracle=0.5333 lr=0.0000 seconds=29
+[ctrl:tc_cont] step=9 latent_r2=0.4859 latent_loss=0.8039 action_l1_1step=0.5383 p_oracle=0.4667 lr=0.0000 seconds=33
+[ctrl:tc_cont] step=10 latent_r2=0.6060 latent_loss=0.8303 action_l1_1step=0.5094 p_oracle=0.4000 lr=0.0000 seconds=36
+[ctrl:tc_cont] step=11 latent_r2=0.6731 latent_loss=0.8978 action_l1_1step=0.4410 p_oracle=0.3333 lr=0.0000 seconds=39
+[ctrl:tc_cont] step=12 latent_r2=0.5341 latent_loss=0.7579 action_l1_1step=0.5587 p_oracle=0.2667 lr=0.0000 seconds=43
+[ctrl:tc_cont] step=13 latent_r2=0.6677 latent_loss=0.8560 action_l1_1step=0.4259 p_oracle=0.2000 lr=0.0000 seconds=46
+[ctrl:tc_cont] step=14 latent_r2=0.5708 latent_loss=0.8602 action_l1_1step=0.5314 p_oracle=0.1333 lr=0.0000 seconds=49
+[ctrl:tc_cont] step=15 latent_r2=0.6359 latent_loss=0.8804 action_l1_1step=0.4435 p_oracle=0.0667 lr=0.0000 seconds=53
+[ctrl:tc_cont] step=16 latent_r2=0.6661 latent_loss=0.8516 action_l1_1step=0.4451 p_oracle=0.0000 lr=0.0000 seconds=56
+[ctrl:tc_cont] step=17 latent_r2=0.6647 latent_loss=0.8779 action_l1_1step=0.4289 p_oracle=0.0000 lr=0.0000 seconds=59
+[ctrl:tc_cont] step=18 latent_r2=0.6774 latent_loss=0.8310 action_l1_1step=0.4570 p_oracle=0.0000 lr=0.0000 seconds=62
+[ctrl:tc_cont] step=19 latent_r2=0.6813 latent_loss=0.8788 action_l1_1step=0.4193 p_oracle=0.0000 lr=0.0000 seconds=66
+[ctrl:tc_cont] step=20 latent_r2=0.6684 latent_loss=0.8679 action_l1_1step=0.4485 p_oracle=0.0000 lr=0.0000 seconds=69
+[ctrl:tc_cont] step=21 latent_r2=0.6300 latent_loss=0.8302 action_l1_1step=0.4832 p_oracle=0.0000 lr=0.0000 seconds=73
+[ctrl:tc_cont] step=22 latent_r2=0.6744 latent_loss=0.8627 action_l1_1step=0.4351 p_oracle=0.0000 lr=0.0000 seconds=76
+[ctrl:tc_cont] step=23 latent_r2=0.6143 latent_loss=0.8050 action_l1_1step=0.4709 p_oracle=0.0000 lr=0.0000 seconds=79
+[ctrl:tc_cont] step=24 latent_r2=0.6006 latent_loss=0.8251 action_l1_1step=0.5223 p_oracle=0.0000 lr=0.0000 seconds=82
+[ctrl:tc_cont] step=25 latent_r2=0.6024 latent_loss=0.8258 action_l1_1step=0.4872 p_oracle=0.0000 lr=0.0000 seconds=86
+[ctrl] saved adapter + decoder at step 25

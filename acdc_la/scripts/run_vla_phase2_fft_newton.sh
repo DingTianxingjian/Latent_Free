@@ -14,6 +14,8 @@
 #
 #   sbatch acdc_la/scripts/run_vla_phase2_fft_newton.sh                       # 8 GPUs x 16 x accum 8
 #   NGPU=4 BS=16 GA=16 sbatch --gres=gpu:nvidia_h100_80gb_hbm3:4 -c 56 --mem=600G ...   # same global batch on 4 GPUs
+#   LR-decay branch from the finished constant-lr run (2026-10-29): 2k more steps, lr linear 2e-5 -> 0, own run dir
+#   STEPS=22000 NOTE=p2fft_ours_decay EXTRA="--branch_from <p2fft_ours run dir> --decay_start 20000" NGPU=4 ... sbatch ...
 #
 # Memory-bounded segments, as run_vla_phase2_newton.sh: host RSS of the RLDS pipeline grows for every rank; once it
 # passes SOFT_G the trainer is restarted with --resume at the next sharded checkpoint (written to a temp dir and swapped
@@ -28,12 +30,15 @@ PY=/lustre/fs1/home/ti874297/lf/envs/univla_vla/bin/python
 source /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/scripts/gpu_preflight_newton.sh
 NGPU=${NGPU:-8}; BS=${BS:-16}; GA=${GA:-8}; STEPS=${STEPS:-20000}; N=${NOTE:-p2fft_ours}
 SOFT_G=${SOFT_G:-700}; HARD_G=${HARD_G:-880}
+# A continuation queued with --dependency=afterany may start after the run already finished: then do nothing.
+if ls acdc_la/ckpt/vla_runs/tc_cont+acdc_oxe29+*+fft+s${STEPS}+*--${N}/vla_full.pt >/dev/null 2>&1; then
+  echo "PHASE2-FFT $N already finished (vla_full.pt exists), nothing to do $(date)"; exit 0; fi
 JID=${SLURM_JOB_ID:-local}
 nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader -l 60 > acdc_la/logs/p2_fft_gpu_${JID}.csv &
 MEMPID=$!
 rss_g() { ps -u $USER -o rss= | awk '{s+=$1} END {print int(s/1048576)}'; }
 state_mtime() { stat -c %Y acdc_la/ckpt/vla_runs/tc_cont+acdc_oxe29+*+fft+s${STEPS}+*--${N}/trainer_state.pt 2>/dev/null | sort -n | tail -1; }
-SEG=0; RC=1
+SEG=0; RC=1; FAILS=0; CRASH_CKPT=""
 while [ $SEG -lt 200 ]; do
   SEG=$((SEG + 1)); echo "[seg $SEG] start $(date) last checkpoint mtime=$(state_mtime)"
   setsid $PY -m torch.distributed.run --standalone --nproc-per-node $NGPU -m acdc_la.downstream.vla.finetune_libero_ctrl \
@@ -54,7 +59,14 @@ while [ $SEG -lt 200 ]; do
   done
   wait $PID; RC=$?
   if [ $RESTART = 1 ]; then pkill -KILL -u $USER -f finetune_libero_ctrl; sleep 30; continue; fi
-  break            # the trainer ended by itself: finished (0) or failed
+  [ $RC = 0 ] && break            # the trainer finished
+  # Crashed (2026-10-28: segment 21 died inside the dcp resume with a collective mismatch, and the job ended and gave
+  # up its node).  Retry from the last checkpoint in the same allocation; give up after 3 crashes with no new checkpoint.
+  [ "$(state_mtime)" != "$CRASH_CKPT" ] && FAILS=0
+  FAILS=$((FAILS + 1)); CRASH_CKPT=$(state_mtime)
+  if [ $FAILS -ge 3 ]; then echo "[seg $SEG] trainer crashed (exit $RC) 3 times on the same checkpoint, giving up $(date)"; break; fi
+  echo "[seg $SEG] trainer crashed (exit $RC), retry $FAILS of 2 from the last checkpoint $(date)"
+  pkill -KILL -u $USER -f finetune_libero_ctrl; sleep 60
 done
 kill $MEMPID 2>/dev/null
 echo "PHASE2-FFT $N exit $RC after $SEG segment(s) $(date)"

@@ -29,9 +29,9 @@ X="--head flow --query_tokens ${QT:-4}"; [ "$L" = tc_cont ] && X="$X --tc_tag ${
 [ -n "${INIT:-}" ] && X="$X --init_from_run $INIT"          # unset INIT = the no-phase-2 control (section 6)
 RUN=$(ls -d acdc_la/ckpt/vla_runs/${L}+${DS}+b*+*s${STEPS:-15000}*--${N} 2>/dev/null | head -1)
 if [ -z "$RUN" ] || [ ! -f "$RUN/config.json" ]; then          # config.json appears with the merged checkpoint
-  $PY -m torch.distributed.run --standalone --nproc-per-node ${NGPU:-2} -m acdc_la.downstream.vla.finetune_libero_ctrl --latent $L $X \
+  $PY -m torch.distributed.run --nnodes 1 --master_addr 127.0.0.1 --master_port $((15000 + RANDOM % 30000)) --nproc-per-node ${NGPU:-2} -m acdc_la.downstream.vla.finetune_libero_ctrl --latent $L $X \
       --dataset_name $DS --run_id_note $N --batch_size ${BS:-8} --grad_accumulation_steps ${GA:-4} --max_steps ${STEPS:-15000} --save_steps ${SAVE:-1000} \
-      --resume True 2>&1 \
+      --resume True ${EXTRA:-} 2>&1 \
     | grep --line-buffered -vE "xFormers|warnings.warn|UserWarning|tensorflow/|I0000|E0000|W0000|oneDNN|TF-TRT|cuda_|AtomicFunction|NoneType|Exception ignored|atomic_function.py"
   RC=${PIPESTATUS[0]}; echo "POST2 train $L $N exit $RC $(date)"; [ $RC = 0 ] || exit $RC
   RUN=$(ls -d acdc_la/ckpt/vla_runs/${L}+${DS}+b*+*s${STEPS:-15000}*--${N} | head -1)

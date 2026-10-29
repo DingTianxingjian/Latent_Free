@@ -1,0 +1,57 @@
+{
+ "fft_rel_change": {
+  "embed_tokens": 0.015289480579400867,
+  "llm_attn": 0.06143473873108389,
+  "llm_mlp": 0.06963079774891215,
+  "lm_head": 0.0,
+  "norms": 0.003649621516499667,
+  "projector": 0.11071598847657048,
+  "vision_dino": 0.020528794114316053,
+  "vision_siglip": 0.019667271782387547
+ },
+ "fft_rel_change_all": 0.04968392976204642,
+ "fft_keys_not_in_base": 0,
+ "lora_rel_change": {
+  "embed_tokens": 0.22752555938713845,
+  "llm_attn": 0.12358601481836205,
+  "llm_mlp": 0.10576146835138074,
+  "lm_head": 0.0,
+  "projector": 0.19033837839048226,
+  "vision_dino": 0.090561164851226,
+  "vision_siglip": 0.10389626093257365
+ },
+ "lora_scale": 0.5,
+ "lora_r": 32,
+ "lora_targets": [
+  "up_proj",
+  "kv",
+  "o_proj",
+  "lm_head",
+  "v_proj",
+  "proj",
+  "q_proj",
+  "gate_proj",
+  "qkv",
+  "fc3",
+  "down_proj",
+  "fc2",
+  "k_proj",
+  "fc1",
+  "q"
+ ],
+ "heads_fft": {
+  "n": 91,
+  "missing": [],
+  "unexpected": [],
+  "finite": true,
+  "rms": 0.027388887479901314
+ },
+ "heads_lora": {
+  "n": 91,
+  "missing": [],
+  "unexpected": [],
+  "finite": true,
+  "rms": 0.04938748478889465
+ },
+ "heads_same_keys": true
+}
