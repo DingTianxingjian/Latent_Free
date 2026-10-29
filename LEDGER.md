@@ -3679,6 +3679,12 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Artifacts.** `acdc_la/results/p2_diag/` (zs_lib_*, ft_lib_*, zs_oxe_* logs, heldout_*.json, weights.json),
   `acdc_la/logs/p2_diag_wu200_1091619.out`, scripts `acdc_la/scripts/p2_diag_newton.sh`, `p2_diag_weights.py`;
   `prior_gate.py` gained `--no_prior` and held-out action errors.
+- **LIBERO-Plus Long moved off Newton (user, 2026-10-29).**  Newton's October GPU quota is exhausted (the four Long
+  jobs pended on AssocGrpGRESMinutes); they are HELD (1084953-56, fallback after the Nov 1 reset) and the suite runs
+  on the UCF workstation with `acdc_la/scripts/run_liberoplus_eval_portable.sh` (no Slurm; shards dealt over GPUs;
+  `LIBERO_RESUME=1` continues an interrupted shard), same 8 strided shards and note `p2ours_full`, policy
+  `tc_cont+libero_10_no_noops+b32x4+lr0.00035+r32+s40000+fm+q4--p2ours_libero_10_full`.  Branch `newton` pushed
+  (1d23133).  Copy the shard jsons back to `acdc_la/results/vla_eval_plus/` and run `liberoplus_summary`.
 - **Crash.** Segment 21 of job 951668 died at 02:55 inside the dcp resume at step 5250 (ranks out of
   step in a collective, an impossible >1 EB allocation, NCCL timeout); the checkpoint was intact.  The wrapper treated
   a non-zero exit as final and released the node, so the run had to queue again.  `run_vla_phase2_fft_newton.sh`
