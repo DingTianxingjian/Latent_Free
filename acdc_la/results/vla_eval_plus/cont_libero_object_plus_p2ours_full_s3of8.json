@@ -314,7 +314,10 @@
   "pick up the salad dressing and place it in the basket light 14": 0.0,
   "pick up the salad dressing and place it in the basket light 23": 1.0,
   "pick up the salad dressing and place it in the basket light 37": 1.0,
-  "pick up the salad dressing and place it in the basket light 48": 1.0
+  "pick up the salad dressing and place it in the basket light 48": 1.0,
+  "pick up the tomato sauce and place it in the basket light 13": 0.0,
+  "pick up the tomato sauce and place it in the basket light 25": 0.0,
+  "pick up the tomato sauce and place it in the basket light 41": 0.0
  },
  "task_ids": [
   3,
@@ -945,7 +948,10 @@
   "2467": 0.0,
   "2475": 1.0,
   "2483": 1.0,
-  "2491": 1.0
+  "2491": 1.0,
+  "2499": 0.0,
+  "2507": 0.0,
+  "2515": 0.0
  },
- "success": 0.5160256410256411
+ "success": 0.5111111111111111
 }

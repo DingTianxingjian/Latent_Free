@@ -3685,6 +3685,12 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   `LIBERO_RESUME=1` continues an interrupted shard), same 8 strided shards and note `p2ours_full`, policy
   `tc_cont+libero_10_no_noops+b32x4+lr0.00035+r32+s40000+fm+q4--p2ours_libero_10_full`.  Branch `newton` pushed
   (1d23133).  Copy the shard jsons back to `acdc_la/results/vla_eval_plus/` and run `liberoplus_summary`.
+  Update (13:50): Object finished on Newton (8/8 shards complete); Goal shards 0-1 finish on Newton (job 1084949),
+  Goal shards 2-7 (jobs 1084950-52, HELD) move to the workstation too.  Policies on the private HF repo
+  `Potestates/TERRA` (`libero_10_full/`, `libero_goal_full/`; pushed over git-lfs from the login node -- compute nodes
+  have no network).  Each shard runs whole on one machine; Newton has ImageMagick 6, the workstation 7, which only
+  touches Sensor Noise's motion blur (random angle per call) -- recorded so a cross-machine difference is not mistaken
+  for a policy effect.
 - **Crash.** Segment 21 of job 951668 died at 02:55 inside the dcp resume at step 5250 (ranks out of
   step in a collective, an impossible >1 EB allocation, NCCL timeout); the checkpoint was intact.  The wrapper treated
   a non-zero exit as final and released the node, so the run had to queue again.  `run_vla_phase2_fft_newton.sh`
