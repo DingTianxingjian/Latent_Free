@@ -3685,6 +3685,30 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   `LIBERO_RESUME=1` continues an interrupted shard), same 8 strided shards and note `p2ours_full`, policy
   `tc_cont+libero_10_no_noops+b32x4+lr0.00035+r32+s40000+fm+q4--p2ours_libero_10_full`.  Branch `newton` pushed
   (1d23133).  Copy the shard jsons back to `acdc_la/results/vla_eval_plus/` and run `liberoplus_summary`.
+
+### 2026-10-30 — 10 % Long replicates: run-to-run spread ~6 points; fft vs LoRA and phase 2 vs none are not distinguishable; warmup does not help (CORRECTS the 10-29 reading)
+
+- **Closed loop, 500 episodes each, identical recipe (15k steps, 10 % Long):**
+
+  | run | success | | run | success |
+  |---|---|---|---|---|
+  | LoRA phase 2 (1/10) | 308/500 = 61.6 % | | fft step 5000 | 288/500 = 57.6 % |
+  | LoRA replicate | 279/500 = 55.8 % | | fft replicate | 256/500 = 51.2 % |
+  | no phase 2 | 282/500 = 56.4 % | | fft + 500-step warmup | 249/500 = 49.8 % |
+
+- **Spread.**  Identical configs differ by 5.8 (LoRA) and 6.4 (fft) points: pooled sd of ONE run ~4.3 points, of
+  which binomial noise (500 episodes) is ~2.2 and training randomness ~3.7.  Per-task replicate differences have
+  sd ~16 points (LoRA task 9: 76 vs 34; fft task 5 "book": 4 vs 30 -- the 10-28 per-task reading was noise).
+- **Comparisons.**  LoRA mean 58.7 vs fft mean 54.4: 4.3 +- 4.3 (1 s.e.), not significant; no-phase-2 56.4 lies
+  between them.  On this protocol neither phase-2 variant shows a detectable effect over no phase 2.  Warmup
+  removes the first-step collapse (latent R2 0.63 vs 0.16 over the first 25 steps, verified in the real run) but the
+  closed loop did not improve (49.8, one run) -- the runs converge after ~1.5k of 15k steps and the collapse leaves
+  no measurable trace.  **Correction of 2026-10-29:** the optimisation shock is real but is NOT shown to cause the
+  57.6 vs 61.6 gap, which is within run-to-run noise; warmup is not adopted as a default.
+- **Consequence.**  A single 500-episode cell carries ~+-8 points (95 %) once training randomness is included; every
+  single-run comparison in this ledger's VLA tables has that uncertainty.  Detecting a 3-point difference at sd 4.3
+  needs ~30 runs per arm.  Phase-2 variants must be compared with a lower-variance or more phase-2-sensitive
+  protocol, or with several seeds per arm.
   Update (13:50): Object finished on Newton (8/8 shards complete); Goal shards 0-1 finish on Newton (job 1084949),
   Goal shards 2-7 (jobs 1084950-52, HELD) move to the workstation too.  Policies on the private HF repo
   `Potestates/TERRA` (`libero_10_full/`, `libero_goal_full/`; pushed over git-lfs from the login node -- compute nodes
