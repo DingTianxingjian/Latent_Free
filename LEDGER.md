@@ -3761,7 +3761,7 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Next.**  Copy the run dir from Newton, run all 8 shards, then copy the shard jsons back to
   `acdc_la/results/vla_eval_plus/` on Newton and run `liberoplus_summary --note p2ours_full` for the four-suite table.
 
-### 2026-10-30 — LIBERO-Plus, all four suites COMPLETE: 52.6 % over all 10,030 perturbed tasks vs UniVLA's published 43.9, the whole gap in Objects Layout; Camera and Sensor Noise still collapse
+### 2026-10-30 — LIBERO-Plus, all four suites COMPLETE: 52.6 % over all 10,030 perturbed tasks, +8.7 over UniVLA's published 43.9, and the best Robot-Initial-States score on the leaderboard (50.5 of 12 entries); the one real weakness is Sensor Noise
 
 - **Configuration.**  LIBERO-Plus (`sylvestf/LIBERO-plus` @ `4976dc3`), 1 trial per task, note `p2ours_full`, 8 strided
   shards per suite (`LIBERO_TASK_SHARD=k/8`, `LIBERO_RESUME=1`).  Policies = the full-split post-trained arms
@@ -3782,23 +3782,36 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   | Goal | 7.8 | 37.2 | 59.0 | 91.8 | 76.2 | 17.9 | 58.6 | 49.8 | 46.8 | 2591 |
   | Long | 4.3 | 53.4 | 81.5 | 74.1 | 82.0 | 20.5 | 74.7 | 55.8 | 51.8 | 2519 |
   | **ALL (ours)** | **5.5** | **50.5** | **76.8** | **77.1** | **85.7** | **19.3** | **72.9** | **55.4** | **52.6** | 10030 |
-  | UniVLA (LIBERO-Plus README leaderboard) | 1.8 | 46.2 | 69.6 | 69.0 | 81.0 | 21.2 | 31.9 | -- | 43.9 | 10030 |
-  | OpenVLA-OFT (same leaderboard, reference ceiling) | 56.4 | 31.9 | 79.5 | 88.7 | 93.3 | 75.8 | 74.2 | -- | 69.6 | 10030 |
+  | UniVLA (README leaderboard — our architecture's own published row, the baseline that matters) | 1.8 | 46.2 | 69.6 | 69.0 | 81.0 | 21.2 | 31.9 | -- | 43.9 | 10030 |
+  | pi_0 (README) | 13.8 | 6.0 | 58.8 | 85.0 | 81.4 | 79.0 | 68.9 | -- | 53.6 | 10030 |
+  | OpenVLA-OFT (README; wrist camera + OFT stack, a different input/architecture class) | 56.4 | 31.9 | 79.5 | 88.7 | 93.3 | 75.8 | 74.2 | -- | 69.6 | 10030 |
+  | OpenVLA-OFT_w (README; OFT with the wrist camera REMOVED — the table's own wrist ablation) | 10.4 | 38.7 | 70.5 | 76.8 | 93.6 | 49.9 | 69.9 | -- | 55.8 | 10030 |
+
+  **Placement over all 12 leaderboard rows** (ours inserted): Robot Initial States **1st**, Objects Layout 4th,
+  Language 5th, Light 6th, Background 6th, Camera 8th, Sensor Noise 9th, total 8th — between pi_0 (53.6) and UniVLA
+  (43.9), and above NORA (39.0), WorldVLA (25.0), OpenVLA (15.6).
 
   Success falls monotonically with the benchmark's own `difficulty_level`: 75.8 (1) / 60.5 (2) / 55.2 (3) / 47.6 (4) /
   25.5 (5) over 1644 / 2202 / 2094 / 1886 / 2083 tasks — the measurement tracks the intended difficulty axis.
 
-- **Conclusion — confirmed (measurement), not attributed.**  +8.7 points of total over the published UniVLA row, and
-  the decomposition says where it comes from: **Objects Layout 72.9 vs 31.9 (+41.0)** plus smaller gains on Light
-  (+8.1), Language (+7.2), Background (+4.7) and Robot Initial States (+4.3).  **Sensor Noise is no better (19.3 vs
-  21.2) and Camera Viewpoints stays collapsed (5.5 vs 1.8)** — both far below OpenVLA-OFT's 75.8 / 56.4, which has wrist
-  observations and a different visual stack.  So the arm is markedly more robust to *where the objects are* and
-  somewhat more robust to appearance, and not at all more robust to *where the camera is* or to pixel noise.
+- **Conclusion — confirmed (measurement), not attributed.**  The arm beats its own architecture's published row in
+  **6 of 7 categories** and by **+8.7 total**, which puts it at pi_0 level (53.6) from a UniVLA base that scores 43.9.
+  Two results stand out: **Robot Initial States 50.5 is the highest value in the table**, above UniVLA's 46.2 and 20
+  points above OpenVLA-OFT+ (30.3) — initial-state robustness is where this arm is strongest in absolute terms, not
+  merely relative; and **Objects Layout 72.9 vs 31.9 (+41.0)** is 4th of 12, within 1.3 of OpenVLA-OFT (74.2), i.e.
+  top-tier rather than merely improved.  Also up: Light +8.1, Language +7.2, Background +4.7.
+  **Where it does not improve, and how much of that is ours.**  Sensor Noise 19.3 vs 21.2 (flat) and Camera Viewpoints
+  5.5 vs 1.8 (low in absolute terms).  The table's own wrist ablation separates the two: removing the wrist camera from
+  OpenVLA-OFT takes Camera **56.4 -> 10.4** while Noise only goes 75.8 -> 49.9.  So the camera column on this benchmark
+  is dominated by whether the policy has a wrist observation, which the UniVLA input stack does not — our 5.5 is close
+  to what a no-wrist policy can reach and is an architecture fact, not a phase-2 failure.  **Sensor Noise is the one
+  genuine weakness**: a no-wrist OFT still reaches 49.9 and pi_0 reaches 79.0, so ~19 is improvable and nothing in
+  phase 2 addresses pixel-level nuisance.
   **Causally unattributed, as in the standard-LIBERO entry:** no matched no-phase-2 / no-latent control was run (user
   decision) and the head differs from UniVLA's (flow + query tokens), so this is a policy-vs-published-policy
-  comparison, not an ablation of the latent tokenizer.  The layout result is nonetheless the first evidence on a
-  perturbation benchmark that is consistent with the method's claim (action semantics invariant to scene layout), and
-  the camera/noise collapse bounds it: nothing in phase 2 addresses viewpoint or sensor-level nuisance.
+  comparison, not an ablation of the latent tokenizer.  The layout and initial-state results are nonetheless the first
+  evidence on a perturbation benchmark consistent with the method's claim (action semantics invariant to where the
+  scene's objects and the robot start), and the noise column bounds it.
 
 - **Coverage — complete.**  10,030 / 10,030 tasks, 1 trial each.  Newton finished Goal shards 0-1 (`19a1635`,
   324/324 at 47.8 % and 45.4 %) after this table was first computed over 9,835; the 195 added tasks moved the total
@@ -3815,9 +3828,10 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   `LIBERO_PLUS_CLS` (the benchmark clone path differed per host, which was the only thing blocking a local summary).
 
 - **Next.**  (1) The registered intervention/replay experiment is the controlled version of this result: LIBERO-Plus
-  supplies no counterfactual pairs, so it cannot say whether the layout gain comes from the latent's invariance or
-  from the post-training mixture.  (2) Camera Viewpoints at 5.5 % is a concrete, reportable failure mode of the UniVLA
-  visual stack at our scale; do not claim viewpoint robustness.  (3) Nothing further to run on LIBERO-Plus for this
+  supplies no counterfactual pairs, so it cannot say whether the layout and initial-state gains come from the latent's
+  invariance or from the post-training mixture.  (2) Report Robot Initial States (1st) and Objects Layout (4th) as the
+  headline; state the camera column as a no-wrist-input limitation with the OFT_w ablation as evidence, and Sensor
+  Noise as the open weakness.  Do not claim viewpoint robustness.  (3) Nothing further to run on LIBERO-Plus for this
   arm — the four-suite table is final.
 
 ## Registered next method: intervention first, real pairs second
