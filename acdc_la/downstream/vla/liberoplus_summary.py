@@ -8,7 +8,8 @@ and prints success per perturbation category and suite, the mean over the seven 
 import argparse, glob, json, os
 from collections import defaultdict
 
-CLS = "/lustre/fs1/home/ti874297/lf/envs/LIBERO-plus/libero/libero/benchmark/task_classification.json"
+CLS = os.environ.get("LIBERO_PLUS_CLS",            # the benchmark clone differs per host, hence the override
+                     "/lustre/fs1/home/ti874297/lf/envs/LIBERO-plus/libero/libero/benchmark/task_classification.json")
 SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 CATS = ("Camera Viewpoints", "Robot Initial States", "Language Instructions", "Light Conditions", "Background Textures",
         "Sensor Noise", "Objects Layout")
@@ -18,7 +19,8 @@ SHORT = dict(zip(CATS, ("Camera", "Robot", "Language", "Light", "Background", "N
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--note", required=True)
     ap.add_argument("--dir", default=os.path.join(os.path.dirname(__file__), "..", "..", "results", "vla_eval_plus"))
-    a = ap.parse_args(); cls = json.load(open(CLS))
+    ap.add_argument("--cls", default=CLS)
+    a = ap.parse_args(); cls = json.load(open(a.cls))
     res = {}                                                   # (suite, task index) -> success
     for s in SUITES:
         for f in glob.glob(os.path.join(a.dir, f"cont_{s}_plus_{a.note}_s*of*.json")):

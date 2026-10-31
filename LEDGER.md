@@ -3761,6 +3761,66 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
 - **Next.**  Copy the run dir from Newton, run all 8 shards, then copy the shard jsons back to
   `acdc_la/results/vla_eval_plus/` on Newton and run `liberoplus_summary --note p2ours_full` for the four-suite table.
 
+### 2026-10-30 (14:03 UTC) — LIBERO-Plus, all four suites: 52.3 % over 9,835 perturbed tasks vs UniVLA's published 43.9, the whole gap in Objects Layout; Camera and Sensor Noise still collapse
+
+- **Configuration.**  LIBERO-Plus (`sylvestf/LIBERO-plus` @ `4976dc3`), 1 trial per task, note `p2ours_full`, 8 strided
+  shards per suite (`LIBERO_TASK_SHARD=k/8`, `LIBERO_RESUME=1`).  Policies = the full-split post-trained arms
+  (`tc_cont+<suite>_no_noops+...+fm+q4--p2ours_<suite>_full`, flow head, 4 query tokens), one per suite, i.e. the same
+  checkpoints that give standard LIBERO 97.2 / 98.8 / 94.4 / 89.0 (avg **94.9**) against UniVLA's published
+  96.5 / 96.8 / 95.6 / 92.0 (avg 95.2) — in-distribution the two are matched, which is what makes the Plus
+  comparison readable.  Spatial + Object + Goal shards 0-1 on Newton; **Long all 8 shards and Goal shards 2-7 on the
+  UCF workstation** (2 GPUs, ~23 s/task, Long 13 h 49 m, Goal 6 h 17 m, every shard exit 0) after Newton's October GPU
+  quota ran out; policies fetched from HF `Potestates/TERRA`.  Environment deviations on the workstation (upstream
+  LIBERO-plus + ImageMagick 7) are recorded in the 2026-10-29 entry; each shard ran whole on one machine.
+
+- **Result (success %, 1 trial per task; `acdc_la/results/vla_eval_plus/summary_plus_p2ours_full.json`).**
+
+  | suite | Camera | Robot | Language | Light | Background | Noise | Layout | cat-mean | total | n |
+  |---|---|---|---|---|---|---|---|---|---|---|
+  | Spatial | 6.4 | 57.4 | 84.4 | 94.9 | 98.8 | 17.1 | 92.5 | 64.5 | 62.5 | 2402 |
+  | Object | 3.5 | 55.3 | 84.2 | 48.5 | 87.1 | 21.1 | 67.7 | 52.5 | 49.8 | 2518 |
+  | Goal | 7.8 | 37.2 | 59.0 | 91.4 | 76.2 | 16.9 | 58.6 | 49.6 | 45.0 | 2396 |
+  | Long | 4.3 | 53.4 | 81.5 | 74.1 | 82.0 | 20.5 | 74.7 | 55.8 | 51.8 | 2519 |
+  | **ALL (ours)** | **5.5** | **50.5** | **76.8** | **76.0** | **85.7** | **19.1** | **73.9** | **55.4** | **52.3** | 9835 |
+  | UniVLA (LIBERO-Plus README leaderboard) | 1.8 | 46.2 | 69.6 | 69.0 | 81.0 | 21.2 | 31.9 | -- | 43.9 | 10030 |
+  | OpenVLA-OFT (same leaderboard, reference ceiling) | 56.4 | 31.9 | 79.5 | 88.7 | 93.3 | 75.8 | 74.2 | -- | 69.6 | 10030 |
+
+  Success falls monotonically with the benchmark's own `difficulty_level`: 75.7 (1) / 60.2 (2) / 55.1 (3) / 47.6 (4) /
+  25.4 (5) over 1589 / 2156 / 2068 / 1869 / 2056 tasks — the measurement tracks the intended difficulty axis.
+
+- **Conclusion — confirmed (measurement), not attributed.**  +8.4 points of total over the published UniVLA row, and
+  the decomposition says where it comes from: **Objects Layout 73.9 vs 31.9 (+42.0)** plus smaller gains on Language
+  (+7.2), Light (+7.0), Background (+4.7) and Robot Initial States (+4.3).  **Sensor Noise is no better (19.1 vs 21.2)
+  and Camera Viewpoints stays collapsed (5.5 vs 1.8)** — both far below OpenVLA-OFT's 75.8 / 56.4, which has wrist
+  observations and a different visual stack.  So the arm is markedly more robust to *where the objects are* and
+  somewhat more robust to appearance, and not at all more robust to *where the camera is* or to pixel noise.
+  **Causally unattributed, as in the standard-LIBERO entry:** no matched no-phase-2 / no-latent control was run (user
+  decision) and the head differs from UniVLA's (flow + query tokens), so this is a policy-vs-published-policy
+  comparison, not an ablation of the latent tokenizer.  The layout result is nonetheless the first evidence on a
+  perturbation benchmark that is consistent with the method's claim (action semantics invariant to scene layout), and
+  the camera/noise collapse bounds it: nothing in phase 2 addresses viewpoint or sensor-level nuisance.
+
+- **Coverage caveat.**  9,835 of 10,030 tasks.  The 195 missing are Goal shards 0-1, which Newton committed at ~70 %
+  (227/324 and 226/324) and could not finish before its quota expired; they are category-biased (Objects Layout 106,
+  Light Conditions 70, Sensor Noise 19) because the suite is ordered by category.  Imputing each missing task at its
+  own Goal-suite category rate moves the total 52.26 -> 52.54, so the headline is insensitive to them; the Goal row's
+  Layout (58.6) and Light (91.4) rest on 75 % and 75 % of their tasks.  Worth re-running those two shards when Newton's
+  quota resets, or on the workstation.
+  Reading a partial run by overall success is misleading in general for this benchmark: at 147/2519 tasks the Long run
+  showed 74 %, because strided shards walk the category-ordered suite and only Robot Initial States and Background
+  Textures had been reached; the final Long number is 51.8.
+
+- **Artifacts.**  `acdc_la/results/vla_eval_plus/cont_{libero_10,libero_goal}_plus_p2ours_full_s*of8.json` (14 new
+  shard jsons), `summary_plus_p2ours_full.json` (regenerated over all four suites);
+  `acdc_la/logs/liberoplus_p2ours_full_libero_{10,goal}_s*of8.log` (gitignored, workstation);
+  `/data/ti874297/liberoplus/run_plus_all.log`; `acdc_la/downstream/vla/liberoplus_summary.py` now takes `--cls` /
+  `LIBERO_PLUS_CLS` (the benchmark clone path differed per host, which was the only thing blocking a local summary).
+
+- **Next.**  (1) Finish Goal shards 0-1 for full coverage.  (2) The registered intervention/replay experiment is the
+  controlled version of this result: LIBERO-Plus supplies no counterfactual pairs, so it cannot say whether the layout
+  gain comes from the latent's invariance or from the post-training mixture.  (3) Camera Viewpoints at 5.5 % is a
+  concrete, reportable failure mode of the UniVLA visual stack at our scale; do not claim viewpoint robustness.
+
 ## Registered next method: intervention first, real pairs second
 
 
