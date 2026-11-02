@@ -3807,6 +3807,15 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   to what a no-wrist policy can reach and is an architecture fact, not a phase-2 failure.  **Sensor Noise is the one
   genuine weakness**: a no-wrist OFT still reaches 49.9 and pi_0 reaches 79.0, so ~19 is improvable and nothing in
   phase 2 addresses pixel-level nuisance.
+  **Which margins survive the run-to-run noise measured the same day** (see the 2026-10-30 replicate entry: training
+  randomness sd ~3.7 points for a 10 % Long post-training run).  LIBERO-Plus itself is nearly noise-free at the total
+  level -- 1 trial x 10,030 tasks gives a sampling s.e. of 0.5 points, far tighter than a 500-episode LIBERO cell --
+  but each suite's number still comes from ONE post-trained checkpoint, so the ~3.7 bound applies to the policy.
+  Against that bound: **Objects Layout +41.0 is ~11 sd** and cannot be noise; **total +8.7 is ~2.4 sd**, solid but not
+  overwhelming; **Robot Initial States +4.3 over UniVLA's 46.2 is ~1.2 sd, i.e. inside it** -- 50.5 is the highest
+  value in the table as measured, and the lead over 3rd place (OpenVLA-OFT_w 38.7) is +11.8, but the lead over UniVLA
+  specifically must not be reported as established.  The full-split checkpoints used here trained on 10x the data for
+  30-40k steps, so 3.7 is an upper bound carried over from a 10 %-data run, not a measurement on these runs.
   **Causally unattributed, as in the standard-LIBERO entry:** no matched no-phase-2 / no-latent control was run (user
   decision) and the head differs from UniVLA's (flow + query tokens), so this is a policy-vs-published-policy
   comparison, not an ablation of the latent tokenizer.  The layout and initial-state results are nonetheless the first
