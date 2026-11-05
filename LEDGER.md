@@ -4842,3 +4842,18 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   compared with no-phase-2 and no-latent controls.
 - **Budget note.**  Queued job 20828934 (UniVLA latent + flow + q4, Goal, no phase 2; registered 2026-09-20) started
   today and will use ~25-30 SU with its evaluations; it doubles as an Anvil seed of the no-phase-2 control.
+
+### 2026-11-05 — Full-parameter phase 2 finished 20k; decay branch queued; post-training launcher for the 62 GB workstation
+
+- **Phase 2.**  `p2fft_ours` reached step 20000 (job 1090237, exit 0 after 18 segments), latent R2 ~0.845, against ~0.82 at
+  step 5000.  Decay branch `p2fft_ours_decay` (20k -> 22k, lr linear to 0) submitted as job 1157422; its branch code has
+  not yet run on the real job at the time of writing.
+- **Launcher.**  `acdc_la/scripts/run_vla_post2_portable.sh`: full split, global batch 128, Long 40k / others 30k steps.
+- **Two memory traps of post-training a `vla_full.pt` base on the workstation** (62 GB, about 41 GB free).  Both are
+  arithmetic from the September measurements, not measured on this configuration:
+  1. `CTRL_REITER_BATCHES` counts micro-batches, the RLDS leak goes with samples.  A fixed 2500 is 20k samples per iterator
+     at BS 8 but 80k at BS 32, ~20 GB per rank.  The launcher derives it from BS (20000 / BS).
+  2. Each start and the final merge hold the 15 GB `vla_full.pt` in RAM on top of the base; the September runs had no such
+     file and already peaked at 35-40 GB in the merge.  `torch.load(full_init, ..., mmap=True)` removes the copy (tested on
+     a compute node: 982 tensors, 50 read, max RSS 0.43 GB).  mmap fails on Newton login nodes (`ulimit -v` 4 GB), not on
+     compute nodes.  The Newton diag runs and earlier post-training did not use this flag; the loaded values are the same.

@@ -331,7 +331,7 @@ def finetune(cfg: Cfg) -> None:
     full_init = None
     if not cfg.full_ft and cfg.init_from_run and os.path.exists(os.path.join(cfg.init_from_run, "vla_full.pt")):
         full_init = os.path.join(cfg.init_from_run, "vla_full.pt")
-        vla.load_state_dict(torch.load(full_init, map_location="cpu"))
+        vla.load_state_dict(torch.load(full_init, map_location="cpu", mmap=True))
         if state.is_main_process: print(f"[ctrl] base VLA from {full_init}", flush=True)
     if not cfg.full_ft: vla = vla.to(device_id)
     lora = LoraConfig(r=cfg.lora_rank, lora_alpha=min(cfg.lora_rank, 16), lora_dropout=cfg.lora_dropout, target_modules="all-linear",
@@ -510,7 +510,7 @@ def finetune(cfg: Cfg) -> None:
     if cfg.merge and not cfg.full_ft and state.is_main_process:                         # merge LoRA into a standalone checkpoint for the evaluator
         base = AutoModelForVision2Seq.from_pretrained(cfg.vla_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True)
         if not cont or nq: base.resize_token_embeddings(len(processor.tokenizer))
-        if full_init: base.load_state_dict(torch.load(full_init, map_location="cpu"))     # the phase-2 base the LoRA was trained on
+        if full_init: base.load_state_dict(torch.load(full_init, map_location="cpu", mmap=True))     # the phase-2 base the LoRA was trained on
         merged = PeftModel.from_pretrained(base, adapter_dir).merge_and_unload(); merged.save_pretrained(run_dir)
         print(f"[ctrl-done] merged checkpoint at {run_dir} ({int(time.time() - t0)}s)", flush=True)
     dist.barrier()
