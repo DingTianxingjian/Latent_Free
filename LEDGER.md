@@ -3843,6 +3843,50 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   Noise as the open weakness.  Do not claim viewpoint robustness.  (3) Nothing further to run on LIBERO-Plus for this
   arm — the four-suite table is final.
 
+### 2026-11-05 — workstation readiness for post-training the 20k full-parameter phase-2 arm: measured, and three things that would have killed the run
+
+- **Why.**  The 20k `fft` phase-2 checkpoint is to be post-trained and compared with the existing cells.  User decision:
+  run the **10 % Long** cell first (15k steps, global 64) rather than the full split, because it joins the six cells of
+  the 2026-10-30 replicate table directly and costs 9.5 h instead of 50 h.  Launcher `run_vla_post2_portable.sh`
+  (Newton, `346aab1`).
+- **Throughput, measured here (120-step smoke, Long RLDS at `LIBERO_TRAIN_FRAC=10`, 1 GPU, b32x1, flow head + q4).**
+  2.32 s/step = **13.8 samples/s/GPU**, against 14.1 for the 2026-09-19 2-GPU Goal run and 16.2 for an H100 in
+  Newton's full-split runs -- this box is ~15 % slower per card than an H100.  So the 10 % Long cell is **9.5 h on two
+  GPUs, 19.3 h on one**, and the full split would be 50 h (Long) / 6.8 days (four suites), NOT the 2.3-2.9 days /
+  7.5-9.3 days quoted earlier from a 2026-09-14 probe that had shared its GPU with another job.  `latent_r2`
+  0.13 -> 0.39 and `action_l1` 0.35 -> 0.21 over 100 steps, the same shape as the September Goal run.
+  **VRAM 43.8 GB per rank** at batch 8.
+- **Host RAM, measured (62 GB box, clean processes).**  `torch.load(vla_full.pt, mmap=True)` of a 15.1 GB file adds
+  **nothing** to RSS (2.2 GB before and after) -- the mmap change (`346aab1`) works.  `load_state_dict` then peaks at
+  **30.6 GB**, `merge_and_unload` **31.9 GB**, `save_pretrained` **31.9 GB**; the whole merge path 250 s.  This
+  **replaces the 50-55 GB estimate** that was reasoned from the September numbers: mmap keeps the file's 15 GB out of
+  anonymous memory, where it is also reclaimable.  Measured with a stand-in `vla_full.pt` (the openvla-7b state dict,
+  15.1 GB, same shapes) and a real same-shape adapter (`tc_cont+...+fm+q4--latp2inv_fmq4_frac10`): a memory
+  measurement, not a model.  Two embedding keys were skipped (the stand-in predates the resize), so add ~0.5 GB, and
+  at the real merge rank 1 is still alive at the barrier, so call it 32-33 GB of 41 available.
+- **Three fixes this found.**  (1) The launcher hard-required `BS x GA x GPUs = 128` and exited otherwise, but every
+  existing 10 % cell is global **64** (`b32x2`); running the new arm at 128 would not be comparable with the cells it
+  is meant to join.  `GLOBAL` added, default 128 (`4a3bf61`).  (2) `CTRL_STAGGER_SEC` defaults to 90 but one
+  `load_state_dict` takes ~180 s, so both ranks would hold ~15 GB of private parameters at once (~43 GB against 41
+  available): **use `CTRL_STAGGER_SEC=240`**, which lets rank 0 reach `vla.to(device_id)` and free its CPU copy first.
+  (3) The transfer list must include **`action_decoder.pt`** (heads, read at `finetune_libero_ctrl.py:342`) --
+  `consolidate_fft_ckpt.py:2-4` gives the full set: `vla_full.pt` + `action_decoder.pt` + `ctrl_meta.json` +
+  processor + `dataset_statistics.json`.
+- **Also verified.**  `LIBERO_TRAIN_FRAC` is live in the vendored UniVLA tree
+  (`third_party/UniVLA/prismatic/vla/datasets/rlds/dataset.py:251-255`); if it were not, `FRAC=10` would silently
+  train on 95 % of the demos and the cell would not be the one it is compared against.  Long RLDS (3.5 GB) taken from
+  HF `openvla/modified_libero_rlds`, the same source as the local Spatial/Goal, so Newton is not needed for data.
+- **Conclusion — confirmed (infrastructure).**  Nothing measured about the method.  The run is blocked only on the
+  15 GB `vla_full.pt`, which needs the user's own terminal (Newton offers only `password,keyboard-interactive` and
+  this harness has no tty), and on GPU 1, which another job holds at 53.8 GB of 96 -- leaving 42 GB against the
+  43.8 GB a rank needs, so two-GPU is not startable until it frees.
+- **Artifacts.**  `acdc_la/logs/` smoke log and `/data/ti874297/{smoke_long.log,mmap_test/{check,merge}.log}`;
+  run dir `/data/ti874297/vla_runs/tc_cont+libero_10_no_noops+b32x1+...--smoke_long_frac10` (120-step smoke, no
+  checkpoint); scratch `merge_check.py` / `mmap_check.py`.
+- **Next.**  `INIT=/data/ti874297/p2fft_20k GLOBAL=64 FRAC=10 STEPS=15000 CTRL_STAGGER_SEC=240 NOTE=p2fft20k_libero_10_frac10`.
+  One cell carries +-8 points (2026-10-30), so two replicates (19 h on two GPUs) are what make it comparable with the
+  LoRA and no-phase-2 arms, which have replicates.  The full split stays a separate decision.
+
 ## Registered next method: intervention first, real pairs second
 
 
