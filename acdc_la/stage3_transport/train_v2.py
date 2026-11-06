@@ -194,7 +194,9 @@ def step(model, feat, b, a, ctx, train=True):
     # shape and ctx_sens monitors.  Cross-context identifiability is not solvable here without counterfactual truth.
     pi = derangement(B, dev, b["ge"])                                      # same batch, different episode
     sim = torch.as_tensor(si.numpy()[pi.cpu().numpy()] == si.numpy(), device=dev)      # and same source
-    if a.lam_effect > 0 and bool(sim.any()):
+    # MMD needs the same transported Ye, so the block also runs for lam_effect = 0 with lam_real > 0 (the "no L_effect"
+    # ablation, 2026-11-06); the ramp scales both weights together, so the default arms are unchanged
+    if (a.lam_effect > 0 or a.lam_real > 0) and bool(sim.any()):
         Ye = model.decode(b["f0"], b["c"], z[pi])                          # donor i's ONLINE code on state j
         psi_syn = _psi(Ye, ctx)[0]
         with torch.no_grad(): psi_all = _psi(b["dF"], ctx)[0]

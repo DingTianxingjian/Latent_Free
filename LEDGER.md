@@ -4901,3 +4901,32 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
      file and already peaked at 35-40 GB in the merge.  `torch.load(full_init, ..., mmap=True)` removes the copy (tested on
      a compute node: 982 tensors, 50 read, max RSS 0.43 GB).  mmap fails on Newton login nodes (`ulimit -v` 4 GB), not on
      compute nodes.  The Newton diag runs and earlier post-training did not use this flag; the loaded values are the same.
+
+### 2026-11-05 — Downstream of the 20k full-parameter model queued on Newton (user's call; the workstation is shared and busy)
+
+- **10 % Long:** job 1157664, same recipe as the other 10 % cells.  **Full split, four suites:** jobs 1157709 1157714 1157719 1157724 (4 GPUs, 8 x 4, Long 40k /
+  others 30k, 500-episode standard LIBERO eval at the end).  **LIBERO-Plus:** jobs 1157710 1157711 1157712 1157713 1157715 1157716 1157717 1157718 1157720 1157721 1157722 1157723 1157725 1157726 1157727 1157728, note `p2fft20k_full`, 8 shards per
+  suite, each afterok on its suite's training.  One post-training per suite serves both benchmarks.
+- **Update 2026-11-06 12:00.**  Object/Spatial/Goal post-training moved from highgpu (estimated start 11-19) to normal,
+  2 GPUs x 8 x accum 8 (same global batch 128; run dirs read `b64x2`): jobs 1172709 1172714 1172719, Plus jobs 1172710 1172711 1172712 1172713 1172715 1172716 1172717 1172718 1172720 1172721 1172722 1172723.  Long stays on highgpu
+  (1157709, running).  Decay branch 1157422 started correctly from 20000 but only reached the 20750 checkpoint in 30 h:
+  RSS hit the 740 GB hard limit (~95 min) before the next 250-step save (~92 min) in most segments.  Continuation 1172724
+  (afterany, SAVE=100).
+
+### 2026-11-06 — Rebuttal ablation A queued: 7 arms x 3 seeds from tc_cont (65k), all retrained on Newton
+
+- **Arms** (`acdc_la/scripts/run_eat_ablation_newton.sh`, tags `eatab_<arm>_s<seed>`): recon (L_self, = tc_cont_plus15k),
+  noinv (= latp2_anchor), full (= latp2_inv), a1 L_self + L_inv, a2 full - L_effect, a3 full - L_rel, a4 full - L_dist.
+  Seeds 0, 1, 2.  Jobs in `acdc_la/logs/eatab.jobids` (1172833-53), preemptable partition.
+- **Data deviation, so seed 0 is retrained too.**  The paper's rows were trained on the CAPPED OXE caches (Anvil,
+  8.19 M train clips); those caches are not on Newton (`cache/oxe` -> empty `cache_oxe`).  All 21 runs use the uncapped
+  caches (`ACDC_FULL_DATA=1`, 17.4 M train clips), the same as `latp2_inv_full`.  The 65k start `tc_cont` itself was
+  trained on the capped data.  The table must be reported as its own set, not merged with the paper's single-seed rows;
+  the distractor video was also rebuilt on Newton (entry 2026-10, `latp2_inv_full`), so the drop column moves too.
+- **Code change.**  `train_v2.step`: the transport block (Ye, MMD) now also runs when `lam_effect = 0` and `lam_real > 0`.
+  Before, MMD was only computed inside the L_effect branch, so "no L_effect" would silently have dropped L_dist as well.
+  The warm-up ramp scales both weights together, so the existing arms compute exactly what they did.
+- **Cost, corrected.**  `latp2_inv_full` ran at 2.84 s/step on one H100 (job 944428): ~12 h per 15k-step EAT run, and
+  it timed out at 12 h in the final evaluation.  21 runs are ~250 GPU-hours, not the ~40 in the plan.  Time limit 20 h.
+- **Not yet runnable.**  A5 (direct MLP prediction head) needs code; A6 is the existing `L_recover` (smooth-L1 to the
+  EMA target's code, not cosine); A7 needs a 65k F0|N endpoint tokenizer that does not exist.
