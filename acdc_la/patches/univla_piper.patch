@@ -1,0 +1,51 @@
+Real-robot Piper dataset (2026-11-06): registers piper_pick_can (acdc_la/realrobot/convert_piper_rlds.py output) in
+prismatic's OXE configs + standardisation transforms. Apply after univla_rlds_acdc.patch.
+
+diff --git a/prismatic/vla/datasets/rlds/oxe/configs.py b/prismatic/vla/datasets/rlds/oxe/configs.py
+index 931e8aa..456662a 100644
+--- a/prismatic/vla/datasets/rlds/oxe/configs.py
++++ b/prismatic/vla/datasets/rlds/oxe/configs.py
+@@ -691,6 +691,16 @@ OXE_DATASET_CONFIGS = {
+         "state_encoding": StateEncoding.POS_EULER,
+         "action_encoding": ActionEncoding.EEF_POS,
+     },
++    # Real robot (acdc_la 2026-11-06): AgileX Piper, jachansantiago/pick_can_place_plate_150_trimmed via
++    # acdc_la/realrobot/convert_piper_rlds.py.  Action = 6 ABSOLUTE joint targets + gripper/8.2 in [0,1]; declared EEF_POS
++    # only for prismatic's contract (dims 0-5 q01/q99-normalised, last dim raw), the policy never sees the label.
++    "piper_pick_can": {
++        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
++        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
++        "state_obs_keys": ["EEF_state", None, "gripper_state"],
++        "state_encoding": StateEncoding.POS_EULER,
++        "action_encoding": ActionEncoding.EEF_POS,
++    },
+     "libero_10_no_noops": {
+         "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
+         "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
+diff --git a/prismatic/vla/datasets/rlds/oxe/transforms.py b/prismatic/vla/datasets/rlds/oxe/transforms.py
+index 47d90b5..362b3d6 100644
+--- a/prismatic/vla/datasets/rlds/oxe/transforms.py
++++ b/prismatic/vla/datasets/rlds/oxe/transforms.py
+@@ -848,6 +848,14 @@ def libero_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
+     return trajectory
+ 
+ 
++def piper_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
++    # acdc_la 2026-11-06: actions are already [6 joint targets, gripper in 0..1] (convert_piper_rlds.py); state is the
++    # raw 14-D Piper vector, eef pose at 7:13 (unused: post-training runs with load_proprio=False)
++    trajectory["observation"]["EEF_state"] = trajectory["observation"]["state"][:, 7:13]
++    trajectory["observation"]["gripper_state"] = trajectory["observation"]["state"][:, 6:7]
++    return trajectory
++
++
+ def human_dataset_transform(sample: Dict[str, Any]) -> Dict[str, Any]:
+     """
+     Transforms human data into the expected format by adding dummy actions.
+@@ -956,6 +964,7 @@ OXE_STANDARDIZATION_TRANSFORMS = {
+     "libero_spatial_no_noops": libero_dataset_transform,
+     "libero_object_no_noops": libero_dataset_transform,
+     "libero_goal_no_noops": libero_dataset_transform,
++    "piper_pick_can": piper_dataset_transform,
+     "libero_10_no_noops": libero_dataset_transform,
+     "libero_10_no_noops_mini": libero_dataset_transform,
+     "libero_goal_no_noops_mini": libero_dataset_transform,

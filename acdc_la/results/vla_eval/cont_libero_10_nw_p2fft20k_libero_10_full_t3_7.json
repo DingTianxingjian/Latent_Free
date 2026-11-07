@@ -1,0 +1,18 @@
+{
+ "checkpoint": "acdc_la/ckpt/vla_runs/tc_cont+libero_10_no_noops+b32x4+lr0.00035+r32+s40000+fm+q4--p2fft20k_libero_10_full",
+ "suite": "libero_10",
+ "trials": 50,
+ "per_task": {
+  "put the black bowl in the bottom drawer of the cabinet and close it": 0.94,
+  "put both the alphabet soup and the cream cheese box in the basket": 0.96
+ },
+ "task_ids": [
+  3,
+  7
+ ],
+ "per_task_id": {
+  "3": 0.94,
+  "7": 0.96
+ },
+ "success": 0.95
+}

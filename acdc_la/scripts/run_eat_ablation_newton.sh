@@ -2,8 +2,8 @@
 #SBATCH --account=ytian
 #SBATCH --partition=preemptable
 #SBATCH --qos=preemptable
-#SBATCH --gres=gpu:1
-#SBATCH --exclude=evc22,evc26,evc38,evc40,evc43,evc44,evc45,evc48
+#SBATCH --gres=gpu:nvidia_h100_pcie:1
+#SBATCH --exclude=evc11,evc22,evc26,evc38,evc40,evc43,evc44,evc45,evc48
 #SBATCH -N 1 -n 1 -c 16 --mem=160G
 #SBATCH -t 20:00:00
 #SBATCH -J eatab
@@ -16,6 +16,7 @@
 #   ARM=recon|noinv|full|a1|a2|a3|a4 SEED=0 sbatch acdc_la/scripts/run_eat_ablation_newton.sh
 source /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/scripts/common.sh
 export ACDC_FULL_DATA=1 TORCH_HOME=$PWD/cache/torch
+timeout 120 $PY -c "import torch,sys; sys.exit(0 if torch.cuda.is_available() else 1)" || { echo "EATAB NO GPU on $(hostname) -- bad node, exiting"; exit 3; }   # evc11 (2026-11-06) allocated a GPU torch could not see
 A=${ARM:?}; S=${SEED:?}; TAG=eatab_${A}_s${S}
 COMMON="--tag $TAG --init-from tc_cont --steps 15000 --warmup 4000 --batch 64 --lr 3e-4 --seed $S --workers 12 --save-every 1000 --resume"
 V2="stage3_transport.train_v2 $COMMON --eval-every 3000 --lam-recover 0"

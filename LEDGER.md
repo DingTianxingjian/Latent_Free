@@ -4930,3 +4930,19 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   it timed out at 12 h in the final evaluation.  21 runs are ~250 GPU-hours, not the ~40 in the plan.  Time limit 20 h.
 - **Not yet runnable.**  A5 (direct MLP prediction head) needs code; A6 is the existing `L_recover` (smooth-L1 to the
   EMA target's code, not cosine); A7 needs a 65k F0|N endpoint tokenizer that does not exist.
+
+### 2026-11-07 — real-robot data path (Piper); p2_univla downstream flagged INVALID; ablation jobs pinned to H100
+
+- **Real robot.** `jachansantiago/pick_can_place_plate_150_trimmed` (LeRobot v3, AgileX Piper, 150 eps, 1 task, 30 Hz,
+  front + wrist 640x480 AV1) -> `data/real_rlds/piper_pick_can/1.0.0` by `acdc_la/realrobot/convert_piper_rlds.py`
+  (run as a module on a compute node): 10 Hz (every 3rd frame), action = 6 absolute joint targets + gripper/8.2 in
+  [0,1], images 256x256; 6,462 steps.  Registered via `acdc_la/patches/univla_piper.patch` (apply after
+  univla_rlds_acdc.patch).  Launcher takes `DS=piper_pick_can EXTRA="--data_root_dir data/real_rlds" SKIP_EVAL=1`.
+  TERRA arm = 20k `p2fft_ours` + LoRA/flow/q4, 10k steps x 64 (train[:95%] = 142 eps).  To run on the workstation
+  (no queue); Newton copy 1176736 held as backup.  UniVLA baseline = official release + official recipe (user, plan 1).
+- **p2_univla downstream = INVALID (not investigated further, user).**  Object @10 % 0/500 and Long @10 % stopped at
+  8,750 steps: train one-step action L1 stays 0.13-0.15 (p2ours same suite 0.034), i.e. the action head never
+  learned under that init -- a training failure, not an evaluator bug.  No p2_univla number may be used.
+- **Ablation A.** evc11 is a V100 node where torch saw no GPU; preemptable V100 slots were also preempted within
+  minutes.  Launcher now requests `gpu:nvidia_h100_pcie:1`, excludes evc11, and exits if CUDA is unavailable; all
+  pending jobs updated, the 9 dead ones resubmitted (ids in `acdc_la/logs/eatab.jobids`).

@@ -24,7 +24,7 @@ export LIBERO_TRAIN_FRAC=${FRAC:-10} CTRL_STAGGER_SEC=${CTRL_STAGGER_SEC:-90} CT
 [ "${FRAC:-10}" = full ] && unset LIBERO_TRAIN_FRAC     # FRAC=full: UniVLA's own split, train[:95%] (rlds/dataset.py)
 PY=/lustre/fs1/home/ti874297/lf/envs/univla_vla/bin/python
 source /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/scripts/gpu_preflight_newton.sh
-L=${LATENT:?set LATENT}; S=${SUITE:?set SUITE}; N=${NOTE:?set NOTE}; DS=${S}_no_noops
+L=${LATENT:?set LATENT}; S=${SUITE:?set SUITE}; N=${NOTE:?set NOTE}; DS=${DS:-${S}_no_noops}   # DS=piper_pick_can + EXTRA="--data_root_dir data/real_rlds" for the real-robot data (2026-11-06)
 X="--head flow --query_tokens ${QT:-4}"; [ "$L" = tc_cont ] && X="$X --tc_tag ${TC_TAG:-latp2_inv}"
 [ -n "${INIT:-}" ] && X="$X --init_from_run $INIT"          # unset INIT = the no-phase-2 control (section 6)
 RUN=$(ls -d acdc_la/ckpt/vla_runs/${L}+${DS}+b*+*s${STEPS:-15000}*--${N} 2>/dev/null | head -1)
