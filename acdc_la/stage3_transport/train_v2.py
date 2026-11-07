@@ -209,6 +209,15 @@ def step(model, feat, b, a, ctx, train=True):
             out["effect_margin"] = out["effect_cos"] - out["effect_shuffle"]
             out["replay_cos"] = F.cosine_similarity(psi_syn, psi_all, dim=1)[sim].mean()   # j's OWN effect: replay check
 
+    # ---- A5 "L_effect -> head" (rebuttal 2026-11-07): the same target Psi(dF_i), predicted DIRECTLY from the code by a
+    # trainable MLP g instead of being realised through T on another state.  Isolates whether transport matters or any
+    # Psi-predictive pressure on z would do.  ctx["head"] is built (and put in the optimiser) by train_multi.
+    if getattr(a, "lam_head", 0) > 0 and "head" in ctx:
+        with torch.no_grad(): psi_t = _psi(b["dF"], ctx)[0]
+        out["head_cos"] = F.cosine_similarity(ctx["head"](z.flatten(1)), psi_t, dim=1).mean()
+        out["head"] = 1 - out["head_cos"]
+        loss = loss + a.lam_head * out["head"]
+
     # ---- L_recover: the code-space cycle of the original design, kept as a DIAGNOSTIC (lam_recover = 0) ----
     zs, ok = _donors(ctx, si, ge, model.n_tokens, model.d, dev)
     if ok.any():
@@ -270,8 +279,10 @@ def step(model, feat, b, a, ctx, train=True):
     # so this is the SPR/BYOL form, and z_erank says whether it is being satisfied by collapse.
     if a.lam_inv > 0:
         with torch.no_grad():
-            g4a = feat.g4_of(_jitter(b["frames"]))
-            f0a, dFa = g4a[:, 0], Fz.dF_from_g4(g4a, feat.dstats)
+            if "_aug" in b: f0a, dFa = b["_aug"]                     # train_multi: ONE jitter draw shared by every arm
+            else:
+                g4a = feat.g4_of(_jitter(b["frames"]))
+                f0a, dFa = g4a[:, 0], Fz.dF_from_g4(g4a, feat.dstats)
         za = _code(model, f0a, dFa)                                    # online encoder, WITH gradient
         out["inv_cos"] = F.cosine_similarity(_std(za, ctx["zmu"], ctx["zvar"]).flatten(1),
                                              _std(zt, ctx["zmu"], ctx["zvar"]).flatten(1), dim=1).mean()

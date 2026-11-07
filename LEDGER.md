@@ -4972,3 +4972,19 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Next.**  The 10 % Long cell is the discriminating one.  Newton job 1157664 is replicate 1; the workstation run
   (`GLOBAL=64 FRAC=10 STEPS=15000`) becomes **replicate 2**, which is what makes the cell comparable with the LoRA and
   no-phase-2 arms, both of which have replicates.  Not a duplicate of 1157664 -- the pair is the point.
+
+### 2026-11-07 (00:00) — ablation A regrouped (Newton)
+
+- **Ablation A re-planned (2026-11-07 ~00:00): grouped, 3 arms per job.**  The single-arm runs were GPU-bound, not
+  data-bound (`a3` on evc49: 2.82 s/step, GPU util 82-100 %), and the H100 preemptable pool gave us ~1 GPU at a time
+  (a3 s0 was itself preempted at ~600 steps, before its first save).  New `stage3_transport/train_multi.py` trains
+  several arms in one process on ONE batch stream: batch, DINO features and the L_inv jitter draw are computed once,
+  each arm keeps its own model / EMA teacher / buffer / optimiser / schedule / checkpoint (`ckpt/eatabm_<arm>_s<seed>.pt`,
+  resume restores the teacher and buffer exactly).  CPU smoke (batch 8, fmb): shared part 3.3-4.0 s/step, each arm
+  0.9-1.6 s, so three arms cost roughly 1.5-2x one arm.  Not bit-identical to a single-arm run (arms share the global
+  RNG of the derangement/donor draws); the arms now see identical clips AND nuisance draws, which tightens the contrast.
+  Adds the two missing rows: **a5** = L_effect replaced by an MLP head g(z) -> Psi(dF), cosine (`--lam-head`, new in
+  train_v2.step); **a6** = L_effect replaced by the latent cycle with cosine to sg[z] (L_recover with recover_l1 = 0).
+  Groups: g1 recon/a1/full, g2 noinv/a2/a3, g3 a4/a5/a6; seeds 0 first (seeds 1-2 nice 100).  Jobs in
+  `acdc_la/logs/eatabm.jobids`; the 21 single-arm jobs were cancelled (none had saved a checkpoint).
+  Endpoint + full EAT (A7) not run (plan: answer at the representation level).
