@@ -4946,3 +4946,29 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Ablation A.** evc11 is a V100 node where torch saw no GPU; preemptable V100 slots were also preempted within
   minutes.  Launcher now requests `gpu:nvidia_h100_pcie:1`, excludes evc11, and exits if CUDA is unavailable; all
   pending jobs updated, the 9 dead ones resubmitted (ids in `acdc_la/logs/eatab.jobids`).
+
+### 2026-11-07 — 20k full-parameter phase 2, post-trained on Long at the FULL split: 449/500 = 89.8 %, our best Long number; the LoRA phase-2 arm is 89.0 %, so the full split cannot separate the two phase-2 variants
+
+- **Run.**  `tc_cont+libero_10_no_noops+b32x4+lr0.00035+r32+s40000+fm+q4--p2fft20k_libero_10_full` (Newton job 1157709,
+  queued 2026-11-05, arrived here with commit `7b043a6`): LoRA r32 on the **20k `fft` phase-2 base** (`p2fft_ours`),
+  flow head, 4 query tokens, global batch 128, 40k steps = UniVLA's Long budget, full split (`train[:95%]`).
+  Evaluated 500 episodes over 4 shards, UniVLA's protocol.
+- **Result.**  **449/500 = 89.8 %.**  Per task 45, 44, 35, 48, 45, 45, 46, 46, 47, 48 of 50 ("put both moka pots on
+  the stove" is the one weak task at 0.70, as in every Long cell).
+- **Control — the same recipe from the LoRA phase-2 base.**  `p2ours_libero_10_full`, identical string except the
+  base (`b32x4+lr0.00035+r32+s40000+fm+q4`): **445/500 = 89.0 %**.  The arms differ by **4 episodes = 0.8 points**
+  against a pooled run-to-run sd of ~4.3 points for a single run (2026-10-30).  **Not a difference.**
+- **Against the field reference.**  UniVLA's published full-split Long is 92.0 (Table I).  At 89.8 % Long is now
+  2.2 points under it, i.e. inside one run's noise of UniVLA's own number, and this is the best Long score we have
+  measured; Object 98.8 % and Spatial 97.2 % (LoRA base) already exceed their published 96.8 / 96.5.
+- **What this does and does not say.**  It is a clean controlled comparison -- only the phase-2 base differs -- and it
+  comes out flat.  Long at the full split sits near the same ceiling for both arms, the way spatial does at 94.8 %
+  (2026-09-15), so **the full split does not discriminate phase-2 variants**.  The 10 % cells do, and that is exactly
+  where the 20k arm has no number yet: Long @10 % is p2ours 61.6 / 55.8, p2fft5000 57.6 / 51.2 / 49.8, nop2 56.4,
+  p2fft20k **--**.  Nothing here says the 20k phase 2 is better or worse; it says the full split cannot tell.
+- **Conclusion — confirmed (measurement); negative for the method claim at this split.**  No advantage of the
+  full-parameter 20k phase 2 over the LoRA phase 2 is detectable on Long at the full split.
+- **Artifacts.**  `acdc_la/results/vla_eval/merged_libero_10_nw_p2fft20k_libero_10_full.json` + the 4 shard files.
+- **Next.**  The 10 % Long cell is the discriminating one.  Newton job 1157664 is replicate 1; the workstation run
+  (`GLOBAL=64 FRAC=10 STEPS=15000`) becomes **replicate 2**, which is what makes the cell comparable with the LoRA and
+  no-phase-2 arms, both of which have replicates.  Not a duplicate of 1157664 -- the pair is the point.

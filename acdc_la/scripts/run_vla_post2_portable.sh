@@ -7,6 +7,10 @@
 #   PY=envs/univla_vla/bin/python INIT=<p2fft_ours run dir> SUITE=libero_10 NOTE=p2fft20k_libero_10_full GPUS="0 1" \
 #     RUNROOT=/data/.../vla_runs bash acdc_la/scripts/run_vla_post2_portable.sh
 #
+# Real-robot (non-LIBERO) data takes DS, the data root through EXTRA, and no LIBERO eval:
+#   ... DS=piper_pick_can EXTRA="--data_root_dir $PWD/data/real_rlds" SKIP_EVAL=1 GLOBAL=64 STEPS=10000 NOTE=terra_piper ...
+# Unset LIBERO_TRAIN_FRAC (FRAC=full, the default) is UniVLA's train[:95%], so the held-out side is train[95%:].
+#
 # BS x GA x number of GPUs must stay at the arm's global batch (GLOBAL, default 128), or the result is not comparable
 # with the runs it is being compared against -- the full-split Newton runs are 128 (b32x4), the 10 % cells 64 (b32x2),
 # so a 10 % replicate is GLOBAL=64 FRAC=10 STEPS=15000.  The iterator restart is
@@ -14,7 +18,10 @@
 # 20000 samples per iterator, ~5 GB per rank, whatever BS is.  A fixed 2500 at BS=32 would be ~20 GB per rank.
 set -u -o pipefail
 cd "$(dirname "$0")/../.."
-PY=${PY:?python of the env}; INIT=${INIT:?phase-2 run dir}; S=${SUITE:?}; N=${NOTE:?}; G=(${GPUS:-0 1}); NG=${#G[@]}; DS=${S}_no_noops
+PY=${PY:?python of the env}; INIT=${INIT:?phase-2 run dir}; N=${NOTE:?}; G=(${GPUS:-0 1}); NG=${#G[@]}
+# DS names the RLDS dataset directly, for data that is not a LIBERO suite; then SUITE is only the eval suite and may be
+# omitted when the eval is skipped.  Unset DS keeps the old behaviour exactly: the suite name plus _no_noops.
+DS=${DS:-${SUITE:?suite name, or DS for a non-LIBERO dataset}_no_noops}; S=${SUITE:-$DS}
 GB=${GLOBAL:-128}                              # the global batch to hold: 128 = UniVLA's full-split budget, 64 = the 10 % cells
 BS=${BS:-8}; GA=${GA:-$((GB / NG / BS))}; [ $((BS * GA * NG)) = "$GB" ] || { echo "BS x GA x GPUs = $((BS * GA * NG)), not $GB"; exit 1; }
 [ "$S" = libero_10 ] && STEPS=${STEPS:-40000} || STEPS=${STEPS:-30000}
