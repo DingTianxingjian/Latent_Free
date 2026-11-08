@@ -3876,6 +3876,16 @@ Per-token stability: univla 0.579 (val) / 0.596 (train); acdc 0.117 / 0.118.  Al
   (`third_party/UniVLA/prismatic/vla/datasets/rlds/dataset.py:251-255`); if it were not, `FRAC=10` would silently
   train on 95 % of the demos and the cell would not be the one it is compared against.  Long RLDS (3.5 GB) taken from
   HF `openvla/modified_libero_rlds`, the same source as the local Spatial/Goal, so Newton is not needed for data.
+- **Correction 2026-11-08 — the measurement held, the "it fits" did not.**  The first real run of this path
+  (`terra_piper`, below) trained to 10,000 steps and was then **SIGKILLed three times in a row in the merge**
+  (09:12 / 09:21 / 09:37, `exitcode -9`), each time inside `merged.save_pretrained`, leaving three 4.9 GB partial
+  safetensors.  Re-run **alone** in a clean process it succeeded at **peak RSS 30.7 GB in 211 s**, i.e. the 31.9 GB
+  figure above is right -- but it was measured with nothing else on the host, and at the end of a real run **rank 1
+  is still alive at `dist.barrier()`** (torchrun only SIGTERMs it after rank 0 dies) holding its own tf.data arena,
+  plus whatever else shares the box.  MemAvailable fell to **9.2 GB** even in the clean re-run.  So: the merge of a
+  20k-base LoRA run **does not reliably fit on this 62 GB host as the tail of a 2-rank job**, and the practical
+  recipe is to let training finish and merge separately (`--merge False` would be the clean fix in the trainer).
+  This does not affect any trained weights: the adapter at step 10,000 was already saved when the kill happened.
 - **Conclusion — confirmed (infrastructure).**  Nothing measured about the method.  The run is blocked only on the
   15 GB `vla_full.pt`, which needs the user's own terminal (Newton offers only `password,keyboard-interactive` and
   this harness has no tty), and on GPU 1, which another job holds at 53.8 GB of 96 -- leaving 42 GB against the
@@ -5000,3 +5010,50 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - Resubmitted as GROUP=all (recon,a1,full,noinv,a2,a3,a4,a5,a6) x seeds 0/1/2, each an 8-deep afternotok chain so a
   preemption restarts automatically: s0 1186071-78, s1 1186079-86, s2 1186087-94 (s1/s2 nice 50).  Expect ~3-4 s/step
   -> ~13-17 h of GPU time per seed if not preempted.  Endpoint+full EAT (A7) still not run.
+### 2026-11-08 — TERRA real-robot arm trained on the workstation: 10k steps on the Piper pick-can data, held-out one-step action L1 0.093 and FLAT from step 6,000; the in-run merge does not fit this host
+
+- **Run.**  `tc_cont+piper_pick_can+b32x2+lr0.00035+r32+s10000+fm+q4--terra_piper`, UCF workstation, 2 GPUs,
+  global batch 64 (8 x accum 4 x 2), **10,000 steps**, LoRA r32 + flow head + 4 query tokens on the **20k
+  full-parameter phase-2 base** (`p2fft_20k`; `vla_full.pt` byte-checked at 15,081,838,026 against Newton).
+  Data `piper_pick_can` (AgileX Piper, 150 episodes, 6,462 steps at 10 Hz), `train[:95%]` = 142 episodes trained,
+  `train[95%:]` = 8 episodes held out.  **6 h 31 m** wall (2.34 s/step = 13.7 samples/s/GPU, ~15 % under an H100).
+  Launcher `run_vla_post2_portable.sh` with `DS=piper_pick_can EXTRA="--data_root_dir .../real_rlds" SKIP_EVAL=1`
+  (`abec2d0`); Newton's queued copy (1176736) was held and is not needed.
+- **Training.**  action L1 **0.407 -> 0.0411**, latent r2 0.247 -> 0.835, lr x0.1 at step 8,000 as the recipe's
+  StepLR does (`:391`, `step_size = 0.8 * max_steps`).  This is **not** the p2_univla failure mode (L1 stuck at
+  0.13-0.15, 2026-11-07): L1 passed 0.1 at step 850.  ~105 epochs over 142 episodes, which is the same epoch count
+  as the LIBERO 10 % cells (15k x 64 / 10,147 = 95), not an arbitrary budget.
+- **Held out, the only offline signal there is** (`acdc_la/realrobot/eval_heldout.py`, new: no simulator exists for
+  this data, so checkpoints cannot be ranked by rollout).  1,024 frames of the 8 held-out episodes, the same two
+  numbers the trainer logs:
+
+  | step | 6,000 | 7,000 | 8,000 | 9,000 | 10,000 |
+  |---|---|---|---|---|---|
+  | one-step action L1 | 0.0972 | 0.0981 | 0.0947 | 0.0940 | **0.0930** |
+  | latent r2 | 0.742 | 0.728 | 0.736 | 0.737 | 0.744 |
+
+  **Flat.**  The 0.005 spread over 4,000 steps is not a selection signal, so no earlier checkpoint is preferable and
+  there is no overfitting inside the window; 10,000 is also the end of the anneal.  Train 0.041 vs held-out 0.093 is
+  the generalisation gap expected at 142 demonstrations, and it is **not growing**.
+- **Infrastructure 1 — intermediate checkpoints do not exist unless copied.**  The trainer writes every LoRA save to
+  the SAME adapter dir (`finetune_libero_ctrl.py:496`), so each save overwrites the last and the run keeps no history.
+  Step 5,000 was already gone before it could be copied; 6,000-10,000 were snapshotted by hand
+  (`/data/ti874297/terra_snapshots/step*`, 813 MB each).  Any future "pick the best step" has to arrange this first.
+- **Infrastructure 2 — the in-run merge OOMs on this 62 GB host.**  Three consecutive SIGKILLs inside
+  `merged.save_pretrained`; merged standalone afterwards at peak RSS 30.7 GB in 211 s.  Details and the correction to
+  the over-optimistic 2026-11-05 reading are in that entry.  No weights were lost: the step-10,000 adapter was
+  already on disk.
+- **The artifact was verified, not just listed.**  982 tensors, vocab 32005, and the LoRA target layers differ from
+  the base (`layers.0.self_attn.q_proj` mean |diff| 5.5e-4, `layers.31.mlp.down_proj` 1.2e-3, `embed_tokens` 9.2e-6 --
+  the last is in `modules_to_save`, so it should move).
+- **Conclusion — confirmed (training); NOT a result about the method.**  The real-robot arm trains cleanly from the
+  20k base and yielded a merged, loadable policy.  **No physical-robot number exists**, and offline L1 does not
+  predict success rate.  The UniVLA baseline (official release + official recipe, user's plan 1) is being prepared on
+  Newton, so there is nothing to compare against yet.
+- **Artifacts.**  Run dir `/data/ti874297/vla_runs/tc_cont+piper_pick_can+...--terra_piper` (16 GB merged);
+  `/data/ti874297/terra_snapshots/{step6000..step10000,heldout.json,heldout.log,merge_step10000.log,snap.log}`;
+  `acdc_la/logs/post2_terra_piper.log`.  Pushed to the PRIVATE HF model repo `Potestates/TERRA` under
+  `piper_pick_can_10k` (same convention as `acdc_la/scripts/hf_upload_terra.sh`, optimiser state left out).
+- **Next.**  The collaborator's physical trials are the only real evaluation of this arm.  The box is now free for
+  the **10 % Long replicate 2** (`GLOBAL=64 FRAC=10 STEPS=15000`), the cell that can actually separate the 20k
+  phase-2 base from the LoRA one.
