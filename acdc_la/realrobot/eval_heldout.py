@@ -5,6 +5,14 @@ What the 95/5 split leaves out -- train[95%:], 8 episodes -- is the only offline
 numbers the trainer logs, measured on that split instead of on train batches: the one-step action L1
 (`loss_1` of WrappedModel.forward, the flow head's L1, NOT the flow loss) and the latent r2.
 
+WHAT THIS NUMBER IS NOT (2026-11-08, found by the `piper_policy.py --replay` self-check).  `loss_1` is
+`(at + (1 - t) * va - actions).abs()` (FlowHeads.loss), and `at = (1 - t) * noise + t * actions` ALREADY CONTAINS
+THE GROUND-TRUTH ACTION: it is a one-Euler-step estimate from a point on the path to the answer, i.e. an
+oracle-conditioned training diagnostic, not an open-loop prediction error.  It also runs the RLDS pipeline with
+`image_aug=False`, so no centre crop, while deployment crops 0.9 of the area.  Use it to RANK checkpoints under one
+fixed protocol; for the error a robot would actually see, sample the chunk from noise and compare with the recorded
+actions -- `acdc_la/realrobot/piper_policy.py --replay`, which on the same 8 episodes reports 0.149, not 0.093.
+
 It evaluates several snapshots in ONE process: the 7B base and the phase-2 weights are loaded once, and each
 snapshot's adapter is attached, measured and detached.  A snapshot is a directory holding adapter_config.json +
 adapter_model.safetensors + action_decoder.pt (what `terra_snapshots/step*` holds), because the trainer writes every

@@ -5033,8 +5033,20 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   | latent r2 | 0.742 | 0.728 | 0.736 | 0.737 | 0.744 |
 
   **Flat.**  The 0.005 spread over 4,000 steps is not a selection signal, so no earlier checkpoint is preferable and
-  there is no overfitting inside the window; 10,000 is also the end of the anneal.  Train 0.041 vs held-out 0.093 is
-  the generalisation gap expected at 142 demonstrations, and it is **not growing**.
+  there is no overfitting inside the window; 10,000 is also the end of the anneal.
+- **Correction, same day — 0.093 is NOT the policy's prediction error, and the open-loop number is 0.149.**  Writing
+  the deployment wrapper (`acdc_la/realrobot/piper_policy.py`) and replaying the held-out episodes through it showed
+  that the metric both the trainer and `eval_heldout.py` report is **oracle-conditioned**: `FlowHeads.loss` computes
+  `l1 = (at + (1 - t) * va - actions).abs()` where `at = (1 - t) * noise + t * actions` **already contains the
+  ground-truth action**, so it is a one-Euler-step estimate from a point on the path to the answer, not a prediction
+  from noise.  `eval_heldout.py` also runs with `image_aug=False`, i.e. without the 0.9-area centre crop deployment
+  uses.  Sampling the chunk properly (10 Euler steps from noise, the deployment image path) on the same 8 episodes,
+  353 steps, step 10,000: **normalised chunk L1 0.149**, and in physical units **3.24 deg mean absolute error per
+  joint** for `chunk[0]` (per joint 1.98 / 3.86 / 3.87 / 3.43 / 5.27 / 1.03) with the gripper at 0.047 of its
+  [0, 1] range; after temporal ensembling 3.69 deg and 0.062.  **What survives:** the 6,000 -> 10,000 comparison is
+  still a like-for-like ranking under one fixed protocol, and it is flat.  **What does not:** "held-out L1 0.093"
+  must not be read as the error a robot would see, here or in the HF README (corrected there too).  The open-loop
+  error of the earlier snapshots has NOT been measured -- it would need each one merged.
 - **Infrastructure 1 — intermediate checkpoints do not exist unless copied.**  The trainer writes every LoRA save to
   the SAME adapter dir (`finetune_libero_ctrl.py:496`), so each save overwrites the last and the run keeps no history.
   Step 5,000 was already gone before it could be copied; 6,000-10,000 were snapshotted by hand
