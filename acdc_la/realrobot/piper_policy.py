@@ -72,7 +72,11 @@ class Ensembler:
 
 
 class PiperPolicy:
-    def __init__(self, checkpoint, device="cuda", flow_steps=None, unnorm_key=None, seed=7):
+    def __init__(self, checkpoint, device="cuda", flow_steps=None, unnorm_key=None, seed=7, ensemble=True):
+        # ensemble=False sends chunk[0] straight through.  On this data the ensembling is slightly WORSE offline
+        # (3.69 deg vs 3.24 deg mean per joint, 2026-11-08): it is UniVLA's LIBERO setting, where the action is a
+        # delta and the lag it introduces costs nothing.  Here the action is an absolute joint target, so the lag
+        # shows up directly.  Both are worth trying on the robot; offline cannot decide it.
         from transformers import AutoConfig, AutoImageProcessor, AutoModelForVision2Seq, AutoProcessor
         from prismatic.extern.hf.configuration_prismatic import OpenVLAConfig
         from prismatic.extern.hf.modeling_prismatic import OpenVLAForActionPrediction
@@ -104,7 +108,7 @@ class PiperPolicy:
         self.adim = len(self.low)
         self.n_patches = self.vla.vision_backbone.featurizer.patch_embed.num_patches
         self.ens = Ensembler(self.W, self.adim)
-        self.seed = seed; self.reset()
+        self.seed = seed; self.use_ens = ensemble; self.reset()
         print(f"[piper-policy] {checkpoint}\n  {'flow, ' + str(self.flow_steps) + ' Euler steps' if self.flow else 'regression'}"
               f" | window {self.W} | action dim {self.adim} | query tokens {self.nq} | unnorm '{unnorm_key}'"
               f" | raw gripper dim(s) {list(np.nonzero(~self.norm_mask)[0])}", flush=True)
@@ -159,8 +163,12 @@ class PiperPolicy:
 
     def act(self, image, instruction):
         """One action to send to the arm, temporally ensembled over the overlapping chunks, exactly as the LIBERO
-        evaluator does: (action_dim,) = 6 absolute joint targets in degrees + gripper in [0, 1]."""
-        return self.ens(self.act_chunk(image, instruction, normalised=True), self.norm_mask, self.low, self.high)
+        evaluator does (unless ensemble=False): (action_dim,) = 6 absolute joint targets in degrees + gripper
+        in [0, 1]."""
+        ch = self.act_chunk(image, instruction, normalised=True)
+        if not self.use_ens:
+            return np.where(self.norm_mask, 0.5 * (ch[0] + 1) * (self.high - self.low) + self.low, ch[0])
+        return self.ens(ch, self.norm_mask, self.low, self.high)
 
     @staticmethod
     def gripper_to_raw(g):

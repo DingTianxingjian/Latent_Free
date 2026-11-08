@@ -5047,6 +5047,24 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   still a like-for-like ranking under one fixed protocol, and it is flat.  **What does not:** "held-out L1 0.093"
   must not be read as the error a robot would see, here or in the HF README (corrected there too).  The open-loop
   error of the earlier snapshots has NOT been measured -- it would need each one merged.
+- **Is 0.149 a failure?  No, and the null baselines say what it is.**  Measured on the same 8 held-out episodes
+  (353 steps), mean absolute error per joint in degrees: constant = the training mean **14.70**, the average
+  demonstration trajectory time-warped to each episode **11.02**, **ours 3.24**, and *repeat the last command*
+  (persistence) **2.06**.  So the policy **crushes both trajectory-level baselines** -- it follows each episode's own
+  trajectory, it is not reproducing an average -- but it **loses to doing nothing**, because the action space is
+  ABSOLUTE joint targets at 10 Hz where the arm only moves ~2 deg per step (joint 5: 0.08 deg) and persistence is
+  therefore a very strong L1 baseline that accomplishes nothing on the robot.  The real content of the number is
+  that the policy's precision (~3 deg) is of the same order as the per-step motion, and that it adds ~1 deg of
+  error to joints that barely move.
+- **It is bias, not sampling noise -- there is no free fix.**  The flow head is stochastic, so the obvious hope was
+  that averaging samples would collapse the error.  One VLA forward per observation, 8 head samples, Euler steps
+  5 / 10 / 50 (normalised units): single sample 0.1471 / 0.1483 / 0.1506, **mean of 8 samples 0.1451 / 0.1452 /
+  0.1457**, across-sample sd 0.0244 / 0.0318 / 0.0411.  Averaging buys **2 %** and more integration steps are
+  slightly *worse*; ~0.145 of the 0.148 is systematic.  **So inference-side tricks will not help**; the levers are
+  training-side (more than 142 demonstrations of one task, delta instead of absolute actions, a higher control rate).
+- **Temporal ensembling is slightly harmful here** (3.69 deg vs 3.24 deg): it is UniVLA's LIBERO setting, where the
+  action is a delta and its lag is free; on an absolute joint target the lag shows up directly.  The wrapper takes
+  `ensemble=False`; offline cannot decide between them, the robot can.
 - **Infrastructure 1 — intermediate checkpoints do not exist unless copied.**  The trainer writes every LoRA save to
   the SAME adapter dir (`finetune_libero_ctrl.py:496`), so each save overwrites the last and the run keeps no history.
   Step 5,000 was already gone before it could be copied; 6,000-10,000 were snapshotted by hand
