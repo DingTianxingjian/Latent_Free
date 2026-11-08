@@ -17,15 +17,19 @@ set -u -o pipefail
 cd /lustre/fs1/home/ti874297/lf/latent_free
 source /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/scripts/common.sh
 export ACDC_FULL_DATA=1 TORCH_HOME=$PWD/cache/torch
-timeout 120 $PY -c "import torch,sys; sys.exit(0 if torch.cuda.is_available() else 1)" || { echo "EATABM NO GPU on $(hostname) -- bad node, exiting"; exit 3; }
+# 120 s was too short: cold torch imports from lustre took >2 min on evc32/33 (jobs 1177725/28), which then trained fine.
+timeout 900 $PY -c "import torch,sys; sys.exit(0 if torch.cuda.is_available() else 1)"; rc=$?
+[ $rc = 124 ] && { echo "EATABM torch import timed out on $(hostname)"; exit 4; }
+[ $rc != 0 ] && { echo "EATABM NO GPU on $(hostname) -- bad node, exiting"; exit 3; }
 G=${GROUP:?}; S=${SEED:?}
 case $G in
   g1) ARMS=recon,a1,full ;;          # L_self | L_self + L_inv | full EAT (TERRA)
   g2) ARMS=noinv,a2,a3 ;;            # EAT w/o L_inv | w/o L_effect | w/o L_rel
   g3) ARMS=a4,a5,a6 ;;               # w/o L_dist | L_effect -> head | L_effect -> cycle
+  all) ARMS=recon,a1,full,noinv,a2,a3,a4,a5,a6 ;;   # one job per seed: the step is data-bound (~1.5 s), each arm adds ~0.2 s
   *) echo "unknown GROUP $G"; exit 1 ;;
 esac
 scontrol update JobId=$SLURM_JOB_ID JobName=eatabm_${G}_s$S 2>/dev/null
 run stage3_transport.train_multi --tag eatabm --arms $ARMS --init-from tc_cont --steps 15000 --warmup 4000 --batch 64 \
-    --lr 3e-4 --seed $S --workers 12 --save-every 1000 --eval-every 3000 --resume
+    --lr 3e-4 --seed $S --workers 12 --save-every 500 --eval-every 0 --resume
 echo "EATABM $G s$S done $(date)"

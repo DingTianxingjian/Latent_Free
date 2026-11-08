@@ -4988,3 +4988,15 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   Groups: g1 recon/a1/full, g2 noinv/a2/a3, g3 a4/a5/a6; seeds 0 first (seeds 1-2 nice 100).  Jobs in
   `acdc_la/logs/eatabm.jobids`; the 21 single-arm jobs were cancelled (none had saved a checkpoint).
   Endpoint + full EAT (A7) not run (plan: answer at the representation level).
+
+### 2026-11-07 (20:30) — ablation A: one 9-arm job per seed (Newton)
+- First grouped round (jobs 1177722-30, 3 arms/job): all PREEMPTED after 0.5 min - 3.4 h; 1177725/28 "NO GPU" were a
+  120 s torch-import timeout on evc32/33, not bad nodes (other jobs trained there) -> guard timeout 900 s, exit 4 on timeout.
+- GPU timing (H100): 2.31-2.41 s/step = data 1.40-1.65 + DINO feat 0.22 + **~0.2 s per arm** -> the step is data-bound;
+  extra arms are nearly free.  Saved progress: s0 a4/a5/a6 @5000; s1 noinv/a2/a3/a4/a5/a6 @2000; everything else @0.
+- train_multi now resumes arms saved at different steps (stream restarts at the least advanced arm; an arm trains only
+  from its own step, so arm step s still sees batch s), atomic saves (tmp + rename), save every 500, no curve evals.
+  CPU smoke (a1 @4 + full @0 -> 6) passed.
+- Resubmitted as GROUP=all (recon,a1,full,noinv,a2,a3,a4,a5,a6) x seeds 0/1/2, each an 8-deep afternotok chain so a
+  preemption restarts automatically: s0 1186071-78, s1 1186079-86, s2 1186087-94 (s1/s2 nice 50).  Expect ~3-4 s/step
+  -> ~13-17 h of GPU time per seed if not preempted.  Endpoint+full EAT (A7) still not run.

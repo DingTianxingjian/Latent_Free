@@ -76,10 +76,12 @@ def main():
     paths = {n: os.path.join(CKPT, f"{A[n].tag}.pt") for n in names}
     res = {n: torch.load(paths[n], map_location=dev) for n in names if a.resume and os.path.exists(paths[n])}
     steps_saved = {n: int(r.get("step", 0)) for n, r in res.items()}
-    start = 0
-    if res:
-        assert len(res) == len(names) and len(set(steps_saved.values())) == 1, f"arms saved at different steps: {steps_saved}"
-        start = next(iter(steps_saved.values())); print(f"[{prefix}] resuming all arms from step {start}", flush=True)
+    # Arms may have been saved at different steps (they used to run in separate groups).  The loader is deterministic
+    # in (seed, step), so the stream restarts at the LEAST advanced arm and an arm trains only once the global step
+    # reaches its own: every arm still sees exactly batch s at its step s.
+    arm_start = {n: steps_saved.get(n, 0) for n in names}
+    start = min(arm_start.values())
+    if res: print(f"[{prefix}] resuming from step {start}; per-arm steps {arm_start}", flush=True)
     srcs, ds, dv, dl, dl_val = loaders.build(a, start_step=start)
     loaders.describe(a, srcs, ds, dv, dev)
     dino = Fz.load_dino(dev); K = a.T - 1
@@ -123,7 +125,8 @@ def main():
                                   **{k: c[k] for k in ("zmu", "zvar", "psi_proj", "psi_mu", "psi_var", "b1")})
         if "head" in c: extra["head"] = c["head"].state_dict()
         for k, v in r["base"].items(): setattr(A[n], k, v)
-        save_ckpt(paths[n], r["model"], vars(A[n]), dstats, extra=extra)
+        save_ckpt(paths[n] + ".tmp", r["model"], vars(A[n]), dstats, extra=extra)   # atomic: a preemption mid-write
+        os.replace(paths[n] + ".tmp", paths[n])                                          # must not corrupt the resume point
 
     t0 = time.time(); t_data = t_feat = 0.0; t_arm = {n: 0.0 for n in names}; tl = time.time()
     for s, batch in enumerate(dl, start=start):
@@ -136,6 +139,7 @@ def main():
                 g4a = feat.g4_of(V2._jitter(b["frames"])); b["_aug"] = (g4a[:, 0], Fz.dF_from_g4(g4a, feat.dstats))
         (torch.cuda.synchronize() if dev == "cuda" else None); t_feat += time.time() - tf
         for n in names:
+            if s < arm_start[n]: continue                              # this arm already trained on batch s
             ta = time.time(); r = R[n]; x = A[n]
             for k, v in r["base"].items(): setattr(x, k, ramp * v)
             r["model"].train()
@@ -147,11 +151,13 @@ def main():
         if (s + 1) % 200 == 0 or s + 1 == a.steps:
             m = s + 1 - start
             print(f"[{prefix}] step {s+1} ramp={ramp:.2f} {(time.time()-t0)/m:.2f}s/step = data {t_data/m:.2f} + feat {t_feat/m:.2f} + "
-                  + " + ".join(f"{n} {t_arm[n]/m:.2f}" for n in names), flush=True)
+                  + " + ".join(f"{n} {t_arm[n]/m:.2f}" for n in names)
+                  + (f" | peak {torch.cuda.max_memory_allocated()/2**30:.1f}G" if dev == "cuda" else ""), flush=True)
             for n in names:
                 print(f"[{A[n].tag}] step {s+1} ramp={ramp:.2f} " + " ".join(f"{k}={np.mean(v[-200:]):.4f}" for k, v in R[n]["log"].items()), flush=True)
         if a.save_every and (s + 1) % a.save_every == 0 and s + 1 < a.steps:
-            for n in names: save(n, s + 1)
+            for n in names:
+                if s + 1 > arm_start[n]: save(n, s + 1)
         if dl_curve is not None and (s + 1) % a.eval_every == 0 and s + 1 < a.steps:
             from ..common.curve import curve_eval
             for n in names:
@@ -159,6 +165,7 @@ def main():
                 except Exception as e: print(f"[{A[n].tag}] CURVE FAILED at step {s+1}: {type(e).__name__}: {e}", flush=True)
         tl = time.time()
     for n in names:
+        if arm_start[n] >= a.steps and os.path.exists(os.path.join(RESULTS, f"{A[n].tag}.json")): continue
         save(n, a.steps); r = R[n]
         out = dump_val(r["model"], feat, dl_val, distractor, os.path.join(RESULTS, f"{A[n].tag}_val.npz"), a.val_batches)
         out.update(tag=A[n].tag, stage="EATAB", arm=n, seed=a.seed, steps=a.steps, seconds=int(time.time() - t0), train_clips=len(ds),
