@@ -5087,3 +5087,14 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Next.**  The collaborator's physical trials are the only real evaluation of this arm.  The box is now free for
   the **10 % Long replicate 2** (`GLOBAL=64 FRAC=10 STEPS=15000`), the cell that can actually separate the 20k
   phase-2 base from the LoRA one.
+
+### 2026-11-09 — Piper deployment made standalone; main fast-forwarded to newton; ablation moved to normal partition
+- Deployment no longer needs a UniVLA clone: the 6 UniVLA files it uses are vendored byte-identical (commit 0ab9e9dd,
+  Apache-2.0) in `acdc_la/vendor/univla/`; ContHeads/FlowHeads moved verbatim to `downstream/vla/heads_ctrl.py`
+  (finetune_libero_ctrl re-exports them).  `acdc_la/realrobot/README.md` + `requirements_deploy.txt` for the robot host.
+- Check (job 1195796, V100, UniVLA imports BLOCKED by a meta-path hook, HF checkpoint `Potestates/TERRA/piper_pick_can_10k`):
+  replay of 353 held-out steps -> chunk[0] 3.24 deg mean per joint, ensembled 3.69 deg; identical to the workstation's
+  numbers.  `acdc_la/results/piper_replay_standalone.json`.  Fix found by it: replay() must hide the GPU from TF first.
+- Ablation A: the 24-job preemptable chain (1186071-94) was exhausted by preemptions (18 s - 58 min each); saved:
+  s0 a4/a5/a6 @5000, s1/s2 partial (<=2000).  Resubmitted on the NORMAL partition, one 9-arm job per seed
+  (1195772-74, -c 32, 24 workers); other pending jobs of ours niced +300 so these start first.

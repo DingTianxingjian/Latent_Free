@@ -30,7 +30,7 @@ Everything that has to agree with training, with the line it comes from:
       a = p.act(front_frame_rgb, "pick up the can and place it on the plate")
       send_joint_targets(a[:6]); send_gripper(PiperPolicy.gripper_to_raw(a[6]))
 
-  PYTHONPATH=.:third_party/UniVLA envs/univla_vla/bin/python -m acdc_la.realrobot.piper_policy \
+  PYTHONPATH=. python -m acdc_la.realrobot.piper_policy \
       --checkpoint /data/ti874297/vla_runs/tc_cont+piper_pick_can+...--terra_piper --replay data/real_rlds
 """
 import argparse, json, os
@@ -78,10 +78,11 @@ class PiperPolicy:
         # delta and the lag it introduces costs nothing.  Here the action is an absolute joint target, so the lag
         # shows up directly.  Both are worth trying on the robot; offline cannot decide it.
         from transformers import AutoConfig, AutoImageProcessor, AutoModelForVision2Seq, AutoProcessor
-        from prismatic.extern.hf.configuration_prismatic import OpenVLAConfig
-        from prismatic.extern.hf.modeling_prismatic import OpenVLAForActionPrediction
-        from prismatic.extern.hf.processing_prismatic import PrismaticImageProcessor, PrismaticProcessor
-        from ..downstream.vla.finetune_libero_ctrl import ContHeads, FlowHeads
+        # vendored, byte-identical UniVLA files (acdc_la/vendor/univla) and the heads alone: no UniVLA clone needed
+        from ..vendor.univla.configuration_prismatic import OpenVLAConfig
+        from ..vendor.univla.modeling_prismatic import OpenVLAForActionPrediction
+        from ..vendor.univla.processing_prismatic import PrismaticImageProcessor, PrismaticProcessor
+        from ..downstream.vla.heads_ctrl import ContHeads, FlowHeads
 
         self.meta = json.load(open(os.path.join(checkpoint, "ctrl_meta.json")))
         assert self.meta["latent"] in ("tc_cont", "acdc_cont", "univla_cont", "none"), self.meta["latent"]
@@ -122,7 +123,7 @@ class PiperPolicy:
         self._prompt = self._instr = None
 
     def _build_prompt(self, instruction):
-        from prismatic.models.backbones.llm.prompting import PurePromptBuilder
+        from ..vendor.univla.base_prompter import PurePromptBuilder
         pb = PurePromptBuilder("openvla")
         pb.add_turn("human", f"What action should the robot take to {instruction.lower()}?")
         pb.add_turn("gpt", "".join(f"<ACT_{i}>" for i in range(self.nq)))
@@ -139,7 +140,7 @@ class PiperPolicy:
             a = cv2.resize(a, (256, 256), interpolation=cv2.INTER_AREA)   # convert_piper_rlds.py: squashed, INTER_AREA
         x = tf.image.convert_image_dtype(tf.convert_to_tensor(a), tf.float32)
         x = tf.image.resize(x, (224, 224))                                # the RLDS decode_and_resize
-        from experiments.robot.openvla_utils import crop_and_resize       # dlimp's crop, so the area matches training
+        from ..vendor.univla.crop import crop_and_resize                  # dlimp's crop, so the area matches training
         x = tf.clip_by_value(crop_and_resize(x, 0.9, 1), 0, 1)
         return Image.fromarray(tf.image.convert_image_dtype(x, tf.uint8, saturate=True).numpy()).convert("RGB")
 
@@ -178,6 +179,7 @@ class PiperPolicy:
 
 # -------------------------------------------------------------------- self-check on the held-out episodes
 def replay(policy, data_root, dataset="piper_pick_can", episodes=None, split="train[95%:]"):
+    _tf()                                        # hide the GPU from TF BEFORE tfds initialises it (else XLA on the GPU)
     import tensorflow_datasets as tfds
     b = tfds.builder_from_directory(os.path.join(data_root, dataset, "1.0.0"))
     ds = b.as_dataset(split=split)

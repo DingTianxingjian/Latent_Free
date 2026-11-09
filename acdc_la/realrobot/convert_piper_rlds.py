@@ -1,7 +1,7 @@
 """LeRobot v3 Piper dataset (jachansantiago/pick_can_place_plate_150_trimmed) -> RLDS/TFDS in the LIBERO layout that
 prismatic's RLDSDataset reads (2026-11-06, real-robot experiment).
 
-Choices (keep identical at deployment, see deploy notes in README_piper.md):
+Choices (keep identical at deployment, see acdc_la/realrobot/README.md):
   * 30 Hz -> 10 Hz: every 3rd frame of each episode (offset 0), so a 12-step action chunk spans 1.2 s and the
     latent labeller's frame stride (window 12 // 4 = 3 steps) is 0.3 s.
   * action = the recorded 7-D command at the kept frame: 6 ABSOLUTE joint targets (degrees, Piper convention) +

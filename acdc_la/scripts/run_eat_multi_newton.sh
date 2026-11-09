@@ -31,5 +31,5 @@ case $G in
 esac
 scontrol update JobId=$SLURM_JOB_ID JobName=eatabm_${G}_s$S 2>/dev/null
 run stage3_transport.train_multi --tag eatabm --arms $ARMS --init-from tc_cont --steps 15000 --warmup 4000 --batch 64 \
-    --lr 3e-4 --seed $S --workers 12 --save-every 500 --eval-every 0 --resume
+    --lr 3e-4 --seed $S --workers ${WORKERS:-12} --save-every 500 --eval-every 0 --resume
 echo "EATABM $G s$S done $(date)"

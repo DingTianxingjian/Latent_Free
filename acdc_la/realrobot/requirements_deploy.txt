@@ -1,0 +1,18 @@
+# Inference-only environment for acdc_la/realrobot/piper_policy.py (Python 3.10, one CUDA GPU with >= 24 GB).
+# Versions are the ones training and the held-out check ran with (envs/univla_vla); transformers in particular must
+# stay at 4.40.x for the vendored OpenVLA/prismatic modeling code.
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch==2.2.0
+torchvision==0.17.0
+transformers==4.40.1
+tokenizers==0.19.1
+accelerate==0.32.1
+safetensors
+timm==0.9.10
+einops==0.8.1
+numpy==1.26.4
+pillow
+opencv-python-headless
+tensorflow-cpu==2.15.0          # only for the training-identical centre crop (and tfds for --replay)
+tensorflow-datasets==4.9.3      # only for --replay
+huggingface_hub                 # to download the checkpoint
