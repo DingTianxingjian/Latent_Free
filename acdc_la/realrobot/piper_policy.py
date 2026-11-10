@@ -177,9 +177,12 @@ class PiperPolicy:
             assert txt.shape[1] == self.nq, f"{txt.shape[1]} query tokens in the prompt, expected {self.nq}"
         if self.flow and self.samples > 1:
             # ONE VLA forward, `samples` head samples in a single batched call, averaged.  The head is ~12M
-            # parameters against the VLA's 7B, so 8 samples cost a few ms (measured 2026-11-08: 8 samples change the
-            # held-out L1 by 2 %, 0.1483 -> 0.1452, with an across-sample sd of 0.032 -- i.e. this buys SMOOTHNESS
-            # between consecutive commands, not accuracy).
+            # parameters against the VLA's 7B.  Measured 2026-11-08: 8 samples change the held-out L1 by only 2 %
+            # (0.1483 -> 0.1452), so this buys SMOOTHNESS, not accuracy -- and measured 2026-11-10, on a FIXED image,
+            # the call-to-call change in the action actually sent drops 3.43 -> 1.28 deg, i.e. **63 % less jitter**.
+            # Note 3.43 deg of call-to-call jitter is as large as the policy's whole accuracy error (3.24 deg), so a
+            # re-predict-every-step loop injects a second error of the same size as the first.  (The latency cost of
+            # samples=8 was NOT cleanly measured: the GPUs were saturated by two training jobs at the time.)
             # CAVEAT, and it is the reason this is not the default: averaging samples from a multimodal distribution
             # returns something that is not any of the modes, which is exactly the failure FlowHeads was chosen to
             # avoid (its docstring quotes LAFP on collapsing multimodal action distributions into unimodal ones).

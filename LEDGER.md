@@ -5082,8 +5082,12 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   Newton, so there is nothing to compare against yet.
 - **Artifacts.**  Run dir `/data/ti874297/vla_runs/tc_cont+piper_pick_can+...--terra_piper` (16 GB merged);
   `/data/ti874297/terra_snapshots/{step6000..step10000,heldout.json,heldout.log,merge_step10000.log,snap.log}`;
-  `acdc_la/logs/post2_terra_piper.log`.  Pushed to the PRIVATE HF model repo `Potestates/TERRA` under
-  `piper_pick_can_10k` (same convention as `acdc_la/scripts/hf_upload_terra.sh`, optimiser state left out).
+  `acdc_la/logs/post2_terra_piper.log`.  Pushed to the HF model repo `Potestates/TERRA` under
+  `piper_pick_can_10k` -- **correction 2026-11-10: that repo is PUBLIC, not private as written here.**  Verified
+  anonymously with no token: `api/models/Potestates/TERRA` returns HTTP 200 with `private: false, gated: false`, and
+  a range request on a weight file returns 206.  So the three merged policies there (`piper_pick_can_10k`,
+  `libero_10_full`, `libero_goal_full`, 15.19 GB each) are world-readable.  Visibility is the user's account
+  decision and was not changed (same convention as `acdc_la/scripts/hf_upload_terra.sh`, optimiser state left out).
 - **Next.**  The collaborator's physical trials are the only real evaluation of this arm.  The box is now free for
   the **10 % Long replicate 2** (`GLOBAL=64 FRAC=10 STEPS=15000`), the cell that can actually separate the 20k
   phase-2 base from the LoRA one.
