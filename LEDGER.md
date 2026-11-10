@@ -5340,3 +5340,41 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   (b) The deployment recipe in `acdc_la/realrobot/README.md` (chunk=2, ensemble off, samples=8) was derived on the
   **absolute** arm; `ensemble off` is now contradicted for delta checkpoints and must be re-derived before any delta
   checkpoint goes on the robot.  (c) j3/j4/j5 being worse than the null is the next diagnostic, not the chunk length.
+
+#### 2026-11-10, same day, per-joint control: the wrist IS predictable, and the error is concentrated in j2 and j4 — this SUPERSEDES the diagnostic I named an hour earlier
+
+- **What I said above and am now narrowing.** The entry above closes with "(c) j3/j4/j5 being worse than the null is
+  the next diagnostic".  The *fact* stands (arm B / null = 1.46 / 1.10 / 1.30 on j3/j4/j5).  The *diagnostic* was
+  aimed wrong, because the null is not the right reference for where a model is losing — the floor is.
+- **Control.** `acdc_la/realrobot/wrist_floor.py`, the same matching as `delta_floor.py` (11,052 cross-episode pairs,
+  pose < 2 deg, image closest 2 %) but reported per joint.  CPU only, no checkpoint.
+
+  | per joint | j0 | j1 | j2 | j3 | j4 | j5 | mean |
+  |---|---|---|---|---|---|---|---|
+  | true \|delta\| per step (= null) | 0.709 | 2.797 | 1.949 | 0.287 | 1.405 | 0.048 | 1.199 |
+  | **floor** (half the matched spread) | 0.424 | 1.712 | 0.601 | 0.213 | 0.710 | 0.002 | 0.610 |
+  | arm B measured, `chunk[0]` | 0.599 | 2.022 | 1.672 | 0.419 | 1.552 | 0.062 | 1.054 |
+  | floor / null | 0.60 | 0.61 | **0.31** | **0.74** | **0.51** | 0.04 | — |
+  | arm B / floor | 1.41 | 1.18 | **2.78** | 1.97 | **2.18** | 29.5 | 1.73 |
+  | share of total recoverable error | 6.6 % | 11.6 % | **40.2 %** | 7.7 % | **31.6 %** | 2.3 % | — |
+
+- **Conclusion: confirmed, and it is case (b), not case (a).** `floor / null` is below 1 on **every** joint,
+  including the three where arm B loses to the null — j3 0.74, j4 0.51, j5 0.04.  So the wrist increments **are**
+  predictable from the observation; arm B exceeding the null there is **our model's shortfall, not a data limit**.
+  There is no joint on which outputting zero is the correct controller.
+- **And the priority is not the wrist.** Measured against the floor rather than the null, **j2 (elbow) and j4 carry
+  71.8 % of all recoverable error** (1.071 deg and 0.842 deg of the 2.664 deg summed headroom).  j1, which has by far
+  the largest *raw* error (2.022 deg), is nearly solved at **1.18x its floor** — its error is mostly irreducible
+  demonstration variation.  j3 and j5, the two that looked worst by the null ratio, are together 10 % of the
+  recoverable error; j5's 29.5x ratio is an artifact of a near-deterministic floor (0.002 deg) on a 0.062 deg error.
+- **Why this is a plausible loss-allocation story, not just a ranking.** The training objective is an unweighted L1
+  over normalised dims, so each joint's gradient share follows its normalised scale, not its recoverable error.
+  j2 and j4 are exactly the dims where raw motion is moderate but conditional predictability is high
+  (floor/null 0.31 and 0.51 — the two most predictable joints after j5), i.e. the dims an unweighted loss
+  under-serves relative to what the data would allow.  **Hypothesis, not a result:** per-joint loss weighting by
+  inverse floor would recover part of the 0.444 deg mean headroom.  Not run, and §8 of `next_task.md` applies —
+  it is an ablation on our arm, and if it is ever reported as a comparison the baseline gets the same weighting.
+- **Artifacts.** `acdc_la/realrobot/wrist_floor.py`; nulls and the aggregate floor `acdc_la/realrobot/delta_floor.py`.
+- **Next.** Supersedes "(c)" above: the diagnostic to run is **j2 and j4**, not j3/j4/j5, and the reference is the
+  per-joint floor, not the null.  Still blocked on arm A's open-loop number before anything is attributed to the
+  latent mechanism.
