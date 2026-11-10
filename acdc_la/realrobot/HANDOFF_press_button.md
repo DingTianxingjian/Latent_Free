@@ -235,14 +235,15 @@ PYTHONPATH=.:third_party/UniVLA <env>/bin/python -m acdc_la.realrobot.piper_poli
 
 ## 8. Getting the phase-2 base
 
-It is on HuggingFace as of 2026-11-10, in a **private** repo (the project's other HF repo, `Potestates/TERRA`, is
-public, so the base was not put there):
+It is on HuggingFace as of 2026-11-10, in the **public** `Potestates/TERRA` repo -- **no token, no login**
+(verified anonymously: a range request on `p2fft_20k/vla_full.pt` with no credentials returns HTTP 206):
 
 ```bash
-huggingface-cli login            # the user has to give you a token with read access to their account
-huggingface-cli download Potestates/TERRA-phase2-base --local-dir p2fft_20k
+huggingface-cli download Potestates/TERRA --include "p2fft_20k/*" --local-dir .
 # then:  INIT=./p2fft_20k  ...
 ```
+
+(There is also a private copy at `Potestates/TERRA-phase2-base`, kept as a backup.  You do not need it.)
 
 **Check you got both big files before training**, and against these exact sizes:
 
@@ -253,8 +254,8 @@ action_decoder.pt       105,268,830 B    REQUIRED -- finetune_libero_ctrl.py:273
                                          run does not reproduce the workstation's arm.
 ```
 
-If the token is not available, the **baseline arm still runs today** (section 7, `INIT=none`): `openvla/openvla-7b`
-is public and downloads without credentials.  Start with that one either way -- it needs nothing from us.
+Both arms therefore need nothing from us.  **Start with the baseline anyway** (section 7, `INIT=none`): it is the
+control the other arm is measured against, and it needs only `openvla/openvla-7b`.
 
 ## 9. Do not
 
