@@ -5287,3 +5287,56 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Next.**  **Get Newton job 1157664's number** (replicate 1 of this same arm) -- it is the only thing that turns
   60.6 into a pair and makes this cell comparable with the two-replicate arms.  Until then the 20k-vs-LoRA phase-2
   question has no answer at 10 % Long either.
+
+### 2026-11-10 — DELTA actions, arm B (the OpenVLA baseline): 3.24 deg -> 1.054 deg open loop, a 3.1x cut, and the first arm that beats "do nothing"
+
+- **Why.** The 2026-11-10 robot feedback ("the motion is right, the grasp is not precise") plus the measurement that
+  the absolute-joint-target arm was *2.7x worse than outputting zero motion* (3.24 deg vs the 1.20 deg zero-delta
+  null) said the output parameterisation, not the budget, was wrong.  Registered prediction before launch: **1.0-1.5 deg**.
+- **Configuration.** Two arms, launched 2026-11-10 03:13 / 03:26 UTC, identical except for the latent mechanism:
+  - **A `terra_piper_delta`** — phase-2 base (`/data/ti874297/p2fft_20k`, full-parameter 20k, `latp2_inv`) + LoRA r32
+    + flow head + 4 query tokens + the latent branch (`--latent tc_cont`).  **Still training at this entry** (see Next).
+  - **B `openvla_piper_delta`** — official `openvla-7b`, fresh LoRA r32, same flow head, same 4 query tokens,
+    **no latent mechanism at all** (`--latent none` -> no labeller, `dz=0`, no `lz` loss, `latent_r2` identically 0.000
+    for all 400 logged points, verified).  Matches the registered LIBERO `none`+`fmq4` control.
+  - Both: 10,000 steps, global batch 64 on 1 GPU (`b64x1`), lr 3.5e-4, window 12, `--merge False`.
+    B finished exit 0 in 45,693 s (12.7 h).
+- **Data.** `data/real_rlds_delta`, derived from `data/real_rlds` by `acdc_la/realrobot/make_delta_rlds.py` so that
+  frames, subsampling, episode boundaries and instruction are **bit-identical** and only `action` differs:
+  `d[:, :6] = acts[:, :6] - js[:, :6]` (target minus *measured* configuration, so it self-corrects at deployment),
+  gripper untouched.  150 episodes, 6462 steps.  Dataset name stays `piper_pick_can`, so no OXE config change.
+- **Result — arm B, 353 held-out steps (8 episodes, `train[95%:]`), mean |error| per joint in degrees:**
+
+  | | j0 | j1 | j2 | j3 | j4 | j5 | **mean** | gripper |
+  |---|---|---|---|---|---|---|---|---|
+  | B `chunk[0]` | 0.599 | 2.022 | 1.672 | 0.419 | 1.552 | 0.062 | **1.054** | 0.0417 |
+  | B ensembled | 0.600 | 1.685 | 1.349 | 0.351 | 1.441 | 0.061 | **0.914** | 0.0589 |
+  | zero-delta null | 0.71 | 2.80 | 1.95 | 0.29 | 1.41 | 0.05 | 1.20 | — |
+  | B / null | 0.84 | 0.72 | 0.86 | **1.44** | **1.10** | **1.24** | 0.88 | — |
+
+  Controls, all in the same "degrees of commanded-target error" space: **absolute arm 3.24 deg**,
+  zero-delta null (stay put) **1.20**, persistence null (repeat the last command) **2.06**,
+  demonstration floor **0.61**.  Whole-chunk L1 in normalised space 0.1142; final train `action_l1_1step` 0.0648.
+- **Conclusion: confirmed, for the parameterisation.** Delta actions cut open-loop target error **3.24 -> 1.054 deg
+  (3.1x)**, inside the registered 1.0-1.5 deg prediction, and this is the first arm to come in **under** the
+  do-nothing null instead of 2.7x above it.  Two independent predictions of the delta argument also came true:
+  1. **Ensembling flipped sign.** On the absolute arm it *hurt* (3.69 vs 3.24); here it *helps* (0.914 vs 1.054,
+     -13 %).  Averaging increments across time is coherent; averaging absolute targets is not.
+  2. The residual is no longer dominated by a near-constant offset.
+- **Conclusion: negative, for the wrist joints, and the honest size of the win.** Overall B is only **12 % better
+  than outputting zero motion** (1.054 vs 1.20), and per joint it is better than the null only on j0/j1/j2
+  (0.84/0.72/0.86) while being **worse than the null on j3/j4/j5** (1.44/1.10/1.24) — the policy *adds* noise on the
+  wrist, where the true increments are smallest.  Headroom to the 0.61 deg demonstration floor is 1.7x, not the 5.3x
+  the absolute arm had.  **This is open-loop error on 353 held-out steps, not a robot success rate**; no physical
+  success rate exists for any policy yet.
+- **Artifacts.** Run `/data/ti874297/vla_runs/none+piper_pick_can+b64x1+lr0.00035+r32+s10000+fm+q4--openvla_piper_delta`
+  (merged in place, 112 s, peak RSS 31.9 GB); log `acdc_la/logs/post2_openvla_piper_delta.log`;
+  replay `acdc_la/realrobot/piper_policy.py --replay data/real_rlds_delta`;
+  nulls and floor `acdc_la/realrobot/delta_floor.py`; dataset `acdc_la/realrobot/make_delta_rlds.py`.
+- **Next.** (a) Arm A is at step 9050/10000 as of 19:32 UTC, ~111 min out; its merge (`--init /data/ti874297/p2fft_20k`,
+  31 GB peak) and replay are chained.  **A vs B is a valid comparison** — same dataset, same normalisation, same
+  formula — and is the only thing here that speaks to the latent mechanism; B alone speaks only to the parameterisation.
+  At step 8975 A's train `action_l1_1step` was 0.0558 against B's final 0.0648, with `latent_r2` 0.832.
+  (b) The deployment recipe in `acdc_la/realrobot/README.md` (chunk=2, ensemble off, samples=8) was derived on the
+  **absolute** arm; `ensemble off` is now contradicted for delta checkpoints and must be re-derived before any delta
+  checkpoint goes on the robot.  (c) j3/j4/j5 being worse than the null is the next diagnostic, not the chunk length.
