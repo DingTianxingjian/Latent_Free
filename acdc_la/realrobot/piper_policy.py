@@ -25,10 +25,28 @@ Everything that has to agree with training, with the line it comes from:
     that is LIBERO's +1/-1 convention.  Piper's gripper is [0, 1] and passes through untouched.
 
   from acdc_la.realrobot.piper_policy import PiperPolicy
-  p = PiperPolicy("<checkpoint dir>"); p.reset()
-  while True:                                        # at 10 Hz
-      a = p.act(front_frame_rgb, "pick up the can and place it on the plate")
-      send_joint_targets(a[:6]); send_gripper(PiperPolicy.gripper_to_raw(a[6]))
+  p = PiperPolicy("<checkpoint dir>", ensemble=False, samples=8)      # see CHUNK LENGTH below
+  p.reset()
+  while True:                                                        # at 10 Hz
+      chunk = p.act_chunk(front_frame_rgb, "pick up the can and place it on the plate")
+      for a in chunk[:2]:                                            # execute 2 of the 12, then re-predict
+          send_joint_targets(a[:6]); send_gripper(PiperPolicy.gripper_to_raw(a[6]))
+          wait_until_next_10hz_tick()
+
+CHUNK LENGTH -- measured 2026-11-10 on the 8 held-out episodes (acdc_la/realrobot/chunk_profile.py).  The open-loop
+error grows across the chunk, so the fewer steps you execute per prediction the better, bounded by inference latency:
+
+  steps ahead k      0     1     2     3     4     5  ...   11
+  error (deg)     3.24  3.94  4.58  4.98  5.19  5.32      5.67
+
+  executing the first n:  n=1 3.24   n=2 3.59   n=3 3.92   n=5 4.38 deg
+  act_chunk latency: 89.0 ms mean, 96.2 ms p90 (RTX PRO 6000 Blackwell), against 100 ms per step at 10 Hz
+
+n=2 is the recommendation: it takes 69 % of the available gain and leaves >2x latency headroom, where n=1 leaves 4 ms
+on OUR card and would miss control deadlines on a slower one -- and a variable control rate is itself off-distribution,
+since the policy only ever saw 10 Hz.  n=1 also re-samples the stochastic head every step, injecting its ~0.5-0.9 deg
+across-sample spread at the full control rate, which on the robot looks like hunting.  Measure your own latency with
+acdc_la/realrobot/latency.py before choosing.
 
   PYTHONPATH=. python -m acdc_la.realrobot.piper_policy \
       --checkpoint /data/ti874297/vla_runs/tc_cont+piper_pick_can+...--terra_piper --replay data/real_rlds
@@ -72,7 +90,7 @@ class Ensembler:
 
 
 class PiperPolicy:
-    def __init__(self, checkpoint, device="cuda", flow_steps=None, unnorm_key=None, seed=7, ensemble=True):
+    def __init__(self, checkpoint, device="cuda", flow_steps=None, unnorm_key=None, seed=7, ensemble=True, samples=1):
         # ensemble=False sends chunk[0] straight through.  On this data the ensembling is slightly WORSE offline
         # (3.69 deg vs 3.24 deg mean per joint, 2026-11-08): it is UniVLA's LIBERO setting, where the action is a
         # delta and the lag it introduces costs nothing.  Here the action is an absolute joint target, so the lag
@@ -109,7 +127,7 @@ class PiperPolicy:
         self.adim = len(self.low)
         self.n_patches = self.vla.vision_backbone.featurizer.patch_embed.num_patches
         self.ens = Ensembler(self.W, self.adim)
-        self.seed = seed; self.use_ens = ensemble; self.reset()
+        self.seed = seed; self.use_ens = ensemble; self.samples = max(1, int(samples)); self.reset()
         print(f"[piper-policy] {checkpoint}\n  {'flow, ' + str(self.flow_steps) + ' Euler steps' if self.flow else 'regression'}"
               f" | window {self.W} | action dim {self.adim} | query tokens {self.nq} | unnorm '{unnorm_key}'"
               f" | raw gripper dim(s) {list(np.nonzero(~self.norm_mask)[0])}", flush=True)
@@ -157,8 +175,21 @@ class PiperPolicy:
         if self.nq:                                                       # the query-token states the heads were trained on
             qm = inputs["input_ids"][0] > 32000; txt = txt[:, qm]
             assert txt.shape[1] == self.nq, f"{txt.shape[1]} query tokens in the prompt, expected {self.nq}"
-        out = (self.heads.sample(vis, txt, self.flow_steps, self.gen) if self.flow else self.heads(vis, txt))
-        chunk = out[0].reshape(self.W, self.adim).cpu().numpy()
+        if self.flow and self.samples > 1:
+            # ONE VLA forward, `samples` head samples in a single batched call, averaged.  The head is ~12M
+            # parameters against the VLA's 7B, so 8 samples cost a few ms (measured 2026-11-08: 8 samples change the
+            # held-out L1 by 2 %, 0.1483 -> 0.1452, with an across-sample sd of 0.032 -- i.e. this buys SMOOTHNESS
+            # between consecutive commands, not accuracy).
+            # CAVEAT, and it is the reason this is not the default: averaging samples from a multimodal distribution
+            # returns something that is not any of the modes, which is exactly the failure FlowHeads was chosen to
+            # avoid (its docstring quotes LAFP on collapsing multimodal action distributions into unimodal ones).
+            # For one can on a table that is a fine trade; for a task with genuinely distinct options it is not.
+            v, t = vis.repeat(self.samples, 1, 1), txt.repeat(self.samples, 1, 1)
+            out = self.heads.sample(v, t, self.flow_steps, self.gen)
+            chunk = out[0].reshape(self.samples, self.W, self.adim).mean(0).cpu().numpy()
+        else:
+            out = (self.heads.sample(vis, txt, self.flow_steps, self.gen) if self.flow else self.heads(vis, txt))
+            chunk = out[0].reshape(self.W, self.adim).cpu().numpy()
         if normalised: return chunk
         return np.where(self.norm_mask, 0.5 * (chunk + 1) * (self.high - self.low) + self.low, chunk)
 
