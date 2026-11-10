@@ -18,28 +18,38 @@
 # 20000 samples per iterator, ~5 GB per rank, whatever BS is.  A fixed 2500 at BS=32 would be ~20 GB per rank.
 set -u -o pipefail
 cd "$(dirname "$0")/../.."
-PY=${PY:?python of the env}; INIT=${INIT:?phase-2 run dir}; N=${NOTE:?}; G=(${GPUS:-0 1}); NG=${#G[@]}
+PY=${PY:?python of the env}; INIT=${INIT:?phase-2 run dir, or none}; N=${NOTE:?}; G=(${GPUS:-0 1}); NG=${#G[@]}
 # DS names the RLDS dataset directly, for data that is not a LIBERO suite; then SUITE is only the eval suite and may be
 # omitted when the eval is skipped.  Unset DS keeps the old behaviour exactly: the suite name plus _no_noops.
 DS=${DS:-${SUITE:?suite name, or DS for a non-LIBERO dataset}_no_noops}; S=${SUITE:-$DS}
 GB=${GLOBAL:-128}                              # the global batch to hold: 128 = UniVLA's full-split budget, 64 = the 10 % cells
+# LATENT=none is the registered no-latent control (the LIBERO arms call it `none`+`fmq4`): build_labeller returns no
+# labeller, dz becomes 0 and the flow head denoises the action chunk alone, while `cont` stays true so the q4
+# placeholder readout and the flow head are UNCHANGED -- so a `none` arm differs from a tc_cont one in the latent
+# branch only, not in the interface.
+LATENT=${LATENT:-tc_cont}; QT=${QUERY_TOKENS:-4}
 BS=${BS:-8}; GA=${GA:-$((GB / NG / BS))}; [ $((BS * GA * NG)) = "$GB" ] || { echo "BS x GA x GPUs = $((BS * GA * NG)), not $GB"; exit 1; }
 [ "$S" = libero_10 ] && STEPS=${STEPS:-40000} || STEPS=${STEPS:-30000}
 ROOT=${RUNROOT:-acdc_la/ckpt/vla_runs}; mkdir -p "$ROOT" acdc_la/logs acdc_la/results/vla_eval
-[ -f "$INIT/vla_full.pt" ] || { echo "$INIT has no vla_full.pt"; exit 1; }
+# INIT=none post-trains the OFFICIAL openvla-7b instead of a phase-2 run: the trainer's --init_from_run is then
+# omitted, which takes finetune_libero_ctrl.py's final branch (a fresh LoRA on cfg.vla_path, with the <ACT_i> tokens
+# already added).  That is the matched control for "what did phase 2 buy": same data, recipe, budget, LoRA and head.
+if [ "$INIT" = none ]; then IFR=""; else
+  [ -f "$INIT/vla_full.pt" ] || { echo "$INIT has no vla_full.pt"; exit 1; }; IFR="--init_from_run $INIT"
+fi
 export PYTHONPATH=$PWD:$PWD/third_party/UniVLA WANDB_MODE=disabled TOKENIZERS_PARALLELISM=false TORCH_HOME=$PWD/cache/torch \
        PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1 \
        CTRL_STAGGER_SEC=${CTRL_STAGGER_SEC:-90} CTRL_REITER_BATCHES=${CTRL_REITER_BATCHES:-$((20000 / BS))}
 [ "${FRAC:-full}" = full ] && unset LIBERO_TRAIN_FRAC || export LIBERO_TRAIN_FRAC=$FRAC
 LOG=acdc_la/logs/post2_${N}.log
-find_run() { ls -d "$ROOT"/tc_cont+${DS}+b*+*s${STEPS}*--${N} 2>/dev/null | head -1; }
+find_run() { ls -d "$ROOT"/${LATENT}+${DS}+b*+*s${STEPS}*--${N} 2>/dev/null | head -1; }
 RUN=$(find_run)
 if [ -z "$RUN" ] || [ ! -f "$RUN/config.json" ]; then          # config.json appears with the merged checkpoint
   for try in 1 2 3; do
     echo "[post2] $N train, attempt $try, BS $BS x GA $GA x $NG GPUs, reiter $CTRL_REITER_BATCHES $(date)" | tee -a $LOG
     CUDA_VISIBLE_DEVICES=$(echo ${G[*]} | tr ' ' ,) $PY -m torch.distributed.run --nnodes 1 --master_addr 127.0.0.1 --master_port $((15000 + RANDOM % 30000)) \
-        --nproc-per-node $NG -m acdc_la.downstream.vla.finetune_libero_ctrl --latent tc_cont --head flow --query_tokens 4 --tc_tag latp2_inv \
-        --init_from_run $INIT --dataset_name $DS --run_id_note $N --run_root_dir $ROOT --batch_size $BS --grad_accumulation_steps $GA \
+        --nproc-per-node $NG -m acdc_la.downstream.vla.finetune_libero_ctrl --latent $LATENT --head flow --query_tokens $QT --tc_tag latp2_inv \
+        ${IFR} --dataset_name $DS --run_id_note $N --run_root_dir $ROOT --batch_size $BS --grad_accumulation_steps $GA \
         --max_steps $STEPS --save_steps ${SAVE:-1000} --resume True ${EXTRA:-} >> $LOG 2>&1 < /dev/null
     RC=$?; echo "[post2] $N train exit $RC $(date)" | tee -a $LOG; [ $RC = 0 ] && break; sleep 60
   done
