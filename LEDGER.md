@@ -5160,6 +5160,26 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   so sub-degree precision is not obviously available from this dataset at all.  Also notable: given the pose, the
   image constraint does not narrow the next command (1.42 -> 1.49 deg, i.e. unchanged within the selection effect of
   a 13x smaller pair set) -- though at 32x32 grey that is a statement about the descriptor, not about the image.
+- **Correction, same day -- the floor is 0.61 deg, not 1.49, and the headroom is 5x not 2x**
+  (`acdc_la/realrobot/delta_floor.py`).  The 1.49 deg above was half the spread of the next ABSOLUTE target at
+  pose-matched steps, but the match allows the two poses to differ by up to 2 deg per joint and **that difference
+  sits inside the absolute-target spread**, so the bound was inflated by its own matching slack.  Recomputed on the
+  DELTA (target minus the step's own measured configuration), which removes the pose offset by construction and is
+  the same physical position error: spread mean **1.22 deg -> floor 0.61 deg** (pose < 2 deg + image closest 2 %,
+  5,526 cross-episode pairs), unchanged by a phase constraint (1.22) and only slightly lower at a 1 deg pose match
+  (1.12 -> 0.56).  The MEDIAN spread is 0.13 deg (floor 0.06), so matched demonstrations agree almost exactly and the
+  mean is carried by a small ambiguous tail.  Consequences: the demonstrations are far MORE consistent than the
+  earlier number said, our 3.24 deg sits **~5.3x above the floor** rather than 2.2x, and the "~1.5 deg caps what any
+  policy fix can buy" caveat is withdrawn -- sub-degree precision IS available from this dataset.
+- **The nulls the delta arm has to beat** (same 8 held-out episodes, 353 steps).  Under a delta parameterisation
+  "output zero" means *stay where you are*, and its error is mean |delta| = **1.20 deg** per joint
+  (0.71 / 2.80 / 1.95 / 0.29 / 1.41 / 0.05); repeat-the-last-command is 2.06 deg; the absolute arm is 3.24 deg.  So
+  the informative band is narrow: **0.61 deg (floor) to 1.20 deg (do nothing)**, and a delta arm that lands above
+  1.20 deg is better than the absolute arm while still being no better than not moving -- which would be a useful
+  NEGATIVE, pointing away from the parameterisation and back at the head's single-token conditioning or the single
+  front view.  Prediction registered BEFORE the run finishes: the signal-to-range ratio improves from 2.06/82 = 2.5 %
+  to 1.20/17.7 = 6.8 %, i.e. 2.7x, so the expected landing is **~1.0-1.5 deg** (2-3x better than absolute), with
+  ~0.7-0.9 deg the optimistic case if the error-as-fraction-of-range is fully preserved.
 - **A more specific structural candidate than either of the above, found by reading the head (2026-11-10).**
   `FlowHeads.cond` is `MAPBlock(n_latents=1)` over the visual tokens and `MAPBlock(n_latents=1)` over the 4 query
   tokens, concatenated into `c_in` -> **a single 512-d token**, and `velocity()` gives the 12 action tokens exactly
