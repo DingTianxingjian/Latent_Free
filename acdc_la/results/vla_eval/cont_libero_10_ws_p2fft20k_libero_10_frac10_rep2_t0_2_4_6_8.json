@@ -1,0 +1,27 @@
+{
+ "checkpoint": "/data/ti874297/vla_runs/tc_cont+libero_10_no_noops+b32x2+lr0.00035+r32+s15000+fm+q4--p2fft20k_libero_10_frac10_rep2",
+ "suite": "libero_10",
+ "trials": 50,
+ "per_task": {
+  "put both the alphabet soup and the tomato sauce in the basket": 0.18,
+  "turn on the stove and put the moka pot on it": 0.86,
+  "put the white mug on the left plate and put the yellow and white mug on the right plate": 0.36,
+  "put the white mug on the plate and put the chocolate pudding to the right of the plate": 0.58,
+  "put both moka pots on the stove": 0.46
+ },
+ "task_ids": [
+  0,
+  2,
+  4,
+  6,
+  8
+ ],
+ "per_task_id": {
+  "0": 0.18,
+  "2": 0.86,
+  "4": 0.36,
+  "6": 0.58,
+  "8": 0.46
+ },
+ "success": 0.488
+}

@@ -5239,3 +5239,51 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   (squash to 256 -> 224 -> 0.9-area centre crop, 10 Hz); and for the failure SHAPE, which separates the hypotheses:
   a consistent spatial offset points at calibration/preprocessing, hunting/jitter at the precision floor, and failure
   only at can positions outside the demonstrated set at data coverage.
+
+### 2026-11-10 — 10 % Long replicate 2 of the 20k full-parameter phase-2 arm: 303/500 = 60.6 %, which does NOT separate it from the LoRA phase-2 or no-phase-2 arms
+
+- **Run.**  `tc_cont+libero_10_no_noops+b32x2+lr0.00035+r32+s15000+fm+q4--p2fft20k_libero_10_frac10_rep2`, UCF
+  workstation, 2 GPUs, global batch 64 (8 x accum 4 x 2), **15,000 steps**, LoRA r32 + flow head + 4 query tokens on
+  the 20k full-parameter phase-2 base (`p2fft_20k`), `LIBERO_TRAIN_FRAC=10`.  **10 h 41 m** wall (2.56 s/step).
+  Training: action L1 0.168 -> 0.0298, latent r2 0.580 -> 0.821, lr x0.1 at step 12,000.
+- **Result — 303/500 = 60.6 %** on the standard 500-episode LIBERO-Long eval, all 10 tasks.  Per task, sorted:
+  0.92 / 0.86 / 0.70 / 0.68 / 0.68 / 0.64 / 0.58 / 0.46 / 0.36 / **0.18** ("put both the alphabet soup and the tomato
+  sauce in the basket" is 9/50 and is the floor in every arm).
+- **The cell, all arms at 10 % Long, 500 episodes each:**
+
+  | arm | rep 1 | rep 2 | mean |
+  |---|---|---|---|
+  | p2ours (LoRA phase 2) | 61.6 | 55.8 | 58.7 |
+  | **p2fft20k (full-parameter 20k)** | **not relayed** | **60.6** | — |
+  | p2fft5000 | 57.6 | 51.2 (and 49.8 at wu500) | 52.9 |
+  | nop2 (no phase 2) | 56.4 | — | 56.4 |
+  | univla_noinh | 53.0 | — | — |
+  | ours_fm | 50.8 | — | — |
+
+- **Conclusion — the run is confirmed, the method question is NOT.**  60.6 sits **inside** p2ours's own spread
+  (55.8-61.6) and above nop2's single 56.4, but **one 500-episode cell carries +-8 points at 95 %** (pooled sd ~4.3
+  for one run, 2026-10-30).  So 60.6 vs 58.7 vs 56.4 is **not separable**, and this entry does **not** establish that
+  the 20k full-parameter phase 2 beats the LoRA phase 2 or beats no phase 2.  What it does: it gives the 20k arm its
+  first 10 % Long number.  Compare with the full split, where the same arm was 89.8 against p2ours 89.0 and the
+  conclusion was also "the split cannot tell" (2026-11-07) -- the 10 % cell was supposed to be the discriminating one,
+  and with a single replicate it still is not.
+- **Infrastructure — the merge fix worked.**  `EXTRA="--merge False"` plus `acdc_la/scripts/merge_ctrl_run.py`
+  standalone: **peak RSS 30.9 GB in 191 s**, no SIGKILL, where the in-run merge was killed three times on this host
+  (2026-11-08).  This is now the recipe for every run on the 62 GB box.
+- **Infrastructure — half the first eval was lost to a co-tenant, not to us.**  The 2026-11-08 eval launched two
+  ranks; the GPU-1 rank died at model load with `CUDA out of memory` because **another user's job held 80.45 GiB of
+  that card's 96**, so tasks 1/3/5/7/9 never ran and the merged file read 122/250 = 48.8 % with `complete: false`.
+  Recovered 2026-11-10 by rerunning exactly those five tasks on GPU 0 (2 h 24 m) and re-merging; both shard files are
+  now present and `complete: true`.  Lesson for this host: the launcher's eval loop does not check that each rank
+  produced a file, and `eval_merge` reports `complete: false` but the launcher still exits 0.
+- **Caveat that applies to this number like every other in this ledger.**  ~6 % of this run's samples had a
+  padding-contaminated window (Long episodes average ~203 steps against a 14-frame window; see the chunker entry
+  above).  Identical on every arm, so the comparison is unaffected.
+- **Artifacts.**  `acdc_la/results/vla_eval/merged_libero_10_ws_p2fft20k_libero_10_frac10_rep2.json` + the two shard
+  files `..._t0_2_4_6_8.json` / `..._t1_3_5_7_9.json`; run dir
+  `/data/ti874297/vla_runs/tc_cont+libero_10_no_noops+b32x2+...--p2fft20k_libero_10_frac10_rep2` (16 GB merged);
+  `acdc_la/logs/post2_{p2fft20k_libero_10_frac10_rep2,eval_p2fft20k_libero_10_frac10_rep2_gpu0,eval_p2fft20k_libero_10_frac10_rep2_gpu1,eval_p2fft20k_libero_10_frac10_rep2_odd}.log`;
+  `/data/ti874297/{long_rep2_wrapper.log,long_rep2_phase23.log,rep2_odd.log}`.
+- **Next.**  **Get Newton job 1157664's number** (replicate 1 of this same arm) -- it is the only thing that turns
+  60.6 into a pair and makes this cell comparable with the two-replicate arms.  Until then the 20k-vs-LoRA phase-2
+  question has no answer at 10 % Long either.

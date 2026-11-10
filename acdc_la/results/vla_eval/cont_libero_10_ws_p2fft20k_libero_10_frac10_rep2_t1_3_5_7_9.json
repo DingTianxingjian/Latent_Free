@@ -1,0 +1,27 @@
+{
+ "checkpoint": "/data/ti874297/vla_runs/tc_cont+libero_10_no_noops+b32x2+lr0.00035+r32+s15000+fm+q4--p2fft20k_libero_10_frac10_rep2",
+ "suite": "libero_10",
+ "trials": 50,
+ "per_task": {
+  "put both the cream cheese box and the butter in the basket": 0.92,
+  "put the black bowl in the bottom drawer of the cabinet and close it": 0.68,
+  "pick up the book and place it in the back compartment of the caddy": 0.68,
+  "put both the alphabet soup and the cream cheese box in the basket": 0.7,
+  "put the yellow and white mug in the microwave and close it": 0.64
+ },
+ "task_ids": [
+  1,
+  3,
+  5,
+  7,
+  9
+ ],
+ "per_task_id": {
+  "1": 0.92,
+  "3": 0.68,
+  "5": 0.68,
+  "7": 0.7,
+  "9": 0.64
+ },
+ "success": 0.724
+}
