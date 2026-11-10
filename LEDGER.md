@@ -5145,10 +5145,47 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   the policy does well is the FAST gross approach (0.63); everywhere the motion becomes fine it is 2.1-2.3x the
   per-step motion.  So "understands the motion but the grasp is imprecise" is this floor meeting a phase whose
   tolerance is below it -- not a grasp-specific perception failure.  **This is a description, not a cause.**
-- **The competing explanation, untested: demonstration multimodality.**  A floor that does not move with phase is
-  also what you get from regressing a multimodal target -- 142 teleop demonstrations of one task contain many valid
-  ways to reach the can, and a middle is not any of them.  The cheap test is the spread BETWEEN demonstrations at
-  matched states; if it is ~3 deg the floor is the data, not the policy.  Not run.
+- **The competing explanation, NOW MEASURED -- the demonstrations impose a floor, but not this floor.**
+  (`acdc_la/realrobot/demo_spread.py`, all 150 episodes, 6,462 steps, no GPU and no training.)  Two steps from
+  DIFFERENT episodes in the same arm configuration and looking the same are the same input to this policy, so half
+  their disagreement about the next command bounds the mean error of ANY deterministic policy of those inputs
+  (`|f-a1| + |f-a2| >= |a1-a2|`).  Matching pose to < 2 deg on every joint and the image to the closest 2 % of a
+  32x32 grey descriptor, over 7,558 cross-episode pairs: spread mean **2.99 deg**, so the **bound is 1.49 deg**
+  (median-based 0.73).  Adding a task-phase constraint (|phase diff| < 0.08, to stop the same configuration on the
+  way out being paired with the way back) changes it by 0.01 deg, so the number is robust.  **Our 3.24 deg is ~2.2x
+  that bound**, and the bound is an OVER-estimate: a 32x32 grey descriptor cannot resolve a 1 cm shift of the can, so
+  some "matched" pairs legitimately differ for reasons a 224x224 policy can see, which inflates the spread.  So
+  **demonstration multimodality does NOT explain the floor** -- there is at least a factor of 2 of policy-side
+  headroom -- but it does CAP what any policy fix can buy: ~1.5 deg is 72 % of the 2.06 deg the arm moves per step,
+  so sub-degree precision is not obviously available from this dataset at all.  Also notable: given the pose, the
+  image constraint does not narrow the next command (1.42 -> 1.49 deg, i.e. unchanged within the selection effect of
+  a 13x smaller pair set) -- though at 32x32 grey that is a statement about the descriptor, not about the image.
+- **A more specific structural candidate than either of the above, found by reading the head (2026-11-10).**
+  `FlowHeads.cond` is `MAPBlock(n_latents=1)` over the visual tokens and `MAPBlock(n_latents=1)` over the 4 query
+  tokens, concatenated into `c_in` -> **a single 512-d token**, and `velocity()` gives the 12 action tokens exactly
+  that one token to attend to.  **The whole visual scene reaches the action head as one 512-d vector**, from which
+  the entire 12x7 chunk is generated; the millimetre-scale offset between gripper and can has to survive a
+  single-token attention pool.  This predicts precisely what was measured -- a floor that does not vary with phase,
+  because the bottleneck is identical at every step -- and unlike the wrist camera it is one line
+  (`n_latents=1` -> 4 or 8) plus a post-training-only rerun (~6.5 h).  It is UniVLA's own ActionDecoder design, so
+  it is inherited, and it is **still a hypothesis: nothing here shows it is the binding constraint.**  **Constraint
+  (`next_task.md` section 8): `n_latents` lives in `FlowHeads` and is shared by every arm**, including the LIBERO
+  cells and the UniVLA-baseline-on-the-robot being prepared, so raising it for the real-robot arm alone would void
+  that comparison.  It is a registered ablation, not a patch.
+- **Why ABSOLUTE joint targets are the wrong parameterisation for this, quantified.**  Compare the two
+  `dataset_statistics.json`: LIBERO is delta EEF (mean ~0, q01/q99 ~ +-0.8, so the whole output range is spent on
+  the increment); Piper joint 1 has mean 111.5 and q01/q99 2.45 .. 166.66, a **164 deg range**, while the arm moves
+  ~2 deg per step -- so the informative part of each prediction is **1.2 % of the output range**.  Our measured
+  error as a fraction of each joint's own range is 2.4 / 2.4 / 2.6 / 11.5 / 8.0 / 7.3 %: **the signal sits below the
+  error**.  Under a delta parameterisation the range would be ~+-5 deg and the same relative precision would give
+  ~0.15-0.3 deg on the quantity that matters.  This is why that whole line (OpenVLA, RT-1/2, Octo) uses deltas, and
+  it is **our converter's deviation, not OpenVLA's** -- OpenVLA's own recipe is delta EEF.  Two already-measured
+  consequences are symptoms of it: persistence (2.06 deg) beats the policy (3.24 deg), which needs a target
+  dominated by "where you already are"; and temporal ensembling HURTS (3.69 vs 3.24), because averaging absolute
+  positions predicted at different times is a lag, whereas averaging deltas averages a velocity estimate.  Cheap to
+  test: `action[t] = joints[t+1] - joints[t]` in the converter, same base, same 10k steps, one 6.5 h run.  Honest
+  caveat: deltas bring integration drift and their own small-signal problem if the range is set by rare fast
+  motions, so this is a well-motivated experiment, not a certainty.
 - **Gripper timing is aligned.**  Shifting the predicted gripper channel against the demonstration: 0.0470 at 0,
   0.0450 at +1 step, 0.0746 at +2.  Best is +1 step (100 ms late) but it buys 4 %, which is not actionable.
 - **Conclusion — provisional (qualitative, n~5), and it retracts a cause I asserted without measuring.**  The policy
@@ -5157,8 +5194,8 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   **ensembling off**: 3.69 vs 3.24 deg, 2026-11-08).  The training-side levers (wrist view, delta instead of absolute
   actions, higher control rate, more demonstrations) are all **unmeasured hypotheses** and must not be reported as
   diagnoses.  No success rate exists for this policy on the robot.
-- **Artifacts.**  `/data/ti874297/{chunk_profile.json,chunk_profile.log,latency.log}`; the three diagnostics are
-  `acdc_la/realrobot/{chunk_profile,phase_motion,latency}.py`.
+- **Artifacts.**  `/data/ti874297/{chunk_profile.json,chunk_profile.log,latency.log,demo_spread2.log}`; the three diagnostics are
+  `acdc_la/realrobot/{chunk_profile,phase_motion,latency,demo_spread}.py`.
 - **Next.**  Ask the collaborator for chunk = 2, ensembling off, and a confirmation that the preprocessing matches
   (squash to 256 -> 224 -> 0.9-area centre crop, 10 Hz); and for the failure SHAPE, which separates the hypotheses:
   a consistent spatial offset points at calibration/preprocessing, hunting/jitter at the precision floor, and failure
