@@ -5218,6 +5218,21 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   **ensembling off**: 3.69 vs 3.24 deg, 2026-11-08).  The training-side levers (wrist view, delta instead of absolute
   actions, higher control rate, more demonstrations) are all **unmeasured hypotheses** and must not be reported as
   diagnoses.  No success rate exists for this policy on the robot.
+- **Infrastructure, found 2026-11-10 while briefing the press_button run: the chunker pads episode starts and
+  nothing masks it** (`acdc_la/realrobot/short_episode.py`, prismatic's real `chunk_act_obs_libero`).  The sample
+  window is BACKWARD-looking -- timestep `t` gets `[t-13 ... t]` for `window_size + 2 = 14` -- and
+  `tf.maximum(chunk_indices, 0)` (`traj_transforms.py:91`) clamps anything before the episode start, so **frame 0 and
+  action 0 are repeated**; actions are clamped to `[0, traj_len-1]` (`:98`).  One sample is emitted per timestep with
+  **none dropped**, so `t=0` is a fully degenerate sample (whole window = frame 0, whole action target = action 0).
+  `pad_mask` records it (`:104`) but **no downstream code reads it** -- a grep over `prismatic/vla/` and `acdc_la/`
+  finds it only in `acdc_la/scripts/test_obs_keep.py`.  Share of samples with a fully real window by episode length
+  in 10 Hz steps: **12 -> 0 %, 17 -> 24 %, 43 -> 70 %, ~203 -> 94 %**.  Consequences: the **LIBERO cells are barely
+  affected** (Long averages ~203 steps per episode, so ~6 % of samples), **pick-can ran with ~30 %** padded samples,
+  and a short-episode dataset like `press_button` (38-167 frames at 30 Hz = 12-55 steps at 10 Hz, median 17) would be
+  **mostly padding**.  **This does not invalidate any comparison in this ledger** -- it is identical on both sides of
+  every arm, since every arm uses the same chunker, window and data -- but it means the effective sample count is
+  below the step count, and absolute numbers are not comparable across datasets with different episode lengths.
+  Not changed: `window_size` is shared (`next_task.md` section 8), so this is recorded, not patched.
 - **Artifacts.**  `/data/ti874297/{chunk_profile.json,chunk_profile.log,latency.log,demo_spread2.log}`; the three diagnostics are
   `acdc_la/realrobot/{chunk_profile,phase_motion,latency,demo_spread}.py`.
 - **Next.**  Ask the collaborator for chunk = 2, ensembling off, and a confirmation that the preprocessing matches

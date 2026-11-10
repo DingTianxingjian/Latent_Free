@@ -3,7 +3,16 @@
 Written 2026-11-10 by the workstation session for whoever picks this up on Jetstream2.  Everything below that is a
 measurement was measured; everything that is a guess says so.  Read the "unverified" notes before trusting a number.
 
-## 0. Read these first, in this order
+## 0. The repository
+
+```bash
+git clone -b newton https://github.com/DingTianxingjian/Latent_Free.git latent_free && cd latent_free
+```
+
+**It is public -- no token, no credentials.**  (The first reader of this document guessed `Potestates/Latent_Free`
+from the HuggingFace org name and got a 404; the owner is `DingTianxingjian`.)
+
+## 0b. Read these first, in this order
 
 1. `AGENTS.md` (repo root) -- **the experiment ledger is `LEDGER.md` at the repo root, and it must be updated before
    you report a result to the user.** Configuration, split, budget, the number, its control, conclusion status,
@@ -103,9 +112,39 @@ window_size 12 = 1.2 s                ->  two thirds of an entire episode
 RLDSDataset is built with window_size + 2 = 14 frames per sample  ->  ~5 valid windows per episode
 ```
 
-**Verify what prismatic's chunking actually does at an episode boundary before you believe any loss curve.**  I did
-not check this and it is the most likely silent failure: if it pads, you are training on padding for a large fraction
-of every sample.  `prismatic/vla/datasets/rlds/traj_transforms.py::chunk_act_obs_libero` is the function.
+**SETTLED 2026-11-10 -- it pads, nothing masks it, and for this dataset that is most of your samples.**  Measured by
+running the real chunker on synthetic trajectories (`acdc_la/realrobot/short_episode.py`):
+
+* The window is **backward-looking**: timestep `t` gets indices `[t-13 ... t]`, then
+  `tf.maximum(chunk_indices, 0)` (`traj_transforms.py:91`) clamps anything before the start, so **frame 0 and
+  action 0 are repeated**.  Actions are clamped the same way to `[0, traj_len-1]` (`:98`).
+* **No sample is dropped** -- one per timestep, including `t=0`, whose entire 14-frame window is frame 0 and whose
+  entire action target is action 0.  A fully degenerate sample.
+* `pad_mask` records exactly which entries are padding (`:104`) and **nothing downstream reads it**: a grep over
+  `prismatic/vla/` and `acdc_la/` finds it used only by `acdc_la/scripts/test_obs_keep.py`.  (The `pad_mask_dict`
+  that *is* used is a different thing -- missing images and language.)
+* Fraction of samples with a fully real window, by episode length in 10 Hz steps:
+
+  | episode length | 12 (press_button shortest) | 17 (press_button median) | 43 (pick-can median) | ~203 (LIBERO Long) |
+  |---|---|---|---|---|
+  | clean samples | **0 %** | **24 %** | 70 % | 94 % |
+
+So **press_button at 10 Hz is mostly padding** and its shortest episodes yield no clean sample at all.  Compute the
+exact fraction on your copy as `sum(max(0, T_i - 13)) / sum(T_i)` over episodes and put it in the ledger entry; the
+effective sample count is what that gives, not 1,844.
+
+**Do not "fix" this by lowering `window_size`** -- it is shared with every LIBERO cell and with the baseline
+(`next_task.md` section 8).  The options, in the order I would raise them with the user:
+
+1. **Accept it and report it.**  The contamination is identical on both sides of every arm, so an A-vs-baseline
+   comparison on this dataset stays valid; only the absolute number stops being comparable with pick-can.
+2. **Keep 30 Hz for this dataset instead of subsampling by 3.**  Episodes are 38-167 frames, so a 14-frame window
+   leaves 25-154 clean samples -- most samples clean.  But it changes the control rate and what a 12-step chunk
+   spans (0.4 s instead of 1.2 s), so it is a design decision, not a fix.  Raise it; do not take it alone.
+3. `chunk_filter_fn` exists in the dataset API (`dataset.py:411-420`) and could drop padded chunks, but that changes
+   the effective data for one arm.
+
+`prismatic/vla/datasets/rlds/traj_transforms.py::chunk_act_obs_libero` is the function; the test is one file.
 
 ### (c) Overfitting is a real risk here -- unlike on pick-can
 
@@ -123,8 +162,8 @@ step 6,000 to 10,000 while train L1 still fell).  **On this dataset it will genu
 * **Actually watch the held-out curve this time**, and snapshot checkpoints: `finetune_libero_ctrl.py:496` writes
   every save to the SAME adapter dir, so each save overwrites the last and the run keeps **no history**.  Copy
   `<run_root>/adapters/<exp_id>` after each save or you cannot pick a step afterwards.
-* Note `total_tasks: 4` but only two task strings were legible to me (`press the red button`, `press the blue
-  button`).  Read `meta/tasks.parquet` properly (needs pyarrow) and report what the 4 are.
+* The 4 tasks are **blue / orange / pink / red button, 25 episodes each** (confirmed on the real download
+  2026-11-10).  Four colours of the same motion is a *better* language test than I assumed from two.
 
 ## 5. Registering the dataset
 
