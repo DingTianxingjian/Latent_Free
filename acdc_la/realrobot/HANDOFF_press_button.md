@@ -194,15 +194,28 @@ PYTHONPATH=.:third_party/UniVLA <env>/bin/python -m acdc_la.realrobot.piper_poli
 
 `SKIP_EVAL=1` is required: the LIBERO simulator eval does not apply to real-robot data.
 
-## 8. The blocker you cannot solve yourself
+## 8. Getting the phase-2 base
 
-**The phase-2 base is not on HuggingFace.**  `p2fft_20k/vla_full.pt` (15 GB, byte-checked at 15,081,838,026) exists
-only on the UCF workstation (`/data/ti874297/p2fft_20k`) and on Newton.  `Potestates/TERRA` on HF holds three
-**merged policies** (`piper_pick_can_10k`, `libero_10_full`, `libero_goal_full`, 15.19 GB each) and no base.
+It is on HuggingFace as of 2026-11-10, in a **private** repo (the project's other HF repo, `Potestates/TERRA`, is
+public, so the base was not put there):
 
-So **the baseline arm (section 7, `INIT=none`) can run today and our arm cannot.**  Getting the base to Jetstream2
-is a decision for the user (uploading 15 GB of phase-2 weights to a repo that is currently **public**, versus an
-rsync from Newton that needs their terminal).  Ask; do not pick one.
+```bash
+huggingface-cli login            # the user has to give you a token with read access to their account
+huggingface-cli download Potestates/TERRA-phase2-base --local-dir p2fft_20k
+# then:  INIT=./p2fft_20k  ...
+```
+
+**Check you got both big files before training**, and against these exact sizes:
+
+```
+vla_full.pt          15,081,838,026 B    the base the LoRA goes on
+action_decoder.pt       105,268,830 B    REQUIRED -- finetune_libero_ctrl.py:273 initialises the post-training
+                                         heads from it (strict=False).  Without it the heads start RANDOM and the
+                                         run does not reproduce the workstation's arm.
+```
+
+If the token is not available, the **baseline arm still runs today** (section 7, `INIT=none`): `openvla/openvla-7b`
+is public and downloads without credentials.  Start with that one either way -- it needs nothing from us.
 
 ## 9. Do not
 
