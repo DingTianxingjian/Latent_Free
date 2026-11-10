@@ -5098,3 +5098,68 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - Ablation A: the 24-job preemptable chain (1186071-94) was exhausted by preemptions (18 s - 58 min each); saved:
   s0 a4/a5/a6 @5000, s1/s2 partial (<=2000).  Resubmitted on the NORMAL partition, one 9-arm job per seed
   (1195772-74, -c 32, 24 workers); other pending jobs of ours niced +300 so these start first.
+### 2026-11-10 — FIRST PHYSICAL-ROBOT feedback on the Piper policy: the motion is right, the grasp is not precise; and the measurements that follow RETRACT my ranking of the cause
+
+- **The evidence.**  A labmate ran the `piper_pick_can_10k` policy on the real AgileX Piper, **~5 trials**, with an
+  **action chunk of 5**.  Verbatim: *"it can understand the motion like grasp and place / but the grasp it not too
+  precise / I am not sure if it is undertrain or overtrain"*.  This is the **only** physical evaluation of this arm
+  and it is qualitative: no success count, no trial log, 5 trials.  Treat it as a direction, not a rate.
+- **Under- or over-trained: neither, and this was already measured.**  Held-out one-step L1 is **flat** from step
+  6,000 to 10,000 (0.0972 / 0.0981 / 0.0947 / 0.0940 / 0.0930) while the training L1 was still falling
+  (0.407 -> 0.0411).  Falling train + flat held-out = on the plateau: more steps buys nothing measurable, fewer
+  cuts the LR anneal.  **The step budget is not the knob**, so the question as posed has a negative answer.
+- **The error grows across the chunk, so chunk = 5 is costing accuracy** (`scratchpad/chunk_profile.py`, the 8
+  held-out episodes, 353 steps, chunk sampled properly from noise through the deployment image path):
+
+  | k steps ahead | 0 | 1 | 2 | 3 | 4 | 5 | ... | 11 |
+  |---|---|---|---|---|---|---|---|---|
+  | our error (deg/joint) | **3.24** | 3.94 | 4.58 | 4.98 | 5.19 | 5.32 | | 5.67 |
+  | motion scale at that horizon | 0.00 | 2.06 | 4.08 | 5.90 | 7.55 | 9.04 | | 15.77 |
+  | err / motion | - | 1.91 | 1.12 | 0.84 | 0.69 | 0.59 | | 0.36 |
+
+  Mean over the first 5 (what a chunk-5 rollout actually commands) **4.38 deg** vs **3.24 deg** for chunk 1.  So
+  **chunk 5 -> 2 is -18 %, chunk 5 -> 1 is -26 %** of commanded joint error, free, at deployment.  Note the two
+  readings differ: *relative* to the motion the long horizons are predicted better (0.36 at k=11), but what lands on
+  an ABSOLUTE joint target is the absolute error, and that is lowest at k=0.
+- **Inference latency permits it.**  `act_chunk` costs **89.0 ms mean / 96.2 ms p90** (RTX PRO 6000 Blackwell Max-Q,
+  bf16, 10 Euler steps, `scratchpad/latency.py`).  At 10 Hz chunk 1 needs < 100 ms, so it fits here with **4 ms of
+  p90 margin** -- too thin to recommend on an unknown card.  **chunk = 2 (200 ms budget) is the safe choice.**
+- **RETRACTED (mine, 2026-11-10): "the policy never sees the wrist camera ... this is the biggest lever, it is
+  structural".**  I ranked that first in chat before measuring, and the phase breakdown does not support it being
+  dominant.  Single-view blindness at close range predicts an error SPIKE in the grasp phase.  There is none --
+  chunk[0] error by phase is approach 2.89 / **grasp 2.94** / transport 4.34 / release 2.34 deg, i.e. the grasp is
+  among the *better* phases in absolute terms.  The wrist camera remains a plausible lever and is **untested**; it is
+  a hypothesis, and it was wrong to rank it as the explanation.  (It is true and unchanged that `datasets_ctrl.py:67`
+  feeds only `image_primary`, so this policy has never seen `wrist_image`.)
+- **What the phase data DOES say, once the confound is removed** (`scratchpad/phase_motion.py`, ground truth only --
+  a slow phase earns a low absolute error for free, so divide by the per-step motion):
+
+  | phase | err (deg) | motion/step (deg) | err / motion | n |
+  |---|---|---|---|---|
+  | approach | 2.89 | 4.62 | **0.63** | 62 |
+  | grasp | 2.94 | 1.38 | **2.14** | 88 |
+  | transport | 4.34 | 1.89 | 2.30 | 113 |
+  | release | 2.34 | 1.10 | 2.12 | 82 |
+
+  The error is a **roughly phase-independent ~3 deg floor** while the required precision varies 3x.  The one phase
+  the policy does well is the FAST gross approach (0.63); everywhere the motion becomes fine it is 2.1-2.3x the
+  per-step motion.  So "understands the motion but the grasp is imprecise" is this floor meeting a phase whose
+  tolerance is below it -- not a grasp-specific perception failure.  **This is a description, not a cause.**
+- **The competing explanation, untested: demonstration multimodality.**  A floor that does not move with phase is
+  also what you get from regressing a multimodal target -- 142 teleop demonstrations of one task contain many valid
+  ways to reach the can, and a middle is not any of them.  The cheap test is the spread BETWEEN demonstrations at
+  matched states; if it is ~3 deg the floor is the data, not the policy.  Not run.
+- **Gripper timing is aligned.**  Shifting the predicted gripper channel against the demonstration: 0.0470 at 0,
+  0.0450 at +1 step, 0.0746 at +2.  Best is +1 step (100 ms late) but it buys 4 %, which is not actionable.
+- **Conclusion — provisional (qualitative, n~5), and it retracts a cause I asserted without measuring.**  The policy
+  transfers to the physical robot and does the task's gross structure; its precision floor (~3 deg/joint) sits above
+  the grasp's tolerance.  Two deployment-side changes are justified by measurement (**chunk 5 -> 2**, and
+  **ensembling off**: 3.69 vs 3.24 deg, 2026-11-08).  The training-side levers (wrist view, delta instead of absolute
+  actions, higher control rate, more demonstrations) are all **unmeasured hypotheses** and must not be reported as
+  diagnoses.  No success rate exists for this policy on the robot.
+- **Artifacts.**  `/data/ti874297/{chunk_profile.json,chunk_profile.log,latency.log}`; scratch
+  `scratchpad/{chunk_profile.py,phase_motion.py,latency.py}`.
+- **Next.**  Ask the collaborator for chunk = 2, ensembling off, and a confirmation that the preprocessing matches
+  (squash to 256 -> 224 -> 0.9-area centre crop, 10 Hz); and for the failure SHAPE, which separates the hypotheses:
+  a consistent spatial offset points at calibration/preprocessing, hunting/jitter at the precision floor, and failure
+  only at can positions outside the demonstrated set at data coverage.
