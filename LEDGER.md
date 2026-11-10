@@ -5108,7 +5108,7 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   6,000 to 10,000 (0.0972 / 0.0981 / 0.0947 / 0.0940 / 0.0930) while the training L1 was still falling
   (0.407 -> 0.0411).  Falling train + flat held-out = on the plateau: more steps buys nothing measurable, fewer
   cuts the LR anneal.  **The step budget is not the knob**, so the question as posed has a negative answer.
-- **The error grows across the chunk, so chunk = 5 is costing accuracy** (`scratchpad/chunk_profile.py`, the 8
+- **The error grows across the chunk, so chunk = 5 is costing accuracy** (`acdc_la/realrobot/chunk_profile.py`, the 8
   held-out episodes, 353 steps, chunk sampled properly from noise through the deployment image path):
 
   | k steps ahead | 0 | 1 | 2 | 3 | 4 | 5 | ... | 11 |
@@ -5122,7 +5122,7 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   readings differ: *relative* to the motion the long horizons are predicted better (0.36 at k=11), but what lands on
   an ABSOLUTE joint target is the absolute error, and that is lowest at k=0.
 - **Inference latency permits it.**  `act_chunk` costs **89.0 ms mean / 96.2 ms p90** (RTX PRO 6000 Blackwell Max-Q,
-  bf16, 10 Euler steps, `scratchpad/latency.py`).  At 10 Hz chunk 1 needs < 100 ms, so it fits here with **4 ms of
+  bf16, 10 Euler steps, `acdc_la/realrobot/latency.py`).  At 10 Hz chunk 1 needs < 100 ms, so it fits here with **4 ms of
   p90 margin** -- too thin to recommend on an unknown card.  **chunk = 2 (200 ms budget) is the safe choice.**
 - **RETRACTED (mine, 2026-11-10): "the policy never sees the wrist camera ... this is the biggest lever, it is
   structural".**  I ranked that first in chat before measuring, and the phase breakdown does not support it being
@@ -5131,7 +5131,7 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   among the *better* phases in absolute terms.  The wrist camera remains a plausible lever and is **untested**; it is
   a hypothesis, and it was wrong to rank it as the explanation.  (It is true and unchanged that `datasets_ctrl.py:67`
   feeds only `image_primary`, so this policy has never seen `wrist_image`.)
-- **What the phase data DOES say, once the confound is removed** (`scratchpad/phase_motion.py`, ground truth only --
+- **What the phase data DOES say, once the confound is removed** (`acdc_la/realrobot/phase_motion.py`, ground truth only --
   a slow phase earns a low absolute error for free, so divide by the per-step motion):
 
   | phase | err (deg) | motion/step (deg) | err / motion | n |
@@ -5157,8 +5157,8 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   **ensembling off**: 3.69 vs 3.24 deg, 2026-11-08).  The training-side levers (wrist view, delta instead of absolute
   actions, higher control rate, more demonstrations) are all **unmeasured hypotheses** and must not be reported as
   diagnoses.  No success rate exists for this policy on the robot.
-- **Artifacts.**  `/data/ti874297/{chunk_profile.json,chunk_profile.log,latency.log}`; scratch
-  `scratchpad/{chunk_profile.py,phase_motion.py,latency.py}`.
+- **Artifacts.**  `/data/ti874297/{chunk_profile.json,chunk_profile.log,latency.log}`; the three diagnostics are
+  `acdc_la/realrobot/{chunk_profile,phase_motion,latency}.py`.
 - **Next.**  Ask the collaborator for chunk = 2, ensembling off, and a confirmation that the preprocessing matches
   (squash to 256 -> 224 -> 0.9-area centre crop, 10 Hz); and for the failure SHAPE, which separates the hypotheses:
   a consistent spatial offset points at calibration/preprocessing, hunting/jitter at the precision floor, and failure
