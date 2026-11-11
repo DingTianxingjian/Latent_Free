@@ -5378,3 +5378,71 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Next.** Supersedes "(c)" above: the diagnostic to run is **j2 and j4**, not j3/j4/j5, and the reference is the
   per-joint floor, not the null.  Still blocked on arm A's open-loop number before anything is attributed to the
   latent mechanism.
+
+### 2026-11-11 — DELTA arm A (ours, the latent mechanism) finished: 1.126 deg vs the baseline's 1.054 deg, NOT separated; and the training-time metric ranked the two arms in the WRONG ORDER
+
+- **Configuration.** The matched pair registered in the entry above, both now complete at 10,000 steps, global batch 64
+  on one GPU, lr 3.5e-4, window 12, same `data/real_rlds_delta`, same normalisation, same 8 held-out episodes.
+  - **A `terra_piper_delta`** — phase-2 base (`/data/ti874297/p2fft_20k`) + LoRA r32 + flow head + 4 query tokens
+    + the latent branch (`--latent tc_cont`).  64,328 s (17.9 h).  Merged in 344 s (peak RSS 31.9 GB).
+    Final `latent_r2` 0.831, so the latent branch was genuinely doing its job, not collapsed.
+  - **B `openvla_piper_delta`** — official `openvla-7b`, fresh LoRA, no latent mechanism at all.  45,693 s (12.7 h).
+- **Result — open-loop target error on 353 held-out steps, both replays deterministic (re-run reproduced both to
+  3 decimals, so none of this gap is sampling noise):**
+
+  | | j0 | j1 | j2 | j3 | j4 | j5 | **mean** |
+  |---|---|---|---|---|---|---|---|
+  | **A (ours)** `chunk[0]` | 0.652 | 2.201 | 1.730 | 0.437 | 1.672 | 0.064 | **1.126** |
+  | **B (baseline)** `chunk[0]` | 0.599 | 2.022 | 1.672 | 0.419 | 1.552 | 0.062 | **1.054** |
+  | A ensembled | 0.638 | 1.801 | 1.364 | 0.387 | 1.447 | 0.065 | **0.950** |
+  | B ensembled | 0.600 | 1.685 | 1.349 | 0.351 | 1.441 | 0.061 | **0.914** |
+
+  Paired cluster bootstrap over the 8 episodes (the independent unit; 353 steps is **not** the sample size, since
+  steps inside an episode are strongly correlated), 20,000 draws — `acdc_la/realrobot/paired_AB.py`:
+
+  | | A − B | per-episode sign | 95 % CI | verdict |
+  |---|---|---|---|---|
+  | `chunk[0]` | **+0.072 deg** | A worse in 5/8, sign test p = 0.727 | **[−0.038, +0.189]** | contains 0 |
+  | ensembled | **+0.036 deg** | A worse in 4/8, sign test p = 1.000 | **[−0.044, +0.110]** | contains 0 |
+
+- **Conclusion: negative / not separated.** On this dataset at this budget the latent-action mechanism is
+  **indistinguishable from plain OpenVLA**.  The point estimate favours the baseline on both read-outs and in 5/8
+  episodes, but 8 held-out episodes cannot resolve a 0.07 deg difference, so the honest statement is **"no effect
+  detected", not "ours is worse"**.  It would be equally wrong to call the +0.072 deg a win for the baseline.
+- **This is now the third setting in a row with the same verdict.** LIBERO full split 89.8 vs 89.0 — did not separate.
+  LIBERO 10 % Long 58.7 (p2ours) / 60.6 (p2fft20k) / 56.4 (nop2) — did not separate, one cell carrying ±8 points.
+  Real-robot delta, here — did not separate.  Three different data regimes, three different metrics, no detected
+  effect anywhere.  That pattern is itself the most load-bearing fact in this ledger about the mechanism, and it
+  should be stated as such rather than left as three separate "inconclusive" entries.
+- **CORRECTION to something I told the user on 2026-11-10.** I said the training-time `action_l1_1step` was a valid
+  basis for comparing arms A and B because they share dataset, normalisation and formula.  The numbers are
+  commensurable, but this pair is a **counterexample to using it as a ranking**: it orders the arms the *opposite* way
+  from the free-running error.
+
+  | | A (ours) | B (baseline) | ordering |
+  |---|---|---|---|
+  | training `action_l1_1step` @10k (oracle-conditioned) | **0.05634** | 0.06483 | A better by 13 % |
+  | replay whole-chunk L1, normalised | 0.1174 | **0.1142** | B better by 3 % |
+  | replay open-loop degrees, `chunk[0]` | 1.126 | **1.054** | B better by 7 % |
+
+  The cause is the one already registered for this metric: `FlowHeads.loss` computes
+  `l1 = (at + (1-t)*va - actions).abs()` where `at = (1-t)*noise + t*actions` **already contains the ground truth**,
+  so it scores a one-step correction from an oracle-perturbed point, not a free-running sample.  Arm A also denoises
+  `z` jointly, which changes that one-step quantity without having to improve the actual sample.  The replay's own
+  normalised whole-chunk L1 agrees with the degree numbers, so the disagreement is specifically with the
+  **oracle-conditioned training** metric, not with normalisation.
+  **Method decision: `action_l1_1step` may be used to track one run over time and to pick a checkpoint within one
+  run. It must NOT be used to rank two arms.** Every arm comparison needs a free-running read-out
+  (`piper_policy.py --replay`, or a LIBERO success rate).  Earlier ledger entries that leaned on it for an
+  arm comparison are weakened by this and are flagged, not deleted.
+- **Artifacts.** Runs `/data/ti874297/vla_runs/{tc_cont,none}+piper_pick_can+b64x1+lr0.00035+r32+s10000+fm+q4--{terra,openvla}_piper_delta`
+  (both merged in place); logs `acdc_la/logs/post2_{terra,openvla}_piper_delta.log`;
+  per-step dumps `steps_A.npz` / `steps_B.npz`; test `acdc_la/realrobot/paired_AB.py`
+  (`piper_policy.py --replay --dump` added for it).
+- **Next.** (a) The parameterisation win stands and is large and separated (3.24 -> ~1.05-1.13 deg, 3x, both arms);
+  **that** is what should go on the robot, and either checkpoint will do, since they are indistinguishable.
+  Pick B if a tiebreak is needed: it is the simpler model and trained 5.2 h faster.
+  (b) Re-derive the deployment recipe on a delta checkpoint — `ensemble off` is contradicted here (ensembling helps
+  both arms: A 1.126 -> 0.950, B 1.054 -> 0.914).
+  (c) 8 held-out episodes is too weak to settle the mechanism question on this task; the per-joint analysis
+  (j2 + j4 = 71.8 % of recoverable error) is a better-powered target than another A/B at this episode count.

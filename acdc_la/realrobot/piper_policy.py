@@ -212,12 +212,13 @@ class PiperPolicy:
 
 
 # -------------------------------------------------------------------- self-check on the held-out episodes
-def replay(policy, data_root, dataset="piper_pick_can", episodes=None, split="train[95%:]"):
+def replay(policy, data_root, dataset="piper_pick_can", episodes=None, split="train[95%:]", dump=None):
     _tf()                                        # hide the GPU from TF BEFORE tfds initialises it (else XLA on the GPU)
     import tensorflow_datasets as tfds
     b = tfds.builder_from_directory(os.path.join(data_root, dataset, "1.0.0"))
     ds = b.as_dataset(split=split)
     per_dim_first, per_dim_ens, norm_chunk, n = [], [], [], 0
+    ep_id = []                                   # the independent unit for a paired test is the EPISODE, not the step
     for ei, epi in enumerate(ds):
         if episodes is not None and ei >= episodes: break
         steps = list(epi["steps"])
@@ -238,7 +239,7 @@ def replay(policy, data_root, dataset="piper_pick_can", episodes=None, split="tr
             policy.ens.buf[0] = ch; policy.ens.buf_mask[0] = True
             a = (policy.ens.buf[:, 0, :] * policy.ens.buf_mask[:, 0:1] * policy.ens.weights).sum(0) / (policy.ens.buf_mask[:, 0:1] * policy.ens.weights).sum()
             a = np.where(policy.norm_mask, 0.5 * (a + 1) * (policy.high - policy.low) + policy.low, a)
-            per_dim_ens.append(np.abs(a - acts[t])); n += 1
+            per_dim_ens.append(np.abs(a - acts[t])); ep_id.append(ei); n += 1
         print(f"[replay] episode {ei}: {len(steps)} steps, instruction {instr!r}", flush=True)
     f, e = np.stack(per_dim_first).mean(0), np.stack(per_dim_ens).mean(0)
     print(f"\n{n} held-out steps, mean |error| per action dimension")
@@ -249,6 +250,10 @@ def replay(policy, data_root, dataset="piper_pick_can", episodes=None, split="tr
     print(f"gripper (0-1 units):  chunk[0] {f[6]:.4f}, ensembled {e[6]:.4f}  (x{GRIP_SCALE} for the arm's units)")
     print(f"whole-chunk L1 in NORMALISED space: {np.mean(norm_chunk):.4f}"
           f"   <- compare with eval_heldout.py's one-step action L1 for the same checkpoint")
+    if dump:
+        np.savez(dump, first=np.stack(per_dim_first), ens=np.stack(per_dim_ens),
+                 norm_chunk=np.array(norm_chunk), ep=np.array(ep_id))
+        print(f"wrote per-step errors to {dump}")
     return dict(steps=n, per_dim_first=f.tolist(), per_dim_ens=e.tolist(), norm_chunk_l1=float(np.mean(norm_chunk)))
 
 
@@ -260,11 +265,12 @@ def main():
     ap.add_argument("--episodes", type=int, default=None, help="only the first N held-out episodes")
     ap.add_argument("--flow_steps", type=int, default=0, help="0 = the value in ctrl_meta.json")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--dump", default=None, help="npz of the PER-STEP per-dim errors + episode ids, for a paired test")
     a = ap.parse_args()
     p = PiperPolicy(a.checkpoint, flow_steps=a.flow_steps or None)
     if not a.replay:
         print("loaded; pass --replay <rlds root> to check it against the held-out episodes"); return
-    r = replay(p, a.replay, a.dataset, a.episodes)
+    r = replay(p, a.replay, a.dataset, a.episodes, dump=a.dump)
     if a.out: json.dump(r, open(a.out, "w"), indent=1); print(f"wrote {a.out}")
 
 
