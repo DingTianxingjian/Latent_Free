@@ -21,8 +21,8 @@ def main():
     ap.add_argument("--data_root", required=True); ap.add_argument("--dataset", default="press_button")
     ap.add_argument("--split", default="train[95%:]"); ap.add_argument("--out", default=None)
     a = ap.parse_args()
-    from acdc_la.realrobot.piper_policy import PiperPolicy, _tf
-    p = PiperPolicy(a.checkpoint); _tf()
+    from acdc_la.realrobot.piper_policy import PiperPolicy, _tf, _unnorm_key_for
+    p = PiperPolicy(a.checkpoint, unnorm_key=_unnorm_key_for(a.checkpoint, a.dataset)); _tf()
     import tensorflow_datasets as tfds
     ds = tfds.builder_from_directory(os.path.join(a.data_root, a.dataset, "1.0.0")).as_dataset(split=a.split)
     unnorm = lambda ch: np.where(p.norm_mask, 0.5 * (ch + 1) * (p.high - p.low) + p.low, ch)

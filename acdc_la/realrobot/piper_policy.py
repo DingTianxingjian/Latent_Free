@@ -99,6 +99,14 @@ class Ensembler:
         return np.where(mask, 0.5 * (a + 1) * (high - low) + low, a)
 
 
+def _unnorm_key_for(checkpoint, dataset):
+    """None for a single-dataset checkpoint; the dataset's own key for a multi-task one (e.g. `piper_multi`)."""
+    stats = json.load(open(os.path.join(checkpoint, "dataset_statistics.json")))
+    if len(stats) == 1: return None
+    assert dataset in stats, f"{dataset} not in dataset_statistics.json keys {list(stats)}"
+    return dataset
+
+
 class PiperPolicy:
     def __init__(self, checkpoint, device="cuda", flow_steps=None, unnorm_key=None, seed=7, ensemble=True, samples=1):
         # ensemble=False sends chunk[0] straight through.  On this data the ensembling is slightly WORSE offline
@@ -316,7 +324,7 @@ def main():
                     "deployment conversion to_joint_targets() against the demonstrated absolute targets")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
-    p = PiperPolicy(a.checkpoint, flow_steps=a.flow_steps or None)
+    p = PiperPolicy(a.checkpoint, flow_steps=a.flow_steps or None, unnorm_key=_unnorm_key_for(a.checkpoint, a.dataset))
     if not a.replay:
         print("loaded; pass --replay <rlds root> to check it against the held-out episodes"); return
     r = replay(p, a.replay, a.dataset, a.episodes, abs_root=a.abs_root)

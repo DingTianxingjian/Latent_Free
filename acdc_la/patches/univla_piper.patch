@@ -59,3 +59,21 @@ index 47d90b5..f036d1d 100644
      "libero_10_no_noops": libero_dataset_transform,
      "libero_10_no_noops_mini": libero_dataset_transform,
      "libero_goal_no_noops_mini": libero_dataset_transform,
+diff --git a/prismatic/vla/datasets/rlds/oxe/mixtures.py b/prismatic/vla/datasets/rlds/oxe/mixtures.py
+index 6a4f939..f0ea1a7 100644
+--- a/prismatic/vla/datasets/rlds/oxe/mixtures.py
++++ b/prismatic/vla/datasets/rlds/oxe/mixtures.py
+@@ -215,5 +215,13 @@ OXE_NAMED_MIXTURES: Dict[str, List[Tuple[str, float]]] = {
+     "libero_combined": [
+         ("libero_combined", 1.0),
+     ],
++    # === Piper real-robot, one model for both tasks (2026-11-11) ===
++    # per-dataset q01/q99 normalisation (two keys in dataset_statistics.json -> deploy with unnorm_key = the task's
++    # dataset); balance_weights=True scales by size (6462 vs 1877 steps), so press_button x2 -> ~37 % of samples.
++    "piper_multi": [
++        ("piper_pick_can", 1.0),
++        ("press_button", 2.0),
++    ],
++
+ }
+ # fmt: on

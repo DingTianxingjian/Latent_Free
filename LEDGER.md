@@ -5454,4 +5454,49 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   every tick (chunk entry k is relative to the state at step k).  Checked on all 1,877 press_button steps:
   q + delta == absolute demo target to 9.5e-7 deg.  `--replay ... --abs_root data/real_rlds` scores the conversion
   end to end with the model (queued after the baseline, GPU busy).
-- **Not yet run on a robot.  Not yet pushed to GitHub** (needs the user's go-ahead).
+- **Not yet run on a robot.**  Pushed to GitHub in `1dd2ca4` (2026-11-11).
+
+### 2026-11-11 — press_button control arm (official openvla-7b, DELTA): 1.920 deg, worse than "stay still", and it does NOT read the instruction; TERRA 0.918 deg and reads it. Phase 2 is what makes the colour word usable here (n = 5 held-out episodes)
+
+- **Config.** `INIT=none LATENT=none`: official `openvla-7b`, fresh LoRA r32, flow head q4, no labeller (dz = 0).
+  Everything else identical to the TERRA arm (entry 2026-11-10): data, split, 3000 steps, global batch 64,
+  lr 3.5e-4. ~10 s/step, exit 0. Merged 04:48-04:59 UTC.
+- **Result (79 held-out steps, degrees per joint, `piper_policy.py --replay`):**
+
+  | | chunk[0] | ensembled | j0..j5 chunk[0] | swap shift | true instr best |
+  |---|---|---|---|---|---|
+  | TERRA `terra_press_button_delta` | **0.918** | 0.968 | 0.34 / 1.90 / 1.48 / 0.40 / 1.39 / 0.01 | **0.42 deg** | 4/5 |
+  | control `openvla_press_button_delta` | 1.920 | 1.796 | 0.36 / **5.75** / **3.59** / 0.48 / 1.34 / 0.01 | **2.4e-7 deg** | 1/5 (= chance) |
+  | null, delta = 0 | 1.691 | - | | | |
+
+  The control's whole-chunk error is 1.645 deg under every instruction, identical to within 1e-8. The 2.1x gap is
+  almost all on j1/j2, the joints that carry the press toward a colour-dependent location.
+- **Not a pipeline bug (checked before reporting).** Both arms run the same code path, and the prompt token ids
+  include the colour word (`acdc_la/realrobot/lang_probe.py`, fp32 on CPU, same image, "pink" vs "blue"). The relative
+  difference in the final-layer **query-token states the head reads** is **0.28 % in the control vs 75 % in
+  TERRA**; for TERRA it grows from 3 % at layer 4 to 48 % at layer 16. The control's head weights are not zeroed on
+  the text half (`c_in` text/visual norm 9.6 / 9.6), so the instruction does arrive. It just carries almost no
+  signal into the query tokens, and the head learns to ignore what is left.
+- **Reading.** With 4 colours and per-episode layouts, a policy that cannot read the colour can only learn an
+  average press, which is consistent with its j1/j2 error. **Phase 2 (TERRA's base) is what makes the instruction
+  usable at this data size (95 episodes).** Caveats: n = 5 held-out episodes and 3 colours, one seed per arm,
+  offline open-loop only. No physical success rate exists yet.
+- **E2E deployment path** (`--abs_root`): TERRA `to_joint_targets(chunk[0], measured q)` against the absolute demo
+  targets gives 0.918 deg, identical to the delta-space error, as it should be.
+- **Artifacts.** HF `Potestates/TERRA/press_button_openvla_delta/` (public, control, README says not for
+  deployment); results `acdc_la/results/press_button_{openvla_delta_replay,lang_swap_openvla,terra_delta_replay_e2e}.json`.
+
+### 2026-11-11 — ONE model for pick-can + press_button (labmate's request): mixture `piper_multi`, TERRA arm, delta, 6000 steps, launched
+
+- **Data.** `jachansantiago/pick_can_place_plate_150_trimmed` is the `piper_pick_can` source: re-converted
+  here with `convert_piper_rlds.py` (150 ep / 6462 steps, as upstream), then `make_delta_rlds.py` with the same delta
+  definition (target minus measured). Mixture `piper_multi` = [(piper_pick_can, 1.0), (press_button, 2.0)] in
+  `oxe/mixtures.py`, now in `univla_piper.patch`. `balance_weights=True` scales the weights by size, so press_button
+  gets ~37 % of samples (CPU dry run: 310/800, all 4 colours present). Normalisation is **per dataset**, so the
+  checkpoint has two keys in `dataset_statistics.json`. Deploy with `PiperPolicy(ckpt, unnorm_key="press_button")`
+  or `"piper_pick_can"`; `--replay` and `lang_swap` select the key from `--dataset`. Each held-out split is
+  `train[95%:]` of its own dataset, unchanged, so the result compares directly with the single-task arms
+  (press_button TERRA 0.918; pick-can delta OpenVLA arm B 1.054).
+- **Config.** INIT `p2fft_20k`, `tc_cont`, flow q4, LoRA r32, global 64 (4 x 16), lr 3.5e-4, 6000 steps
+  (~38 epochs of pick-can, ~76 of press_button), save 500 with snapshots. Started 2026-11-11 05:02 UTC, due around
+  21:00-22:30 UTC. Merge, replay on both held-out sets and lang_swap are chained (`/media/volume/TERRA/multi_chain.sh`).
