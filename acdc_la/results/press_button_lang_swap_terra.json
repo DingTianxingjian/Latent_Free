@@ -1,0 +1,101 @@
+{
+ "summary": {
+  "episodes": 5,
+  "true_instr_err_deg": 0.9361005896848669,
+  "wrong_instr_err_deg": 1.1356725725667,
+  "mean_shift_wrong_vs_true_deg": 0.4219887675211712,
+  "rank1": 0.8
+ },
+ "episodes": [
+  {
+   "episode": 0,
+   "steps": 18,
+   "true": "press the pink button",
+   "err": {
+    "press the blue button": 0.9193481583375586,
+    "press the orange button": 0.9675210428142713,
+    "press the pink button": 0.9047567056375557,
+    "press the red button": 1.1406111388719777
+   },
+   "shift": {
+    "press the blue button": 0.22070207364826416,
+    "press the orange button": 0.15146518879884388,
+    "press the pink button": 0.0,
+    "press the red button": 0.3285368173937241
+   },
+   "best": "press the pink button"
+  },
+  {
+   "episode": 1,
+   "steps": 14,
+   "true": "press the red button",
+   "err": {
+    "press the blue button": 1.2698245365310503,
+    "press the orange button": 1.8916568750464773,
+    "press the pink button": 1.4134077014253117,
+    "press the red button": 1.2204582222442542
+   },
+   "shift": {
+    "press the blue button": 0.27441347141167843,
+    "press the orange button": 0.8931689340907836,
+    "press the pink button": 0.38581583579392115,
+    "press the red button": 0.0
+   },
+   "best": "press the red button"
+  },
+  {
+   "episode": 2,
+   "steps": 17,
+   "true": "press the pink button",
+   "err": {
+    "press the blue button": 1.1450878023716995,
+    "press the orange button": 0.81109927670054,
+    "press the pink button": 0.8222969579764043,
+    "press the red button": 1.0658479653590296
+   },
+   "shift": {
+    "press the blue button": 0.46688175864592757,
+    "press the orange button": 0.22371882960773606,
+    "press the pink button": 0.0,
+    "press the red button": 0.5210452604419511
+   },
+   "best": "press the orange button"
+  },
+  {
+   "episode": 3,
+   "steps": 14,
+   "true": "press the orange button",
+   "err": {
+    "press the blue button": 0.917444818401256,
+    "press the orange button": 0.8020970126385485,
+    "press the pink button": 0.8130112759718745,
+    "press the red button": 1.1997736119794602
+   },
+   "shift": {
+    "press the blue button": 0.20749675803893472,
+    "press the orange button": 0.0,
+    "press the pink button": 0.2945809140827814,
+    "press the red button": 0.6377624814167929
+   },
+   "best": "press the orange button"
+  },
+  {
+   "episode": 4,
+   "steps": 16,
+   "true": "press the orange button",
+   "err": {
+    "press the blue button": 1.0441910117503796,
+    "press the orange button": 0.9308940499275721,
+    "press the pink button": 1.4198096560775584,
+    "press the red button": 1.0164537168620558
+   },
+   "shift": {
+    "press the blue button": 0.4300565412526839,
+    "press the orange button": 0.0,
+    "press the pink button": 0.7788468233406999,
+    "press the red button": 0.5153398248528458
+   },
+   "best": "press the orange button"
+  }
+ ]
+}
