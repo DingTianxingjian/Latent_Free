@@ -5604,3 +5604,26 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   (d) **Run the phase-2 + `--latent none` arm on press_button** — the third arm that separates the phase-2 base from
   the latent branch.  Until it exists, every real-robot claim is about the package, not about the latent mechanism.
   (e) Do not generalise this entry's null to the mechanism as a whole: it is a null on a single-instruction task.
+
+
+### 2026-11-11 — Ablation A (rebuttal Table 4), seed 0 complete (Newton)
+- Job 1195772 (normal partition, evc31, 13.9 h, 2.70 s/step, peak 26.7 GB): all 9 arms to 15k steps from tc_cont,
+  shared data stream, full 29-source data.  Dumps `acdc_la/results/eatabm_<arm>_s0_val.npz`.
+- Evaluated with the appendix protocols (`acdc_la/downstream/eatab_table.py` -> `results/eatab_table.json`).
+  NMSE, lower better; Act. = transported action, all donors; Far = Q3/Q4 donors; Rise = Far - Near (Q1/Q2) [Rise
+  definition is ours, to be matched to the table's]:
+  | row | Act. | Total | First | Tim. | Seq. | Drop% | Far | Rise |
+  | L_self | .820 | .703 | .755 | .906 | .791 | 19.5 | .878 | .043 |
+  | L_self+L_inv | .826 | .676 | .716 | .897 | .757 | 20.2 | .890 | .054 |
+  | EAT w/o L_inv | .727 | .661 | .741 | .911 | .765 | 22.5 | .788 | .025 |
+  | w/o L_effect | .951 | .675 | .719 | .900 | .762 | 23.0 | 1.156 | .238 |
+  | w/o L_rel | .733 | .636 | .687 | .904 | .737 | 20.9 | .815 | .052 |
+  | w/o L_dist | .771 | .634 | .696 | .903 | .737 | 16.9 | .802 | .005 |
+  | L_effect->head | .862 | .631 | .718 | .908 | .743 | 16.9 | .973 | .107 |
+  | L_effect->cycle | .976 | .679 | .748 | .902 | .767 | 24.0 | 1.210 | .273 |
+  | full EAT | .732 | .640 | .688 | .901 | .735 | 18.9 | .796 | .026 |
+- Consistency with the Anvil appendix numbers (other data cap, other seed): full EAT net .640 vs .671, drop 18.9 vs
+  17.9, Far .796 vs .801; L_self net .703 vs .732, Far .878 vs .889.  Same ordering.
+- Status: SINGLE SEED.  Transport (Act./Far) is the clear separation: removing L_effect or replacing it by a head or
+  a latent cycle loses most of it.  Probe columns: full EAT is within ~.01 of w/o L_rel / w/o L_dist / head, which a
+  single seed cannot separate.  Seeds 1, 2 (jobs 1195773/74) pending, Slurm estimate 2026-11-13 17:51.
