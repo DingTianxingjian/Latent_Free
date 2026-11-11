@@ -62,7 +62,7 @@ def main():
     print(f"[delta] action[:6] q99  {np.round(np.quantile(allied[:, :6], 0.99, axis=0), 2)}")
     print(f"[delta] gripper range {allied[:, 6].min():.4f} .. {allied[:, 6].max():.4f} (unchanged, absolute)")
 
-    class PiperPickCan(tfds.core.GeneratorBasedBuilder):
+    class _DeltaBase(tfds.core.GeneratorBasedBuilder, skip_registration=True):
         VERSION = tfds.core.Version("1.0.0")
         def _info(self):
             F = tfds.features
@@ -91,7 +91,11 @@ def main():
                                   "language_instruction": e["instr"]})
                 yield f"ep{e['idx']}", {"steps": steps, "episode_metadata": {"file_path": e["path"], "episode_index": e["idx"]}}
 
-    b = PiperPickCan(data_dir=a.out)
+    # TFDS takes the dataset name from the class name, so build a class named after --dataset
+    # (piper_pick_can -> PiperPickCan, press_button -> PressButton); added 2026-11-10 for press_button.
+    Builder = type("".join(w.capitalize() for w in a.dataset.split("_")), (_DeltaBase,), {})
+    assert Builder.name == a.dataset, (Builder.name, a.dataset)
+    b = Builder(data_dir=a.out)
     b.download_and_prepare()
     ds = b.as_dataset(split="train"); n_ep2 = n_st2 = 0
     for x in ds:

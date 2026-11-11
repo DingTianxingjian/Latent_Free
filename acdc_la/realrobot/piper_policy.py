@@ -30,7 +30,17 @@ Everything that has to agree with training, with the line it comes from:
   while True:                                                        # at 10 Hz
       chunk = p.act_chunk(front_frame_rgb, "pick up the can and place it on the plate")
       for a in chunk[:2]:                                            # execute 2 of the 12, then re-predict
-          send_joint_targets(a[:6]); send_gripper(PiperPolicy.gripper_to_raw(a[6]))
+          q = read_joint_state_deg()                                 # MEASURED joints NOW, every tick (6 values)
+          send_joint_targets(p.to_joint_targets(a, q)); send_gripper(PiperPolicy.gripper_to_raw(a[6]))
+          wait_until_next_10hz_tick()
+
+ACTION SPACE (added 2026-11-11).  A checkpoint is either ABSOLUTE (piper_pick_can_10k: dims 0-5 are joint targets) or
+DELTA (press_button_terra_delta: dims 0-5 are target MINUS the measured joint state, make_delta_rlds.py).
+`p.action_space` says which (ctrl_meta.json "action_space", else inferred from dataset_statistics.json and printed).
+ALWAYS go through `p.to_joint_targets(a, q)`: for delta it returns q[:6] + a[:6], for absolute a[:6].  Sending a
+delta checkpoint's raw output as joint targets drives the arm toward ~0 deg on every joint.  For a delta chunk,
+entry k is relative to the joint state AT step k (that is how it was trained), so q must be re-read on every tick,
+not once per chunk.  The loop above does that.
           wait_until_next_10hz_tick()
 
 CHUNK LENGTH -- measured 2026-11-10 on the 8 held-out episodes (acdc_la/realrobot/chunk_profile.py).  The open-loop
@@ -125,12 +135,35 @@ class PiperPolicy:
         self.low, self.high = np.array(s["q01"]), np.array(s["q99"])
         self.norm_mask = np.array(s.get("mask", np.ones_like(self.low, dtype=bool)))
         self.adim = len(self.low)
+        # ACTION SPACE (2026-11-11): explicit in ctrl_meta.json when the run recorded it; otherwise inferred from the
+        # joint means -- absolute Piper targets have |mean| up to ~111 deg (joint 1), deltas are within a few deg.
+        self.action_space = self.meta.get("action_space")
+        if self.action_space is None:
+            jm = np.abs(np.array(s["mean"][:6])).max()
+            self.action_space = "delta" if jm < 20 else "absolute"
+            print(f"[piper-policy] action_space not in ctrl_meta.json; INFERRED '{self.action_space}' "
+                  f"(max |joint mean| {jm:.1f} deg)", flush=True)
+        assert self.action_space in ("absolute", "delta"), self.action_space
         self.n_patches = self.vla.vision_backbone.featurizer.patch_embed.num_patches
         self.ens = Ensembler(self.W, self.adim)
         self.seed = seed; self.use_ens = ensemble; self.samples = max(1, int(samples)); self.reset()
         print(f"[piper-policy] {checkpoint}\n  {'flow, ' + str(self.flow_steps) + ' Euler steps' if self.flow else 'regression'}"
               f" | window {self.W} | action dim {self.adim} | query tokens {self.nq} | unnorm '{unnorm_key}'"
-              f" | raw gripper dim(s) {list(np.nonzero(~self.norm_mask)[0])}", flush=True)
+              f" | raw gripper dim(s) {list(np.nonzero(~self.norm_mask)[0])} | action space {self.action_space.upper()}",
+              flush=True)
+
+    def to_joint_targets(self, a, joint_state=None):
+        """Policy action (>= 6 dims, un-normalised) -> the 6 joint targets in degrees to SEND to the arm.
+        absolute: a[:6].  delta: joint_state[:6] + a[:6], where joint_state is the arm's MEASURED joints right now
+        (re-read every tick: chunk entry k was trained relative to the state at step k)."""
+        a = np.asarray(a, dtype=np.float64)
+        if self.action_space == "absolute":
+            return a[:6]
+        if joint_state is None:
+            raise ValueError("delta checkpoint: to_joint_targets needs the measured joint state (6 values, degrees)")
+        q = np.asarray(joint_state, dtype=np.float64)[:6]
+        assert q.shape == (6,), q.shape
+        return q + a[:6]
 
     # ---------------------------------------------------------------- per-episode state
     def reset(self, episode=0):
@@ -198,8 +231,9 @@ class PiperPolicy:
 
     def act(self, image, instruction):
         """One action to send to the arm, temporally ensembled over the overlapping chunks, exactly as the LIBERO
-        evaluator does (unless ensemble=False): (action_dim,) = 6 absolute joint targets in degrees + gripper
-        in [0, 1]."""
+        evaluator does (unless ensemble=False): (action_dim,) = 6 joint values in degrees + gripper in [0, 1].
+        The 6 joint values are ABSOLUTE targets or DELTAS depending on self.action_space -- pass the result through
+        to_joint_targets(a, measured_joints) before sending it to the arm."""
         ch = self.act_chunk(image, instruction, normalised=True)
         if not self.use_ens:
             return np.where(self.norm_mask, 0.5 * (ch[0] + 1) * (self.high - self.low) + self.low, ch[0])
@@ -212,17 +246,27 @@ class PiperPolicy:
 
 
 # -------------------------------------------------------------------- self-check on the held-out episodes
-def replay(policy, data_root, dataset="piper_pick_can", episodes=None, split="train[95%:]"):
+def replay(policy, data_root, dataset="piper_pick_can", episodes=None, split="train[95%:]", abs_root=None):
     _tf()                                        # hide the GPU from TF BEFORE tfds initialises it (else XLA on the GPU)
     import tensorflow_datasets as tfds
     b = tfds.builder_from_directory(os.path.join(data_root, dataset, "1.0.0"))
     ds = b.as_dataset(split=split)
+    # abs_root (delta checkpoints, 2026-11-11): the ABSOLUTE RLDS the delta copy was derived from.  The replay then
+    # also runs the deployment conversion to_joint_targets(chunk[0], measured joints) and scores it against the
+    # absolute targets the demonstrator actually commanded -- an end-to-end check of the delta -> target path.
+    abs_eps = None
+    if abs_root is not None:
+        abs_eps = [np.stack([s["action"].numpy() for s in e["steps"]]).astype(np.float64)
+                   for e in tfds.builder_from_directory(os.path.join(abs_root, dataset, "1.0.0")).as_dataset(split=split)]
+    tgt_err = []
     per_dim_first, per_dim_ens, norm_chunk, n = [], [], [], 0
     for ei, epi in enumerate(ds):
         if episodes is not None and ei >= episodes: break
         steps = list(epi["steps"])
         imgs = [s["observation"]["image"].numpy() for s in steps]
         acts = np.stack([s["action"].numpy() for s in steps]).astype(np.float64)
+        qs = np.stack([s["observation"]["joint_state"].numpy() for s in steps]).astype(np.float64)
+        if abs_eps is not None: assert len(abs_eps[ei]) == len(steps), (ei, len(abs_eps[ei]), len(steps))
         instr = steps[0]["language_instruction"].numpy().decode()
         policy.reset(episode=ei)
         for t in range(len(steps)):
@@ -232,6 +276,8 @@ def replay(policy, data_root, dataset="piper_pick_can", episodes=None, split="tr
             gtn = np.where(policy.norm_mask, 2 * (gt - policy.low) / (policy.high - policy.low) - 1, gt)
             norm_chunk.append(np.abs(ch[:len(gt)] - gtn).mean())
             per_dim_first.append(np.abs(un[0] - acts[t]))
+            if abs_eps is not None:                                       # the deployment path, end to end
+                tgt_err.append(np.abs(policy.to_joint_targets(un[0], qs[t]) - abs_eps[ei][t, :6]))
             policy.ens.buf[1:] = policy.ens.buf[:-1]; policy.ens.buf_mask[1:] = policy.ens.buf_mask[:-1]
             policy.ens.buf[:, :-1] = policy.ens.buf[:, 1:]; policy.ens.buf_mask[:, :-1] = policy.ens.buf_mask[:, 1:]
             policy.ens.buf_mask = policy.ens.buf_mask * policy.ens.mask
@@ -249,7 +295,14 @@ def replay(policy, data_root, dataset="piper_pick_can", episodes=None, split="tr
     print(f"gripper (0-1 units):  chunk[0] {f[6]:.4f}, ensembled {e[6]:.4f}  (x{GRIP_SCALE} for the arm's units)")
     print(f"whole-chunk L1 in NORMALISED space: {np.mean(norm_chunk):.4f}"
           f"   <- compare with eval_heldout.py's one-step action L1 for the same checkpoint")
-    return dict(steps=n, per_dim_first=f.tolist(), per_dim_ens=e.tolist(), norm_chunk_l1=float(np.mean(norm_chunk)))
+    r = dict(steps=n, action_space=policy.action_space, per_dim_first=f.tolist(), per_dim_ens=e.tolist(),
+             norm_chunk_l1=float(np.mean(norm_chunk)))
+    if tgt_err:
+        te = np.stack(tgt_err).mean(0)
+        print(f"DEPLOYMENT PATH to_joint_targets(chunk[0], measured q) vs ABSOLUTE demo targets ({abs_root}):\n"
+              f"  per joint " + " ".join(f"{v:.3f}" for v in te) + f"  -> {te.mean():.3f} deg mean")
+        r["deploy_target_err_per_joint"] = te.tolist()
+    return r
 
 
 def main():
@@ -259,12 +312,14 @@ def main():
     ap.add_argument("--dataset", default="piper_pick_can")
     ap.add_argument("--episodes", type=int, default=None, help="only the first N held-out episodes")
     ap.add_argument("--flow_steps", type=int, default=0, help="0 = the value in ctrl_meta.json")
+    ap.add_argument("--abs_root", default=None, help="delta checkpoints: the absolute RLDS root, to score the "
+                    "deployment conversion to_joint_targets() against the demonstrated absolute targets")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     p = PiperPolicy(a.checkpoint, flow_steps=a.flow_steps or None)
     if not a.replay:
         print("loaded; pass --replay <rlds root> to check it against the held-out episodes"); return
-    r = replay(p, a.replay, a.dataset, a.episodes)
+    r = replay(p, a.replay, a.dataset, a.episodes, abs_root=a.abs_root)
     if a.out: json.dump(r, open(a.out, "w"), indent=1); print(f"wrote {a.out}")
 
 

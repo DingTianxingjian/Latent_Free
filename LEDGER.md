@@ -5378,3 +5378,80 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Next.** Supersedes "(c)" above: the diagnostic to run is **j2 and j4**, not j3/j4/j5, and the reference is the
   per-joint floor, not the null.  Still blocked on arm A's open-loop number before anything is attributed to the
   latent mechanism.
+
+### 2026-11-10 — press_button (first multi-task real-robot set) converted on Jetstream2 g3.xl; training HELD for the abs-vs-delta decision
+
+- **Status: data prep only, no training, no result.**  Host: Jetstream2 g3.xl (1x A100-SXM4-40GB, 115 GB RAM), workspace
+  `/media/volume/TERRA` (code `latent_free/` at newton `3bb8555`, env `envs/univla_vla` = REPRODUCE.md recipe, torch
+  2.2.0+cu121, + pyarrow/av).  Handoff: `HANDOFF_press_button.md` (HF `Potestates/TERRA`).
+- **Registered question (before training):** does this policy family read its instruction?  `anhdao69/press_button_task`
+  = 4 tasks, **press the blue / orange / pink / red button, 25 episodes each**, 100 episodes, 5533 frames at 30 Hz.
+  The **button layout changes between episodes** (checked visually, eps 2-4), so colour -> position cannot be
+  memorised; the word plus the image is the only route.
+- **Converter bug caught (would have silently mis-aligned images):** unlike pick-can, the concatenated mp4 holds
+  **6190 frames for 5533 rows** -- dead footage between some episodes (5.03 s between ep 2 and 3).  The pick-can
+  converter's "video frame k = data row k" assumption is false here.  `convert_press_button_rlds.py` maps frames by
+  LeRobot v3 `episodes/from_timestamp + row timestamp` (pts-matched); first/mid/last front + wrist frames of eps 2-4
+  checked by eye: aligned.  **Do not reuse convert_piper_rlds.py on another LeRobot export without that check.**
+- **Gripper (handoff 4a), decision:** keep `GRIP_SCALE = 8.2` (same calibration as piper_pick_can).  Raw 0.04-0.06 ->
+  stored 0.0049-0.0073, i.e. constant "closed"; not rescaled per dataset (would amplify sensor noise into a fake
+  signal and break cross-dataset meaning).  Written in the converter docstring.
+- **Padding (handoff 4b), decision by the user: option 1, accept and report.**  On this copy at 10 Hz:
+  `sum(max(0, T_i - 13)) / sum(T_i)` = **577 / 1877 = 30.7 %** clean samples; **2 episodes have none**.  (30 Hz would
+  give 4233 / 5533 = 76.5 %; not taken -- changes the control rate.)  Effective sample count is 577, not 1877.
+  Identical on both arms, so the A-vs-baseline comparison stays valid; absolute numbers are not comparable with pick-can.
+- **Artifacts:** `data/real_rlds/press_button/1.0.0` (absolute, 100 ep / 1877 steps, 52 MB) and
+  `data/real_rlds_delta/press_button/1.0.0` (delta = action[:6] - joint_state[:6]; mean
+  [-0.005 3.965 -3.106 0.086 0.515 -0.007] deg, q01..q99 joint 2: -3.44..19.0).  `press_button` registered in
+  `third_party/UniVLA/prismatic/vla/datasets/rlds/oxe/{configs,transforms}.py` (copy of the piper entries; NOT yet in
+  `acdc_la/patches/univla_piper.patch`).  `make_delta_rlds.py` now names the builder after `--dataset`.
+  Base: `/media/volume/TERRA/p2fft_20k` (vla_full.pt 15,081,838,026 B, action_decoder.pt 105,268,830 B, both match);
+  `openvla-7b` at `/media/volume/TERRA/hf/openvla-7b`.
+- **Next decision:** abs vs delta, from the two workstation pick-can delta runs (due ~2026-11-10 22:00 UTC; registered
+  prediction 1.0-1.5 deg open-loop vs absolute 3.24).  Then baseline arm first (INIT=none), then TERRA arm, SAME
+  parameterisation for both, BS=4 GA=16 (global 64), 3000 steps, save 500, snapshot each adapter save.
+
+### 2026-11-10 — TERRA arm on press_button (DELTA actions), 3000 steps: 0.92 deg/joint open-loop vs 1.69 deg "stay still" null; the instruction moves the output and the true one predicts best in 4/5 held-out episodes -- direction only, n=5, NO baseline yet
+
+- **Config.**  INIT `p2fft_20k` (Potestates/TERRA, sizes verified), `tc_cont` / `latp2_inv` labeller, flow head q4,
+  LoRA r32, lr 3.5e-4, window 12, global batch 64 (BS 4 x GA 16 x 1 A100-40GB), 3000 steps (~104 epochs), save 500.
+  Data `data/real_rlds_delta/press_button` (delta = action[:6] - joint_state[:6]; user's call 2026-11-10, ahead of the
+  workstation pick-can delta runs).  Split: UniVLA train[:95%] / held-out train[95%:] = **5 episodes, 79 steps**
+  (pink x2, orange x2, red x1, blue x0).  Padding accepted (30.7 % clean samples, entry above).
+- **Cost.**  29.6 GB VRAM, ~9.0 s/step (openvla no-latent smoke: 7.4 s/step), 7.5 h wall.  Merge standalone: 11m50s,
+  peak RSS 32.2 GB.  latent R2 (train) 0.10 @25 -> 0.40 @50 -> 0.74 @3000.  `action_l1_1step` is oracle-conditioned,
+  not reported as an error (handoff 9).
+- **Open-loop replay** (`piper_policy.py --replay`, deployment image path, degrees; delta error = absolute-target error
+  because the measured joint state is known at deployment):
+
+  | | chunk[0] mean/joint | ensembled | whole 12-step chunk |
+  |---|---|---|---|
+  | TERRA, delta | **0.918 deg** | 0.968 deg | 0.936 deg (from lang-swap, true instr) |
+  | null: predict delta = 0 ("stay where you are") | 1.691 deg | - | 1.124 deg |
+
+  Per joint chunk[0]: 0.34 / 1.90 / 1.48 / 0.40 / 1.39 / 0.01 deg (joints 2, 3, 5 carry the press motion).
+  **Not comparable with pick-can's 3.24 deg** (absolute, other dataset, other padding fraction).
+- **Does it read the instruction?  (`acdc_la/realrobot/lang_swap.py`, new)** Same image, same flow noise, each of the
+  4 instructions: true instr 0.936 deg vs wrong instr **1.136 deg** whole-chunk error (wrong ~= the zero-motion null
+  1.124); output shifts **0.42 deg** on average when the colour word is swapped; **true instruction gives the lowest
+  error in 4/5 episodes** (the miss, ep 2 pink, is a near-tie: orange 0.811 vs pink 0.822).  **Status: suggestive, not
+  established** -- 5 episodes, 3 colours, no blue held out, no significance possible.
+- **Artifacts.**  Run `/media/volume/TERRA/vla_runs/tc_cont+press_button+b64x1+lr0.00035+r32+s3000+fm+q4--terra_press_button_delta`
+  (merged), snapshots `vla_runs/snapshots/terra_press_button_delta/step_{500..3000}`, results
+  `acdc_la/results/press_button_terra_delta_replay.json`, `press_button_lang_swap_terra.json`.
+- **Next decision.**  (1) Baseline arm (`INIT=none`, same delta data / recipe) -- without it "0.92 deg" and "reads
+  the instruction" have no control: openvla-7b may read the colour word just as well.  (2) A held-out set large and
+  balanced enough for the language claim (e.g. 2 episodes per colour, or the per-step lang-swap over more episodes).
+  (3) Checkpoint choice from the step snapshots once a held-out curve exists.
+
+### 2026-11-11 — press_button_terra_delta published (public HF) + delta support in the deployment wrapper
+
+- **Published** `Potestates/TERRA/press_button_terra_delta/` (public, user's standing instruction): merged weights,
+  `action_decoder.pt`, stats, `ctrl_meta.json` with `"action_space": "delta"`, README with the delta interface.  22/22
+  files byte-identical to local; anonymous range request HTTP 206.  Repo README table row added.
+- **`piper_policy.py`**: `action_space` (ctrl_meta, else inferred from the joint means) and `to_joint_targets(a, q)` =
+  q[:6] + a[:6] for delta, a[:6] for absolute; raises without q on a delta checkpoint.  Deployment loop re-reads q
+  every tick (chunk entry k is relative to the state at step k).  Checked on all 1,877 press_button steps:
+  q + delta == absolute demo target to 9.5e-7 deg.  `--replay ... --abs_root data/real_rlds` scores the conversion
+  end to end with the model (queued after the baseline, GPU busy).
+- **Not yet run on a robot.  Not yet pushed to GitHub** (needs the user's go-ahead).
