@@ -5791,3 +5791,36 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Next (unchanged).**  Newton job 1157664's number, which is the only thing that turns 60.6 % into a pair; and the
   **phase-2 base + `--latent none`** third arm, the only way to attribute the press_button effect to the latent
   branch rather than to the phase-2 base.
+
+#### 2026-11-12 (22:45) — RELAYED, NOT VERIFIED HERE: the forward-window fix lands on press_button (`press_button_anchored_fwd_step1500`); and the root HF card was being overwritten round-robin by two hosts
+
+- **Source and status.**  Read off the HF repo, not off artifacts: Jetstream pushed
+  `press_button_anchored_fwd_step1500/` at 21:34 UTC and updated `piper_multi_anchored_step5500/README.md` at the
+  same time.  **No ledger entry exists from that host yet**, and press_button data is not on this workstation, so
+  nothing below is reproduced here -- it is recorded so it is not left only in a model card (AGENTS.md), and it
+  stands or falls on their verification, not mine.
+- **Their numbers** (held-out press_button, 5 episodes / 79 steps, open-loop target error in degrees, mean over
+  joints, by chunk position k):
+
+  | model | k=0 | 1 | 2 | 3 | 7 | 11 | exec 2 | exec 4 |
+  |---|---|---|---|---|---|---|---|---|
+  | `press_button_anchored_fwd_step1500` (fixed window) | 0.96 | 2.04 | 2.80 | 3.33 | 3.96 | 3.36 | 1.50 | **2.28** |
+  | `piper_multi_anchored_step5500` (old backward window) | 0.89 | 1.98 | 3.22 | 4.50 | 9.21 | 13.43 | 1.44 | 2.65 |
+  | `press_button_terra_delta` (per-step, ideal tracking) | 0.87 | 2.45 | 4.33 | 6.36 | 14.39 | 22.43 | 1.66 | 3.50 |
+
+- **What it claims.**  With the sample window starting at the input frame (`CTRL_FORWARD_WINDOW=1`), the error
+  **stops growing with k** -- it levels off near 3.4-4.0 deg instead of climbing to 13 (old anchored) or 22 (per-step
+  under ideal tracking).  Slightly worse at k=0 (0.96 vs 0.89) and at exec 2 (1.50 vs 1.44), better from k=2 and at
+  exec 4.  Caveats carried by their own card: snapshot **1500 of 3000**, 5 held-out episodes, one seed, **not yet on
+  the robot**.
+- **Collision found, and the convention it needs.**  The root `README.md` of the HF repo has now been **replaced
+  twice**: my catalogue card at 20:52, their shorter card at 21:34 (which dropped the inventory and the measured
+  tables), mine again at 22:24 (which dropped their three-action-space section and the per-model deployment-call
+  column).  Nobody noticed at the time because an HF upload has no merge.  **Fixed by merging**: the live card now
+  carries their action-space table (corrected -- `piper_pick_can_10k` *does* record `action_space` explicitly since
+  20:51, their copy still said the key was absent), their exec-N numbers, and my inventory; it ends with an explicit
+  "merge into this file, do not overwrite it", and the authoritative copy is
+  `acdc_la/hf_cards/TERRA_root_README.md` in git, which is the only one of the two that has a history.
+- **Next.**  Ask Jetstream for the step-3000 numbers and a ledger entry on their side; the robot check for the
+  anchored parameterisation (whether executing 2-4 anchored steps holds up on hardware) is still unrun, and it is
+  the thing that would make a chunk > 1 usable.

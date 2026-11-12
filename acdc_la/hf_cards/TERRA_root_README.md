@@ -16,6 +16,8 @@ action/latent head (`action_decoder.pt` — **required**, it is not inside the m
 with the measured numbers and the exact deployment loop.
 
 **Code:** https://github.com/DingTianxingjian/Latent_Free — branch `newton`, public, no token needed.
+Real-robot deployment wrapper: `acdc_la/realrobot/piper_policy.py`; LIBERO evaluator:
+`acdc_la/downstream/vla/run_libero_eval_cont.py`.
 
 ```bash
 git clone -b newton https://github.com/DingTianxingjian/Latent_Free.git latent_free && cd latent_free
@@ -46,6 +48,20 @@ huggingface-cli download Potestates/TERRA --include "<dir>/*" --local-dir .
 >    that carry the motion, so it **bends the direction** instead of just scaling it. This was seen on the robot:
 >    chunk 1 presses the button, chunk 2 "the direction is a bit off". Use an `anchored` checkpoint if you need
 >    multi-step chunks.
+
+---
+
+## The three action spaces on the Piper — getting this wrong drives the arm somewhere else
+
+`ctrl_meta.json -> action_space` says which one a directory uses, `PiperPolicy` reads it and prints it on load.
+(It used to be *absent* on the pick-can directories and inferred from the joint means; since 2026-11-12 all three
+record it explicitly, so **a missing key now means an old copy** — re-download.)
+
+| `action_space` | what `chunk[k]` is | the call | how many steps per chunk |
+|---|---|---|---|
+| `absolute` | the joint target itself | send `chunk[k]` directly | — |
+| `delta` | target − joints measured **at step k** | `to_joint_targets(a, q)`, `q` re-read **every tick** | **1** — the teleop lead adds up linearly and with opposite signs on j1/j2 (−0.74 / +0.75 deg per step on pick-can), so the direction bends |
+| `delta_anchored` | `target[s+k]` − joints read **once** at the chunk's start | `chunk_targets(chunk, q)`, `q` read once per chunk; **no ensembling** (the policy disables it) | 1, then try 2 and 4: tracking drift does not exist here, what limits N is the model's own error growing with k |
 
 ---
 
@@ -139,7 +155,11 @@ One model for **both** tasks (press_button x2 + pick-can mixture), using **chunk
 per-step parameterisation from k>=2, slightly worse at k=0. Trained with the old backward sample window (magnitudes
 under-predicted ~0.8x). **`press_button_anchored_fwd_step1500` is the first checkpoint with the window fixed**
 (press-button only, snapshot of a run still training): its error stops growing with chunk position — it levels
-off near 3.5° instead of climbing to 13° — and it will supersede these for that task. Different deployment call
+off near 3.5° instead of climbing to 13° — and it will supersede these for that task. Measured on the 5 held-out
+press_button episodes, mean error over the steps actually executed: **exec 2 / exec 4 = 1.50 / 2.28°** for the
+window-fixed snapshot, 1.44 / 2.65° for `piper_multi_anchored_step5500` (old window), 1.66 / 3.50° for the
+per-step `press_button_terra_delta` under ideal tracking. Both anchored models are **snapshots of runs still
+training** (1500 of 3000, and step 5500) and **neither has been on the robot**. Different deployment call
 (`chunk_targets`, no ensembling) — read their READMEs.
 
 ---
@@ -208,3 +228,9 @@ control). Use it to track a single run or pick a checkpoint within one run — *
 
 `HANDOFF_press_button.md` at the root of this repo is the brief for training the next real-robot task on a fresh
 host. The full experiment ledger, including everything retracted or superseded, is `LEDGER.md` in the code repo.
+
+---
+
+*This card is version-controlled at `acdc_la/hf_cards/TERRA_root_README.md` in the code repo and is written
+from both hosts. **Merge into it, do not overwrite it** — two hosts replaced each other's version of this file
+on 2026-11-12 before anyone noticed.*
