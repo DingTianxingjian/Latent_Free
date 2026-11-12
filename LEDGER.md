@@ -5713,3 +5713,28 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   infers it.  The inference was verified correct for all three first (max |joint mean| 1.81 / 1.81 / 111.50 against
   the threshold of 20), and the end-to-end `to_joint_targets(chunk[0], measured q)` path was checked against the
   absolute demo targets: identical to the delta-space error, as it must be.
+
+#### 2026-11-12 — the two pick-can DELTA checkpoints published (public HF), and every model in the repo now has a card
+
+- **Uploaded** to the public `Potestates/TERRA` (standing authorisation, 2026-11-10), `trainer_state.pt` excluded as
+  training-only: `piper_pick_can_terra_delta/` (ours, 1.126 deg) and `piper_pick_can_openvla_delta/` (the matched
+  control, 1.054 deg), 22 files / 15.19 GB each, 218 s and 143 s.  **Verified byte-for-byte** against local, and
+  verified **anonymously fetchable with no credentials** (HTTP 200 on the cards, 206 range on the weights).
+- **Pre-flight checks done before anything could reach an arm.**  `action_space` was **absent** from all three
+  pick-can `ctrl_meta.json` files, so `PiperPolicy` was *inferring* it from the joint means — a wrong inference would
+  send deltas as absolute targets or vice versa.  Verified the inference was correct for all three first
+  (max |joint mean| 1.81 / 1.81 / 111.50 against a threshold of 20), then **wrote the field explicitly** into all
+  three locally and pushed the corrected `piper_pick_can_10k/ctrl_meta.json` to HF as well.  Also re-ran the loaded
+  policy end to end: it prints `action space DELTA`, and `to_joint_targets(chunk[0], measured q)` scored against the
+  **absolute** demo targets equals the delta-space error, as it must.
+- **Cards.** All 10 model directories now carry a `README.md`.  The repo card leads with a "which one do I test"
+  table and a boxed warning on the two things that break a deployment: (1) the action space differs per directory
+  (absolute / per-step delta / chunk-anchored, each with a different call), now explicit in every `ctrl_meta.json`
+  and printed on load; (2) execute **one** chunk entry per prediction on the per-step delta policies, with the
+  measured drift (pick-can 0.855 deg/step, press_button ~2) and the fact that it is opposite-signed on the two
+  motion-carrying joints, so it bends direction rather than scaling.  Each card carries its own measured table, its
+  controls and nulls, and a copy-pasteable loop.  Tracked copies of the cards I wrote are in
+  `acdc_la/realrobot/hf_cards/` so they have a history and cannot silently drift from this ledger.
+- **Repo state:** 11 directories, 151.9 GB, public.  `piper_pick_can_10k` is marked **superseded** by the two delta
+  checkpoints on its row (3.24 vs ~1.05 deg) rather than removed.
+- **Not changed:** repo visibility, and no checkpoint was deleted.
