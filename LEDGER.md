@@ -5597,8 +5597,25 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Next.** (a) The parameterisation win stands and is large and separated (3.24 -> ~1.05-1.13 deg, 3x, both arms);
   **that** is what should go on the robot, and either checkpoint will do, since they are indistinguishable.
   Pick B if a tiebreak is needed: it is the simpler model and trained 5.2 h faster.
-  (b) Re-derive the deployment recipe on a delta checkpoint — `ensemble off` is contradicted here (ensembling helps
-  both arms: A 1.126 -> 0.950, B 1.054 -> 0.914).
+  (b) Re-derive the deployment recipe on a delta checkpoint — `ensemble off` is contradicted *on pick-can*
+  (ensembling helps both arms: A 1.126 -> 0.950, B 1.054 -> 0.914).
+  **QUALIFIED 2026-11-12, after the press_button arms: this is NOT a general rule and I overstated it in chat.**
+  Ensembling helps pick-can A (-16 %), pick-can B (-13 %) and the press_button control (1.920 -> 1.796, -6 %), but
+  **hurts the one good multi-task policy**, press_button TERRA (0.918 -> 0.968, **+5 %**).  So it is dataset- and
+  arm-dependent and must be measured per checkpoint, not set once.
+  Mechanism note, mine: the two deployment modes are **not** affected the same way by the per-step delta's frame
+  problem, and the 2026-11-12 entry's two per-k curves are the right references for each.  Chunk entry `k` is trained
+  as `a[t+k] - q[t+k]`, i.e. relative to the state at the step it is *for*.  So (i) **executing k steps of one chunk**
+  anchored on `q_s` is in the wrong frame for k >= 1 — that is the `ideal_tracking` curve, +2 deg/step; while
+  (ii) **temporal ensembling that re-reads q every tick** takes entry `k` from the prediction made `k` steps ago,
+  which is a delta relative to *now* — coordinate-correct, and its reference is the **flat `demo_state` curve**
+  (0.87 -> 1.19 max).  `to_joint_targets`'s docstring already states (i)'s requirement and
+  `piper_policy.py:158-160` already disables ensembling for `delta_anchored` (averaging across different anchors is
+  meaningless), so the code is right on both counts; what was missing was that the flat curve, not the +2 deg/step
+  one, is what bounds the ensembling route.  **Consequence for the anchored run: since `demo_state` is flat, k = 1
+  accuracy was never the limitation, so chunk-anchoring buys latency/throughput (one VLA forward per k steps) rather
+  than accuracy, and it gives up the ensembling route to get it.** Worth stating because the robot's working
+  configuration today is chunk = 1, which needs neither fix.
   (c) 8 held-out episodes is too weak to settle the mechanism question on this task; the per-joint analysis
   (j2 + j4 = 71.8 % of recoverable error) is a better-powered target than another A/B at this episode count.
   (d) **Run the phase-2 + `--latent none` arm on press_button** — the third arm that separates the phase-2 base from
