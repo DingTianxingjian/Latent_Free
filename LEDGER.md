@@ -5824,3 +5824,53 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Next.**  Ask Jetstream for the step-3000 numbers and a ledger entry on their side; the robot check for the
   anchored parameterisation (whether executing 2-4 anchored steps holds up on hardware) is still unrun, and it is
   the thing that would make a chunk > 1 usable.
+
+### 2026-11-13 (00:05) — the new 4-task dataset: only `stack_bowls` is new data (pick-can is bit-identical to ours, reordered), and the OpenVLA baseline for it is TRAINING
+
+- **Source.**  User (2026-11-12): new data at HF `datasets/anhdao69/data_real_4tasks`, exclude the spoon task; TERRA
+  will be trained on Jetstream, the OpenVLA baseline here.  Repo: 4 independent LeRobot v3 datasets, 0.55 GB,
+  450 episodes / 49,482 frames at 30 Hz, AgileX Piper.
+- **Checked what is actually new, before spending a GPU-day.**
+
+  | folder | eps | frames @30 Hz | instruction(s) | verdict |
+  |---|---|---|---|---|
+  | `pick_can_place_plate` | 150 | 19,246 | 1 | **the same data we already have** |
+  | `press_button` | 100 | 5,533 | 4 colours x 25 | very likely Jetstream's `press_button`; **not verifiable here** (no local copy) |
+  | `stack_bowls` | 100 | 11,679 | 1 ("stack the bowls") | **NEW** |
+  | `put_spoon_in_bowl` | 100 | 13,024 | 1 | new, **excluded by the user** |
+
+- **The pick-can identity is measured, not assumed.**  Both sides have 150 episodes and the same multiset of
+  episode lengths (6,462 steps at 10 Hz on both), and **150/150 of our episodes match an episode of the new repo
+  exactly** on the six joint dimensions (tolerance 0.01 deg), with the gripper matching to **0.00e+00** after our
+  `GRIP_SCALE = 8.2` division.  The only difference is the **episode ORDER in the repo**.
+  - **Trap this creates:** our held-out split is positional (`train[95%:]`), so a conversion that follows the new
+    repo's order would hold out **different episodes** and the existing 1.054 / 1.126 deg would stop being
+    comparable.  Recorded; the pick-can RLDS on this host is left as it is.
+  - **For Jetstream:** run the same check on `press_button` before quoting 0.918 / 1.920 against anything trained
+    from this repo's copy.
+- **`stack_bowls` converted** with `convert_press_button_rlds.py`, which was parameterised by `--dataset` (the same
+  dynamic-class-name trick `make_delta_rlds.py` already used): `data/real_rlds/stack_bowls/1.0.0` (absolute) and
+  `data/real_rlds_delta/stack_bowls/1.0.0` (per-step delta, `action[:6] - joint_state[:6]`), both **100 episodes /
+  3,928 steps at 10 Hz**, one instruction for all 100.  Registered in the vendored prismatic (configs + transforms);
+  `third_party/` is gitignored and `univla_piper.patch` is written from the other host, so the two insertions are
+  recorded in `acdc_la/patches/README.md` instead of regenerating that patch and deleting the other host's entries.
+- **The nulls for this task, measured before any model exists** (same definitions as pick-can):
+  **"stay where you are" 0.901 deg**, **"repeat the last command" 0.719 deg**, per-joint |delta| per step
+  `[0.503, 2.213, 1.527, 0.150, 0.900, 0.116]`.  Note the **order flips** against pick-can, where stay-still was
+  1.20 and repeat-last 2.06: here repeat-last is the *harder* null to beat, because the motion is smooth and
+  strongly drifting (mean signed delta j1 **+1.85**, j2 **-1.38** deg/step -- the same opposite-sign teleop-lead
+  signature as the other two tasks).  **Any stack_bowls policy has to be read against 0.719, not 0.901.**
+- **Baseline arm launched** (user's call: new task on the previous setting, baseline here, TERRA on Jetstream).
+  `/data/ti874297/vla_runs/none+stack_bowls+b64x1+lr0.00035+r32+s10000+fm+q4--openvla_stack_bowls_delta`, GPU 1 of
+  the shared workstation, started 2026-11-12 23:55 UTC, ETA ~13 h (arm B's 4.6 s/step).  Setting copied
+  byte-for-byte from `openvla_piper_delta`: `INIT=none LATENT=none`, fresh LoRA r32 on official `openvla-7b`, flow
+  head, 4 query tokens, per-step delta root, **GLOBAL=64 (BS 8 x GA 8 x 1 GPU), STEPS=10000, SAVE=1000,
+  `--merge False`**.  `dataset_statistics.json` verified on the delta root (joint-1 mean 1.85, not ~111).
+- **What Jetstream must match for this to be a pair** (`next_task.md` section 8): dataset `stack_bowls` **alone**
+  (not a mixture), per-step **delta** root, the **old backward** sample window (the `CTRL_FORWARD_WINDOW` fix is
+  still not in git), **10,000 steps at global batch 64**, LoRA r32, flow head, 4 query tokens, 10 Hz, chunk 12,
+  `GRIP_SCALE = 8.2`.  10k steps is 163 epochs here against 99 on pick-can (3,928 vs 6,462 steps of data) -- kept
+  identical rather than epoch-matched, because "the previous setting" is the thing both hosts can reproduce without
+  another agreement; it applies equally to both arms.
+- **Next.**  Merge standalone (`merge_ctrl_run.py`, ~31 GB peak) then `piper_policy.py --replay` on the held-out
+  episodes (the last 5, 184 steps) and compare against 0.719 / 0.901; relay the setting to Jetstream.

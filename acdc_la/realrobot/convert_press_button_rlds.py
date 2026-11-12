@@ -68,12 +68,12 @@ def load(src):
     return act, st, ep, keep, frames, ep_task
 
 
-def build(src, out):
+def build(src, out, dataset="press_button"):
     import tensorflow_datasets as tfds
     act, st, ep, keep, frames, ep_task = load(src)
     g = np.clip(act[:, 6] / GRIP_SCALE, 0, 1)
 
-    class PressButton(tfds.core.GeneratorBasedBuilder):
+    class _Base(tfds.core.GeneratorBasedBuilder):
         VERSION = tfds.core.Version("1.0.0")
         def _info(self):
             F = tfds.features
@@ -103,20 +103,25 @@ def build(src, out):
                                   "language_instruction": ep_task[int(e)]})
                 yield f"ep{int(e)}", {"steps": steps, "episode_metadata": {"file_path": f"lerobot/ep{int(e)}", "episode_index": int(e)}}
 
-    b = PressButton(data_dir=out)
+    # TFDS takes the dataset name from the class name (press_button -> PressButton, stack_bowls -> StackBowls);
+    # parameterised 2026-11-12 so the same converter serves every single- or multi-task LeRobot v3 Piper folder.
+    Builder = type("".join(w.capitalize() for w in dataset.split("_")), (_Base,), {})
+    assert Builder.name == dataset, (Builder.name, dataset)
+    b = Builder(data_dir=out)
     b.download_and_prepare(download_config=tfds.download.DownloadConfig(manual_dir=src))
     ds = b.as_dataset(split="train")
     n_ep = n_st = 0; instr = {}
     for x in ds:
         n_ep += 1; n_st += int(x["steps"].cardinality())
         s0 = next(iter(x["steps"])); k = s0["language_instruction"].numpy().decode(); instr[k] = instr.get(k, 0) + 1
-    print(f"[press_button] wrote {b.data_dir}: {n_ep} episodes, {n_st} steps at 10 Hz, grip_scale={GRIP_SCALE}")
-    print(f"[press_button] episodes per instruction: {instr}")
+    print(f"[{dataset}] wrote {b.data_dir}: {n_ep} episodes, {n_st} steps at 10 Hz, grip_scale={GRIP_SCALE}")
+    print(f"[{dataset}] episodes per instruction: {instr}")
 
 
 def main():
     p = argparse.ArgumentParser(); p.add_argument("--src", required=True); p.add_argument("--out", required=True)
-    a = p.parse_args(); build(a.src, a.out)
+    p.add_argument("--dataset", default="press_button", help="TFDS name to write (also the prismatic registration key)")
+    a = p.parse_args(); build(a.src, a.out, a.dataset)
 
 
 if __name__ == "__main__":
