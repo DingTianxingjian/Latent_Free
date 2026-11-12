@@ -5678,3 +5678,38 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Logging for the robot side:** `acdc_la/realrobot/deploy_logger.py` (frame, q, chunk, k, sent target, inference
   time, success + note per episode). From those logs: camera shift vs the training images (a fixed offset direction),
   real tracking lag vs the demos, loop rate and latency.
+
+#### 2026-11-12 — the same teleop lag is in pick-can, measured: 0.85 deg/step (press_button ~2), so the pick-can delta checkpoints are also chunk = 1
+
+- **Why measured rather than inherited.** The press_button entry traced chunk >= 2 direction-bending to the demos
+  being a continuous 30 Hz teleop command.  pick-can came from the same rig, but the drift had never been measured on
+  it, and the deployment advice for the two pick-can delta checkpoints depends on the size.
+- **Derivation (data only, in `acdc_la/realrobot/demo_lead.py`).** With the arm settling at each command and `q`
+  re-read every tick, `q_arm(s+k+1) = q_arm(s+k) + d_pred[k]` and `d_pred[k] = a[s+k] - q[s+k]`, so with
+  `e_k = q_arm(s+k) - a[s+k-1]` the recursion is `e_{k+1} = e_k + (a[s+k-1] - q[s+k])`.  **The per-step drift is
+  exactly the demo lead `a[t-1] - q[t]`** and it is linear in k — which is why press_button's curve was straight.
+- **Result, pick-can, 6312 step pairs over all 150 episodes (degrees):**
+
+  | | j0 | j1 | j2 | j3 | j4 | j5 | mean |
+  |---|---|---|---|---|---|---|---|
+  | demo lead `a[t-1] - q[t]`, **signed** | 0.031 | **−0.740** | **+0.746** | 0.083 | −0.035 | 0.008 | 0.274 |
+  | \|lead\| | 0.608 | 1.751 | 1.374 | 0.334 | 0.996 | 0.066 | **0.855** |
+  | arm motion per step | 1.258 | 4.608 | 3.282 | 0.605 | 2.232 | 0.097 | 2.014 |
+
+  Drift carried by chunk entry k = k x 0.855 deg: entry 1 **0.86**, entry 2 **1.71**, entry 3 **2.56**,
+  entry 4 **3.42**, entry 11 **9.4**.
+- **Conclusion: confirmed, same mechanism, about 2.4x smaller than press_button.** Two points matter.
+  (1) The drift at entry 1 (0.86 deg) is already **the size of the model's whole chunk[0] error** (1.05-1.13 deg), so
+  chunk = 2 roughly doubles the error on its second step and chunk = 4 reaches the absolute arm's 3.24 deg by its
+  fourth.  **Deployment decision: chunk = 1 for both pick-can delta checkpoints**, not just for press_button.
+  (2) The *signed* lead is near zero in the mean (0.274) but **opposite in sign on the two joints that carry most of
+  the motion, j1 −0.74 and j2 +0.75**.  That is the direction-bending mechanism, not a magnitude error — the same
+  signature the user reported on the robot — so it would not have shown up in a scalar error check.
+- **Retrospective.** The collaborator's first robot test (2026-11-10) ran **action chunk = 5** on the *absolute* arm.
+  On the delta parameterisation that same setting would carry up to 3.4 deg of drift on its fifth step; the chunk
+  table already in `acdc_la/realrobot/README.md` was derived for absolute targets and does not express this cause.
+- **Artifacts.** `acdc_la/realrobot/demo_lead.py`.  Also written this day: `action_space` is now **explicit** in
+  `ctrl_meta.json` for all three pick-can runs (`"delta"` / `"delta"` / `"absolute"`), so `PiperPolicy` no longer
+  infers it.  The inference was verified correct for all three first (max |joint mean| 1.81 / 1.81 / 111.50 against
+  the threshold of 20), and the end-to-end `to_joint_targets(chunk[0], measured q)` path was checked against the
+  absolute demo targets: identical to the delta-space error, as it must be.
