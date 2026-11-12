@@ -5734,7 +5734,60 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   measured drift (pick-can 0.855 deg/step, press_button ~2) and the fact that it is opposite-signed on the two
   motion-carrying joints, so it bends direction rather than scaling.  Each card carries its own measured table, its
   controls and nulls, and a copy-pasteable loop.  Tracked copies of the cards I wrote are in
-  `acdc_la/realrobot/hf_cards/` so they have a history and cannot silently drift from this ledger.
+  `acdc_la/hf_cards/` (moved there from `acdc_la/realrobot/hf_cards/` on 2026-11-12, when the LIBERO cards joined
+  them) so they have a history and cannot silently drift from this ledger.
 - **Repo state:** 11 directories, 151.9 GB, public.  `piper_pick_can_10k` is marked **superseded** by the two delta
   checkpoints on its row (3.24 vs ~1.05 deg) rather than removed.
 - **Not changed:** repo visibility, and no checkpoint was deleted.
+
+#### 2026-11-12 — the four LIBERO checkpoints that were never published are now public, including the one clean single-factor cell in this project
+
+- **Why.**  User (2026-11-12): give the TERRA-vs-baseline inventory and upload what is not up yet, no duplicates.
+  Took stock of every merged checkpoint reachable on this host against the HF repo.  11 directories were already on
+  `Potestates/TERRA`; **four merged checkpoints existed only locally**, all four LIBERO.  The upload script refuses
+  any prefix that already exists on HF, so nothing was re-uploaded.
+- **Published** (public `Potestates/TERRA`, standing authorisation 2026-11-10; `trainer_state.pt` excluded as
+  training-only; 20 files / 15.19 GB each):
+
+  | HF dir | arm | base | suite / split | result |
+  |---|---|---|---|---|
+  | `libero_goal_frac10_terra` | ours (`tc_cont`, `latp2_inv`) | openvla-7b, **no phase 2** | Goal, 10 % = 43 demos | 434/500 = **86.8 %** |
+  | `libero_goal_frac10_univla_cont` | **baseline**: UniVLA's deployed latent (`z_q`, `s2mix_1ep`) | same | same | 447/500 = **89.4 %** |
+  | `libero_goal_frac10_none` | **matched control**: no latent (`latent_r2` identically 0) | same | same | 443/500 = **88.6 %** |
+  | `libero_10_frac10_terra_p2fft20k` | ours, full stack | **`p2fft_20k`** (20k full-parameter phase 2) | Long, 10 % = 43 demos | 303/500 = **60.6 %** |
+
+- **No new result is claimed here** — all four numbers are already in this ledger (2026-09-19, 09-20, 09-20, 11-10).
+  What changed is that the three Goal arms, which are **the only single-factor comparison in this project** (one
+  factor, the latent channel; no phase 2 on any of them), are now downloadable as a set, and their cards state the
+  negative conclusion in the card itself: the no-latent control lands **between** the two latent arms, 13 episodes in
+  500 is ~1.3 sigma, one cell carries +-8 points at 95 %, so the latent channel is decorative at 10 % Goal.
+- **Inventory as published: 11 TERRA directories (one of them the base, not a policy) and 4 baselines/controls.**
+  The root card now carries that split as a table, so a reader can see which directory is ours and which exists to
+  be beaten.  It also records the caveat that both `*_openvla_delta` controls change the base **and** the latent
+  branch at once, while the Goal triplet does not.
+- **Not uploaded, on purpose.**  `smoke_long_frac10` (120-step code-path smoke, no merged weights — not a model);
+  the LoRA adapters under `/data/ti874297/vla_runs/adapters/` (the merged weights already contain them, so they are
+  duplicates); and everything that lives on Newton — the full-split 20k phase-2 Long arm (**89.8 %, our best Long
+  number**), the missing 10 % Long replicate 1 (job 1157664), the Ablation A seeds — which is not reachable by ssh
+  from this workstation.  That is a publication gap, recorded as such, not a result.
+- **Pre-flight fix, the same class as the `action_space` one.**  `ctrl_meta.json` **never recorded the phase-2
+  init** -- verified on the one run where the init is beyond doubt (`p2fft20k_libero_10_frac10_rep2`, launched with
+  `INIT=/data/ti874297/p2fft_20k`): its meta is indistinguishable from a stock-base run.  So a downloader could not
+  tell the Goal triplet (stock `openvla-7b`, these cells predate phase 2) from the full stack by looking at the
+  files, which is how an 86.8 % and a 94.4 % end up in the same sentence.  Wrote `"init"` + `"init_note"`
+  explicitly into all four published metas (`none` x3, `p2fft_20k` x1); the keys are additive and every consumer
+  reads `ctrl_meta` by key (`consolidate_fft_ckpt.py` already adds `consolidated_from` the same way), so nothing
+  breaks.  The older HF directories still state their base only in their cards -- recorded as a gap.
+- **Verification.**  Byte-for-byte against local for all 4 x 20 files plus the root card, and anonymous fetch with no
+  credentials: HTTP 200 on the root card, all four model cards and all four `ctrl_meta.json`, HTTP 206 on a range
+  request to each `model-00001-of-00004.safetensors`.  The size check **caught one real stale upload**: the first
+  directory's `README.md` (3,934 vs 4,419 B) and `ctrl_meta.json` (553 vs 686 B) had been hashed before the `init`
+  field and the provenance section were written, so the folder upload carried the pre-edit versions.  A follow-up
+  commit replaced all 8 small files; all 8 now match byte-for-byte and an anonymous fetch confirms the live
+  `ctrl_meta.json` of each of the four carries `"init"`.  **Repo state: 15 model directories, 227.8 GB, public**;
+  visibility unchanged, nothing deleted.
+- **Artifacts.**  Cards mirrored to `acdc_la/hf_cards/` (the directory moved out of `realrobot/` because it now holds
+  sim cards too); upload + verification script and its log in the session scratchpad.
+- **Next (unchanged).**  Newton job 1157664's number, which is the only thing that turns 60.6 % into a pair; and the
+  **phase-2 base + `--latent none`** third arm, the only way to attribute the press_button effect to the latent
+  branch rather than to the phase-2 base.

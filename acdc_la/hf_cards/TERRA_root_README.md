@@ -32,6 +32,7 @@ huggingface-cli download Potestates/TERRA --include "<dir>/*" --local-dir .
 | **pick the can, place on plate** | **`piper_pick_can_openvla_delta`** | **3x better open loop** than the arm currently on the robot (1.05 vs 3.24 deg); simplest of the equals |
 | the same, with our full method | `piper_pick_can_terra_delta` | statistically **indistinguishable** from the row above (1.13 vs 1.05, CI contains 0) — either is fine |
 | **one model for both tasks** | `piper_multi_anchored_step5500` | **experimental**, and a retrain will supersede it — see its README |
+| **compare the latent mechanism** in sim | the `libero_goal_frac10_*` **triplet** | ours / UniVLA's / **no latent at all**, identical otherwise |
 | post-train a new task | `p2fft_20k` | the **base**, not a policy |
 
 > ### ⚠ Two things that will break a deployment if you skip them
@@ -45,6 +46,48 @@ huggingface-cli download Potestates/TERRA --include "<dir>/*" --local-dir .
 >    that carry the motion, so it **bends the direction** instead of just scaling it. This was seen on the robot:
 >    chunk 1 presses the button, chunk 2 "the direction is a bit off". Use an `anchored` checkpoint if you need
 >    multi-step chunks.
+
+---
+
+## Inventory — which directories are **ours (TERRA)** and which are **controls / baselines**
+
+Every policy here shares the same interface (LoRA r32 + flow-matching head + 4 query tokens, chunk 12). What differs
+is the **base** and the **latent channel**, which is exactly what each comparison is about.
+
+### TERRA — ours (latent channel `tc_cont`, `latp2_inv` labels)
+
+| dir | base | task / suite | number |
+|---|---|---|---|
+| `p2fft_20k` | openvla-7b, full fine-tune | **phase-2 base, not a policy** | — |
+| `press_button_terra_delta` | `p2fft_20k` | press_button, per-step delta | 0.918° ✅ on hardware |
+| `press_button_anchored_fwd_step1500` | `p2fft_20k` | press_button, anchored, fixed window | 0.96° at k=0, flat in k |
+| `piper_pick_can_terra_delta` | `p2fft_20k` | pick-can, per-step delta | 1.126° |
+| `piper_pick_can_10k` | `p2fft_20k` | pick-can, **absolute** — superseded | 3.24° |
+| `piper_multi_anchored_step2500` / `step5500` | `p2fft_20k` | both tasks, anchored — experimental | see card |
+| `libero_goal_full` | LoRA-scale phase 2 | LIBERO-Goal, full split | 94.4 % |
+| `libero_10_full` | LoRA-scale phase 2 | LIBERO-Long, full split | 89.0 % |
+| `libero_10_frac10_terra_p2fft20k` | `p2fft_20k` | LIBERO-Long, 10 % (43 demos) | 60.6 % |
+| `libero_goal_frac10_terra` | **openvla-7b, no phase 2** | LIBERO-Goal, 10 % | 86.8 % |
+
+### Baselines / controls — no latent, or somebody else's latent
+
+| dir | what it controls for | number |
+|---|---|---|
+| `press_button_openvla_delta` | stock openvla-7b, **`--latent none`** — the whole package vs nothing | 1.920° (worse than not moving) |
+| `piper_pick_can_openvla_delta` | the same, on pick-can | **1.054°** — here it is a good policy |
+| `libero_goal_frac10_none` | **no latent at all**, identical otherwise (`latent_r2` ≡ 0) | 88.6 % |
+| `libero_goal_frac10_univla_cont` | **UniVLA's** deployed latent through our interface | 89.4 % |
+
+> **One honest caveat about the two `*_openvla_delta` controls.** They change the base **and** the latent branch at
+> once (`INIT=none LATENT=none`), so where they separate, the effect belongs to *the whole package*, not specifically
+> to the latent branch. The missing arm that would split those two — phase-2 base with `--latent none` — has not been
+> run. The `libero_goal_frac10_*` triplet *is* clean in that sense (one factor, no phase 2 anywhere), and there the
+> answer is that the latent channel changes nothing.
+>
+> **Which base a policy came from is not in most of these files.** `ctrl_meta.json` records the latent, the head
+> and the dataset, but the training script never wrote the phase-2 init. The four directories published on
+> 2026-11-12 (`libero_goal_frac10_*`, `libero_10_frac10_terra_p2fft20k`) now carry an explicit `"init"` field;
+> for the others the base is stated in the table above and in each card, and nowhere in the weights.
 
 ---
 
@@ -94,21 +137,46 @@ there is nothing for a language-grounding advantage to do. The same pair separat
 One model for **both** tasks (press_button x2 + pick-can mixture), using **chunk-ANCHORED** deltas
 (`target[s+k] - q[s]`, `q` read once per chunk) so that executing several entries open loop is valid. Better than the
 per-step parameterisation from k>=2, slightly worse at k=0. Trained with the old backward sample window (magnitudes
-under-predicted ~0.8x); **a forward-window retrain is in progress and will supersede these.** Different deployment
-call (`chunk_targets`, no ensembling) — read their README.
+under-predicted ~0.8x). **`press_button_anchored_fwd_step1500` is the first checkpoint with the window fixed**
+(press-button only, snapshot of a run still training): its error stops growing with chunk position — it levels
+off near 3.5° instead of climbing to 13° — and it will supersede these for that task. Different deployment call
+(`chunk_targets`, no ensembling) — read their READMEs.
 
 ---
 
 ## LIBERO policies
 
-| dir | suite | demos | success, standard 500-episode eval |
-|---|---|---|---|
-| `libero_10_full` | `libero_10_no_noops` | full | **89.0** |
-| `libero_goal_full` | `libero_goal_no_noops` | full | **94.4** |
+Standard eval, 50 trials x 10 tasks = **500 episodes**, continuous flow head:
 
 ```bash
 python -m acdc_la.downstream.vla.run_libero_eval_cont --pretrained_checkpoint <dir>
 ```
+
+| dir | suite | demos | base | latent | success |
+|---|---|---|---|---|---|
+| `libero_goal_full` | Goal | full | LoRA-scale phase 2 | ours | **94.4 %** |
+| `libero_10_full` | Long | full | LoRA-scale phase 2 | ours | **89.0 %** |
+| `libero_10_frac10_terra_p2fft20k` | Long | 10 % (43) | **`p2fft_20k`** | ours | **60.6 %** |
+| `libero_goal_frac10_univla_cont` | Goal | 10 % (43) | openvla-7b | **UniVLA's** | 89.4 % |
+| `libero_goal_frac10_none` | Goal | 10 % (43) | openvla-7b | **none** | 88.6 % |
+| `libero_goal_frac10_terra` | Goal | 10 % (43) | openvla-7b | ours | 86.8 % |
+
+### The one result in this repo that is a clean, single-factor comparison — and it is negative
+
+The three `libero_goal_frac10_*` rows differ **only** in the latent channel. The **no-latent control lands between
+the two latent arms** (88.6 % against 89.4 % and 86.8 %), so at 10 % Goal demos through this interface the latent
+channel is **decorative**: the action head reads what it needs from the visual features alone. 13 episodes in 500 is
+~1.3σ, one seed each, and a single 500-episode cell carries **±8 points at 95 %** once training randomness is
+counted — so these three are one band, not a ranking.
+
+What the triplet *does* settle: an earlier 9.2 % collapse on Goal with the same latent and no query tokens was an
+**interface** failure, not the latent. What it does not cover: regimes where the visual features are insufficient.
+LIBERO-Long at 10 % is that regime (nothing saturates there: 60.6 % for the best arm) but with one replicate per arm
+it still cannot separate 60.6 / 58.7 / 56.4. The place where a matched control *does* separate is the real robot:
+`press_button_openvla_delta` is 2.1x worse than ours and cannot read the instruction at all.
+
+Not published here: the full-split 20k-phase-2 Long arm (89.8 %, our best Long number) and the remaining 10 % Long
+replicates live on a cluster filesystem, not on this host.
 
 ---
 

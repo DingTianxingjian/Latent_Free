@@ -20,5 +20,7 @@
   "layers": 4,
   "z_tok": 32,
   "steps": 10
- }
+ },
+ "init": "none",
+ "init_note": "openvla/openvla-7b directly, NO phase 2 -- this cell predates phase 2 (LEDGER.md 2026-09-19/09-20)"
 }
