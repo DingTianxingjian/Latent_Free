@@ -5824,3 +5824,8 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Next.**  Ask Jetstream for the step-3000 numbers and a ledger entry on their side; the robot check for the
   anchored parameterisation (whether executing 2-4 anchored steps holds up on hardware) is still unrun, and it is
   the thing that would make a chunk > 1 usable.
+### 2026-11-12 17:58 -- Table 4 seeds 1/2: resume safety net
+- 1195773 (s1) / 1195774 (s2) at step 9600/15000 after 12.0 h of a 20 h limit.  s1 rate ~640 steps/h -> needs ~20.5 h total
+  (likely TIMEOUT); s2 ~800 steps/h -> ~18.8 h.  Submitted `afternotok` resume jobs 1201487 (s1) / 1201488 (s2), normal
+  partition, same GROUP=all/SEED, `--resume` continues each arm from its last 500-step save.  They never run if the
+  originals complete.
