@@ -32,6 +32,27 @@ class KeptFrames:
 
 _KEEP = [int(k) for k in os.environ["CTRL_OBS_KEEP"].split(",")] if os.environ.get("CTRL_OBS_KEEP") else None
 
+# CHUNK-ANCHORED delta actions (2026-11-11, acdc_la/realrobot/make_anchor_rlds.py).  A *_anc dataset stores RAW 13-D
+# actions [absolute target (6), gripper (1), measured joints (6)].  The chunk the head learns is
+#     action[s+k, :6] - joints[s]          (every entry relative to the joints when the chunk STARTS)
+# normalised to [-1, 1] with that dataset's per-position q01/q99 and clipped, as BOUNDS_Q99 would; gripper raw.
+_ANCHOR = None
+if os.environ.get("CTRL_ANCHOR_STATS"):
+    import json, numpy as np
+    _ANCHOR = {k: (np.array(v["q01_k"], np.float32), np.array(v["q99_k"], np.float32))
+               for k, v in json.load(open(os.environ["CTRL_ANCHOR_STATS"])).items()}
+
+
+def anchor_chunk(acts, dataset_name):
+    """(W, 13) raw window slice -> (W, 7) normalised chunk-anchored actions."""
+    import numpy as np
+    name = dataset_name.decode() if isinstance(dataset_name, bytes) else str(dataset_name)
+    lo, hi = _ANCHOR[name]
+    acts = np.asarray(acts, np.float32); assert acts.shape[1] == 13, acts.shape
+    rel = acts[:, :6] - acts[0, 7:13]
+    n = np.clip(2 * (rel - lo[:, :6]) / np.maximum(hi[:, :6] - lo[:, :6], 1e-8) - 1, -1, 1)
+    return np.concatenate([n, acts[:, 6:7]], 1).astype(np.float32)
+
 
 @dataclass
 class RLDSBatchTransformCtrl:
@@ -62,6 +83,13 @@ class RLDSBatchTransformCtrl:
         stride = self.window_size // (self.labeller.T - 1)
         return self.labeller.encode([imgs[ro + k * stride] for k in range(self.labeller.T)])
 
+    def _acts(self, rlds_batch, ro):
+        a = rlds_batch["action"][ro: self.window_size + ro]
+        if a.shape[-1] == 13:
+            assert _ANCHOR is not None, "a *_anc dataset needs CTRL_ANCHOR_STATS=<data root>/anchor_stats.json"
+            return anchor_chunk(a, rlds_batch["dataset_name"])
+        return a
+
     def __call__(self, rlds_batch: Dict[str, Any]) -> Dict[str, Any]:
         dataset_name = rlds_batch["dataset_name"]; lang = rlds_batch["task"]["language_instruction"].decode().lower()
         imgs = rlds_batch["observation"]["image_primary"]
@@ -79,7 +107,7 @@ class RLDSBatchTransformCtrl:
                 pb.add_turn(turn["from"], turn["value"])
             input_ids = torch.tensor(self.base_tokenizer(pb.get_prompt(), add_special_tokens=True).input_ids)
             return dict(pixel_values=pixel_values, input_ids=input_ids, labels=torch.full_like(input_ids, IGNORE_INDEX),
-                        actions=rlds_batch["action"][ro: self.window_size + ro], latent_action_idx=idx.float().cpu(), dataset_name=dataset_name)
+                        actions=self._acts(rlds_batch, ro), latent_action_idx=idx.float().cpu(), dataset_name=dataset_name)
         action_tokens = "".join(f"<ACT_{int(i)}>" for i in idx)
         input_prompt = f"What action should the robot take to {lang}?"
         if hist is not None: input_prompt += " History action " + "".join(f"<ACT_{int(i)}>" for i in hist)
@@ -89,5 +117,5 @@ class RLDSBatchTransformCtrl:
         labels = list(input_ids); input_ids, labels = torch.tensor(input_ids), torch.tensor(labels)
         labels[: -(len(idx) + 1)] = IGNORE_INDEX
         if not self.predict_stop_token: labels[-1] = IGNORE_INDEX
-        return dict(pixel_values=pixel_values, input_ids=input_ids, labels=labels, actions=rlds_batch["action"][ro: self.window_size + ro],
+        return dict(pixel_values=pixel_values, input_ids=input_ids, labels=labels, actions=self._acts(rlds_batch, ro),
                     latent_action_idx=idx.cpu(), dataset_name=dataset_name)

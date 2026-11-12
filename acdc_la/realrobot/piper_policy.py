@@ -143,6 +143,9 @@ class PiperPolicy:
         self.low, self.high = np.array(s["q01"]), np.array(s["q99"])
         self.norm_mask = np.array(s.get("mask", np.ones_like(self.low, dtype=bool)))
         self.adim = len(self.low)
+        if "q01_k" in s:   # chunk-anchored runs: one range PER CHUNK POSITION (make_anchor_rlds.py), shape (W, adim)
+            self.low, self.high = np.array(s["q01_k"]), np.array(s["q99_k"])
+            assert self.low.shape == (self.W, self.adim), self.low.shape
         # ACTION SPACE (2026-11-11): explicit in ctrl_meta.json when the run recorded it; otherwise inferred from the
         # joint means -- absolute Piper targets have |mean| up to ~111 deg (joint 1), deltas are within a few deg.
         self.action_space = self.meta.get("action_space")
@@ -151,7 +154,10 @@ class PiperPolicy:
             self.action_space = "delta" if jm < 20 else "absolute"
             print(f"[piper-policy] action_space not in ctrl_meta.json; INFERRED '{self.action_space}' "
                   f"(max |joint mean| {jm:.1f} deg)", flush=True)
-        assert self.action_space in ("absolute", "delta"), self.action_space
+        assert self.action_space in ("absolute", "delta", "delta_anchored"), self.action_space
+        if self.action_space == "delta_anchored" and ensemble:
+            # averaging chunks predicted from different anchors is meaningless in this space; execute chunks instead
+            print("[piper-policy] delta_anchored: temporal ensembling OFF (use chunk_targets)", flush=True); ensemble = False
         self.n_patches = self.vla.vision_backbone.featurizer.patch_embed.num_patches
         self.ens = Ensembler(self.W, self.adim)
         self.seed = seed; self.use_ens = ensemble; self.samples = max(1, int(samples)); self.reset()
@@ -160,6 +166,14 @@ class PiperPolicy:
               f" | raw gripper dim(s) {list(np.nonzero(~self.norm_mask)[0])} | action space {self.action_space.upper()}",
               flush=True)
 
+    def chunk_targets(self, chunk, q_anchor):
+        """delta_anchored: (W, adim) chunk from act_chunk() + the joints measured WHEN IT WAS PREDICTED -> (W, 6) joint
+        targets in degrees.  Read q ONCE per chunk; every entry is relative to that same q, so executing k entries
+        open loop does not accumulate error the way the per-step delta does."""
+        assert self.action_space == "delta_anchored", self.action_space
+        q = np.asarray(q_anchor, dtype=np.float64)[:6]; assert q.shape == (6,), q.shape
+        return q[None] + np.asarray(chunk, dtype=np.float64)[:, :6]
+
     def to_joint_targets(self, a, joint_state=None):
         """Policy action (>= 6 dims, un-normalised) -> the 6 joint targets in degrees to SEND to the arm.
         absolute: a[:6].  delta: joint_state[:6] + a[:6], where joint_state is the arm's MEASURED joints right now
@@ -167,6 +181,8 @@ class PiperPolicy:
         a = np.asarray(a, dtype=np.float64)
         if self.action_space == "absolute":
             return a[:6]
+        if self.action_space == "delta_anchored" and joint_state is None:
+            raise ValueError("delta_anchored checkpoint: pass the joints measured when the chunk was predicted (or use chunk_targets)")
         if joint_state is None:
             raise ValueError("delta checkpoint: to_joint_targets needs the measured joint state (6 values, degrees)")
         q = np.asarray(joint_state, dtype=np.float64)[:6]
@@ -209,7 +225,7 @@ class PiperPolicy:
         """The policy's whole chunk: (window, action_dim).  Un-normalised unless `normalised`."""
         if instruction != self._instr: self._prompt, self._instr = self._build_prompt(instruction), instruction
         inputs = self.processor(self._prompt, self.preprocess(image))
-        inputs = {k: (v.to(self.device, dtype=torch.bfloat16) if v.dtype.is_floating_point else v.to(self.device))
+        inputs = {k: (v.to(self.device, dtype=self.vla.dtype) if v.dtype.is_floating_point else v.to(self.device))
                   for k, v in inputs.items()}
         h = self.vla(**inputs, output_hidden_states=True).hidden_states[-1]
         vis, txt = h[:, :self.n_patches].float(), h[:, self.n_patches:].float()
@@ -244,7 +260,8 @@ class PiperPolicy:
         to_joint_targets(a, measured_joints) before sending it to the arm."""
         ch = self.act_chunk(image, instruction, normalised=True)
         if not self.use_ens:
-            return np.where(self.norm_mask, 0.5 * (ch[0] + 1) * (self.high - self.low) + self.low, ch[0])
+            lo, hi = (self.low[0], self.high[0]) if self.low.ndim == 2 else (self.low, self.high)
+            return np.where(self.norm_mask, 0.5 * (ch[0] + 1) * (hi - lo) + lo, ch[0])
         return self.ens(ch, self.norm_mask, self.low, self.high)
 
     @staticmethod

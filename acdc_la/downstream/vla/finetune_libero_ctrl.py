@@ -337,6 +337,14 @@ def finetune(cfg: Cfg) -> None:
     ds = RLDSDataset(cfg.data_root_dir, cfg.dataset_name, transform, resize_resolution=tuple(model.module.vla.config.image_sizes), shuffle_buffer_size=cfg.shuffle_buffer_size,
                      image_aug=cfg.image_aug, window_size=cfg.window_size + 2, training_phase="post-training")
     if state.is_main_process: save_dataset_statistics(ds.dataset_statistics, run_dir); processor.save_pretrained(run_dir)
+    if state.is_main_process and os.environ.get("CTRL_ANCHOR_STATS"):
+        # chunk-anchored runs (datasets_ctrl.anchor_chunk): the head's 7-D output is un-normalised with the per-position
+        # anchor stats, not with the RLDS stats of the RAW 13-D field -- overwrite the action entry so deployment can't mix them up
+        _anc = json.load(open(os.environ["CTRL_ANCHOR_STATS"])); _p = run_dir / "dataset_statistics.json"; _ds = json.load(open(_p))
+        for _k in _ds:
+            assert _k in _anc, f"{_k} has no anchor stats"
+            _ds[_k]["action"] = _anc[_k]
+        json.dump(_ds, open(_p, "w"), indent=2)
     collator = PaddedCollatorForActionPrediction_LIBERO(processor.tokenizer.model_max_length, processor.tokenizer.pad_token_id, padding_side="right")
     dl = DataLoader(ds, batch_size=cfg.batch_size, sampler=None, collate_fn=collator, num_workers=0)
     n_patches = model.module.vla.vision_backbone.featurizer.patch_embed.num_patches
@@ -400,7 +408,8 @@ def finetune(cfg: Cfg) -> None:
                     json.dump(dict(latent=cfg.latent, n_tokens=n_tokens, codebook_size=codebook_size, dz=dz, window_size=cfg.window_size, step=step + 1, vla_path=cfg.vla_path,
                                    lam_path=cfg.lam_path, acdc_tag=cfg.acdc_tag, acdc_codebook=cfg.acdc_codebook, tc_tag=cfg.tc_tag, dataset_name=cfg.dataset_name,
                                    train_frac=os.environ.get("LIBERO_TRAIN_FRAC"), override=ov_d, head=cfg.head, query_tokens=nq,
-                                   flow=dict(width=cfg.flow_width, layers=cfg.flow_layers, z_tok=cfg.flow_z_tok, steps=cfg.flow_steps)), open(run_dir / "ctrl_meta.json", "w"), indent=1)
+                                   flow=dict(width=cfg.flow_width, layers=cfg.flow_layers, z_tok=cfg.flow_z_tok, steps=cfg.flow_steps),
+                                   **({"action_space": "delta_anchored"} if os.environ.get("CTRL_ANCHOR_STATS") else {})), open(run_dir / "ctrl_meta.json", "w"), indent=1)
                     # written to a temp file and renamed: a job killed mid-write (1.2 GB) otherwise leaves a truncated
                     # trainer_state.pt that --resume cannot load (arm B of phase 2, Newton, 2026-10-13, step 19000)
                     if not cfg.full_ft:   # full_ft saves its own (sharded) trainer state above

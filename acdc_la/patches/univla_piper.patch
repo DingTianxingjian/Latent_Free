@@ -1,12 +1,16 @@
-Real-robot Piper datasets: registers piper_pick_can (2026-11-06, convert_piper_rlds.py) and press_button
-(2026-11-11, convert_press_button_rlds.py; same image keys and action contract) in prismatic's OXE configs +
-standardisation transforms. Apply after univla_rlds_acdc.patch.
-
 diff --git a/prismatic/vla/datasets/rlds/oxe/configs.py b/prismatic/vla/datasets/rlds/oxe/configs.py
-index 931e8aa..274fe30 100644
+index 931e8aa..ba3e77e 100644
 --- a/prismatic/vla/datasets/rlds/oxe/configs.py
 +++ b/prismatic/vla/datasets/rlds/oxe/configs.py
-@@ -691,6 +691,24 @@ OXE_DATASET_CONFIGS = {
+@@ -47,6 +47,7 @@ class ActionEncoding(IntEnum):
+     JOINT_POS = 2           # Joint Delta Position (7) + Gripper Open/Close (1)
+     JOINT_POS_BIMANUAL = 3  # Joint Delta Position (2 x [ Joint Delta Position (6) + Gripper Open/Close (1) ])
+     EEF_R6 = 4              # EEF Delta XYZ (3) + R6 (6) + Gripper Open/Close (1)
++    JOINT_ANCHOR = 5        # acdc_la 2026-11-11: RAW [abs joint target (6), gripper (1), measured joints (6)]; anchored in datasets_ctrl.py
+     # fmt: on
+ 
+ 
+@@ -691,6 +692,40 @@ OXE_DATASET_CONFIGS = {
          "state_encoding": StateEncoding.POS_EULER,
          "action_encoding": ActionEncoding.EEF_POS,
      },
@@ -28,11 +32,75 @@ index 931e8aa..274fe30 100644
 +        "state_encoding": StateEncoding.POS_EULER,
 +        "action_encoding": ActionEncoding.EEF_POS,
 +    },
++    # acdc_la 2026-11-11: chunk-anchored delta copy (acdc_la/realrobot/make_anchor_rlds.py)
++    "press_button_anc": {
++        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
++        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
++        "state_obs_keys": ["EEF_state", None, "gripper_state"],
++        "state_encoding": StateEncoding.POS_EULER,
++        "action_encoding": ActionEncoding.JOINT_ANCHOR,
++    },
++    # acdc_la 2026-11-11: chunk-anchored delta copy (acdc_la/realrobot/make_anchor_rlds.py)
++    "piper_pick_can_anc": {
++        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
++        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
++        "state_obs_keys": ["EEF_state", None, "gripper_state"],
++        "state_encoding": StateEncoding.POS_EULER,
++        "action_encoding": ActionEncoding.JOINT_ANCHOR,
++    },
      "libero_10_no_noops": {
          "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
          "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
+diff --git a/prismatic/vla/datasets/rlds/oxe/materialize.py b/prismatic/vla/datasets/rlds/oxe/materialize.py
+index 56d0d38..2e5c7de 100644
+--- a/prismatic/vla/datasets/rlds/oxe/materialize.py
++++ b/prismatic/vla/datasets/rlds/oxe/materialize.py
+@@ -29,7 +29,7 @@ def make_oxe_dataset_kwargs(
+ ) -> Dict[str, Any]:
+     """Generates config (kwargs) for given dataset from Open-X Embodiment."""
+     dataset_kwargs = deepcopy(OXE_DATASET_CONFIGS[dataset_name])
+-    if dataset_kwargs["action_encoding"] not in [ActionEncoding.EEF_POS, ActionEncoding.EEF_R6]:
++    if dataset_kwargs["action_encoding"] not in [ActionEncoding.EEF_POS, ActionEncoding.EEF_R6, ActionEncoding.JOINT_ANCHOR]:
+         raise ValueError(f"Cannot load `{dataset_name}`; only EEF_POS & EEF_R6 actions supported!")
+ 
+     # [Contract] For EEF_POS & EEF_R6 actions, only the last action dimension (gripper) is absolute!
+@@ -37,6 +37,11 @@ def make_oxe_dataset_kwargs(
+     if dataset_kwargs["action_encoding"] is ActionEncoding.EEF_POS:
+         dataset_kwargs["absolute_action_mask"] = [False] * 6 + [True]
+         dataset_kwargs["action_normalization_mask"] = [True] * 6 + [False]
++    elif dataset_kwargs["action_encoding"] is ActionEncoding.JOINT_ANCHOR:
++        # acdc_la 2026-11-11: all 13 dims stay RAW; the anchored chunk is formed and normalised per sample in
++        # acdc_la/downstream/vla/datasets_ctrl.py (it depends on the chunk's start, so it cannot be done per step)
++        dataset_kwargs["absolute_action_mask"] = [True] * 13
++        dataset_kwargs["action_normalization_mask"] = [False] * 13
+     elif dataset_kwargs["action_encoding"] is ActionEncoding.EEF_R6:
+         dataset_kwargs["absolute_action_mask"] = [False] * 9 + [True]
+         dataset_kwargs["action_normalization_mask"] = [True] * 9 + [False]
+diff --git a/prismatic/vla/datasets/rlds/oxe/mixtures.py b/prismatic/vla/datasets/rlds/oxe/mixtures.py
+index 6a4f939..b373d5f 100644
+--- a/prismatic/vla/datasets/rlds/oxe/mixtures.py
++++ b/prismatic/vla/datasets/rlds/oxe/mixtures.py
+@@ -215,5 +215,18 @@ OXE_NAMED_MIXTURES: Dict[str, List[Tuple[str, float]]] = {
+     "libero_combined": [
+         ("libero_combined", 1.0),
+     ],
++    # === Piper real-robot, one model for both tasks (2026-11-11) ===
++    # per-dataset q01/q99 normalisation (two keys in dataset_statistics.json -> deploy with unnorm_key = the task's
++    # dataset); balance_weights=True scales by size (6462 vs 1877 steps), so press_button x2 -> ~37 % of samples.
++    "piper_multi": [
++        ("piper_pick_can", 1.0),
++        ("press_button", 2.0),
++    ],
++    # chunk-anchored delta version (2026-11-11), same weights
++    "piper_multi_anc": [
++        ("piper_pick_can_anc", 1.0),
++        ("press_button_anc", 2.0),
++    ],
++
+ }
+ # fmt: on
 diff --git a/prismatic/vla/datasets/rlds/oxe/transforms.py b/prismatic/vla/datasets/rlds/oxe/transforms.py
-index 47d90b5..f036d1d 100644
+index 47d90b5..a25da8e 100644
 --- a/prismatic/vla/datasets/rlds/oxe/transforms.py
 +++ b/prismatic/vla/datasets/rlds/oxe/transforms.py
 @@ -848,6 +848,14 @@ def libero_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
@@ -50,30 +118,14 @@ index 47d90b5..f036d1d 100644
  def human_dataset_transform(sample: Dict[str, Any]) -> Dict[str, Any]:
      """
      Transforms human data into the expected format by adding dummy actions.
-@@ -956,6 +964,8 @@ OXE_STANDARDIZATION_TRANSFORMS = {
+@@ -956,6 +964,10 @@ OXE_STANDARDIZATION_TRANSFORMS = {
      "libero_spatial_no_noops": libero_dataset_transform,
      "libero_object_no_noops": libero_dataset_transform,
      "libero_goal_no_noops": libero_dataset_transform,
 +    "piper_pick_can": piper_dataset_transform,
 +    "press_button": piper_dataset_transform,
++    "press_button_anc": piper_dataset_transform,
++    "piper_pick_can_anc": piper_dataset_transform,
      "libero_10_no_noops": libero_dataset_transform,
      "libero_10_no_noops_mini": libero_dataset_transform,
      "libero_goal_no_noops_mini": libero_dataset_transform,
-diff --git a/prismatic/vla/datasets/rlds/oxe/mixtures.py b/prismatic/vla/datasets/rlds/oxe/mixtures.py
-index 6a4f939..f0ea1a7 100644
---- a/prismatic/vla/datasets/rlds/oxe/mixtures.py
-+++ b/prismatic/vla/datasets/rlds/oxe/mixtures.py
-@@ -215,5 +215,13 @@ OXE_NAMED_MIXTURES: Dict[str, List[Tuple[str, float]]] = {
-     "libero_combined": [
-         ("libero_combined", 1.0),
-     ],
-+    # === Piper real-robot, one model for both tasks (2026-11-11) ===
-+    # per-dataset q01/q99 normalisation (two keys in dataset_statistics.json -> deploy with unnorm_key = the task's
-+    # dataset); balance_weights=True scales by size (6462 vs 1877 steps), so press_button x2 -> ~37 % of samples.
-+    "piper_multi": [
-+        ("piper_pick_can", 1.0),
-+        ("press_button", 2.0),
-+    ],
-+
- }
- # fmt: on

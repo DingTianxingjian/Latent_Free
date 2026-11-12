@@ -5627,3 +5627,37 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - Status: SINGLE SEED.  Transport (Act./Far) is the clear separation: removing L_effect or replacing it by a head or
   a latent cycle loses most of it.  Probe columns: full EAT is within ~.01 of w/o L_rel / w/o L_dist / head, which a
   single seed cannot separate.  Seeds 1, 2 (jobs 1195773/74) pending, Slurm estimate 2026-11-13 17:51.
+
+### 2026-11-12 — First physical result for press_button_terra_delta: chunk = 1 PRESSES (slightly off-centre), chunk = 2 bends the direction. Cause: the per-step delta encodes the DEMO arm's tracking. Fix in training: chunk-ANCHORED delta (one model, pick-can + press_button)
+
+- **Robot (user, 2026-11-11/12, qualitative, counts not yet recorded).** Executing **1 step per chunk**: the arm presses
+  the requested button. It touches it, but not dead centre, possibly always off in the same direction (user is
+  re-checking). **2 steps per chunk**: "the direction is a bit off". Larger chunks make it worse. The user reports it
+  "understands the task", which rules out units, joint order and the image path.
+- **Offline, per chunk position** (`acdc_la/realrobot/chunk_replay.py`, new; 79 held-out steps; CPU fp32, so k = 0
+  reads 0.87 here vs 0.918 in bf16). Mean target error in deg by k:
+  demo-state (arm exactly where the demonstrator's was) 0.87 1.00 1.15 1.18 ... 1.01: flat, so the model knows the path.
+  Ideal tracking (arm settles at each command, per-step deltas integrate) 0.87 2.45 4.33 6.36 ... 22.43: about
+  +2 deg per step. Executing 2 / 4 / 8 / 12 steps costs 1.66 / 3.50 / 7.47 / 11.44 deg. The robot sits between the two.
+- **Cause (data only, no model).** The demos were teleoperated with a CONTINUOUS 30 Hz command. The demo arm at s+1 is
+  already past the step-s command (lead a - q: j1 +3.96, j2 -3.11 deg). An arm commanded stepwise at 10 Hz is behind
+  that, so with the per-step delta `a[t] - q[t]` the second target of a chunk is off by **-2.7 deg on j1 and +2.4 on
+  j2** (|.| 3.0 / 2.4; true motion per step 7.7 / 5.7). Two joints off by different fractions **bends the end
+  effector's direction**, which matches the report. My first account said the error was overshoot; that was the
+  wrong sign. It is lag, and its size differs per joint.
+- **Fix: chunk-anchored delta.** `anchored[k] = a[s+k] - q[s]`, deployed as `targets = q_s + chunk`, with q read once
+  per chunk (`PiperPolicy.chunk_targets`). The targets no longer depend on how the arm tracks inside a chunk, and
+  entry 0 is identical to the old delta. Stored as a RAW 13-D action [abs target, gripper, measured q]
+  (`make_anchor_rlds.py`, `ActionEncoding.JOINT_ANCHOR`, datasets `press_button_anc` / `piper_pick_can_anc`, mixture
+  `piper_multi_anc`). The anchor is formed per sample in `datasets_ctrl.anchor_chunk`. Normalisation is **per chunk
+  position**: the press_button range on j1 is 18 deg at k = 0 and 141 deg at k = 11 (j1 swings ~0 -> 135 deg in ~1.5 s).
+  The k = 0 range equals the old per-step delta's, so no resolution is lost at k = 0.
+  Checked on CPU: 14-frame windows; unnormalise round trip 2e-5 deg; held-out episodes identical to the 7-D datasets
+  (asserted); 5.6 % of entries at the +-1 bound.
+- **Run.** `terra_piper_multi_anc`: INIT p2fft_20k, tc_cont, flow q4, LoRA r32, global 64, 6000 steps, started
+  2026-11-11 22:56 UTC, ~14 s/step, due ~2026-11-12 22:00 UTC. Chained merge -> chunk_replay on both held-out sets ->
+  lang_swap (`/media/volume/TERRA/anc_chain.sh`). The per-step `piper_multi` run was stopped at step 4625. Snapshot
+  `step_4500` is kept as the per-step comparison point.
+- **Logging for the robot side:** `acdc_la/realrobot/deploy_logger.py` (frame, q, chunk, k, sent target, inference
+  time, success + note per episode). From those logs: camera shift vs the training images (a fixed offset direction),
+  real tracking lag vs the demos, loop rate and latency.
