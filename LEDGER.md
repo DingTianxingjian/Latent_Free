@@ -5957,3 +5957,67 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   alone, per-step delta, backward window, 6,000 steps at global batch 64, scored on the same `train[95%:]`.
   (3) Unchanged and still unanswered: the phase-2 + `--latent none` third arm (attribution), a pick-can anchored
   control, and the fact that **no policy of ours has ever been scored by success rate on the robot**.
+
+### 2026-11-13 (18:00) — WHY the stack_bowls control is weak: the bottleneck is the **observation**, not the base, the budget or the head. The per-step joint delta is ~determined by the arm's POSE (floor 0.236°) and nearly undetermined by the front IMAGE (floor 0.814°, against a 0.863° zero-output null) — and the policy is given the image only
+
+Asked by the user: "why is OpenVLA not good enough".  Four measurements, all on `stack_bowls`.
+
+- **(1) What the policy is actually given.**  `prismatic/vla/datasets/datasets.py:334` — `load_camera_views=("primary",)`,
+  `load_proprio=False`, `load_language=True`, one frame.  So: **one 256x256 front frame + the instruction.**  The
+  RLDS carries `wrist_image`, `joint_state` and `EEF_state`, and `configs.py` registers them, but **none of them
+  reach the model**.  Meanwhile the target is `target − q`, a delta **from a pose the model is never told**.
+- **(2) Train vs held-out, measured with ONE metric** (`piper_policy.py --replay --split`, 10-step Euler both sides;
+  `--split` added today).  5 training episodes (each seen ~98 times) vs the 5 held-out ones:
+
+  | | train `train[:5%]`, 197 steps | held-out `train[95%:]`, 184 steps |
+  |---|---|---|
+  | policy `chunk[0]` | **0.540 deg** | **0.695 deg** |
+  | null: repeat the last command | 0.723 | 0.667 |
+  | policy − null (paired cluster bootstrap, 5 eps) | **−0.174 [−0.217, −0.128] policy wins** | **+0.031 [−0.118, +0.184] tie** |
+
+  So there IS a generalisation gap (0.155 deg, 1.29x) and it is exactly what flips the verdict — but it is **not the
+  main story**: even on episodes it has seen 98 times the policy only reaches 0.540 deg, **2.4x the 0.226 deg
+  oracle-state floor.**  Memorisation is not the ceiling it is hitting.
+- **(3) CORRECTION — the training metric is not a prediction error at all.**  For the flow head
+  `action_l1_1step` is `heads_ctrl.py:53`: `|at + (1-t)*va - actions|` with **t ~ U(0,1) along the noise->action
+  path**, averaged over all 12 chunk positions.  At t near 1, `at` is already almost the true action, so the number
+  is structurally optimistic and is a **denoising diagnostic, not an open-loop error**.  That — not "oracle
+  conditioning", as the 2026-11-12 entry says — is why it ranked the pick-can pair backwards.  The earlier entry's
+  conclusion (never rank arms with it) stands; its stated *reason* is retracted.  0.0718 at step 5950 must not be
+  compared with a replay number; the train-vs-held-out read above is the correct comparison.
+- **(4) The decisive measurement: floors by what is conditioned on** (`acdc_la/realrobot/obs_floor.py`, half the
+  cross-episode spread of the delta at matched states, the same convention as `wrist_floor.py`; 100 episodes):
+
+  | conditioned on | j0 | j1 | j2 | j3 | j4 | j5 | **mean** |
+  |---|---|---|---|---|---|---|---|
+  | image (closest 2%) **AND** pose (<2 deg) | 0.006 | 0.131 | 0.555 | 0.056 | 0.559 | 0.050 | **0.226** |
+  | **pose only** | 0.007 | 0.145 | 0.582 | 0.051 | 0.567 | 0.064 | **0.236** |
+  | **image only — the policy's input** | 0.369 | 2.119 | 1.310 | 0.123 | 0.877 | 0.090 | **0.814** |
+  | image only, closest 0.2% | 0.186 | 1.801 | 1.320 | 0.103 | 0.868 | 0.059 | **0.723** |
+  | policy, `chunk[0]` | 0.593 | 1.254 | 0.918 | 0.125 | 1.177 | 0.102 | **0.695** |
+
+  **Pose alone is almost sufficient (0.236 vs 0.226); the image alone is barely better than outputting zero (0.814
+  vs the 0.863 null).**  The policy's 0.695 is **0.85x the image-only floor** — i.e. it is already at or past the
+  crude bound for the information it is given, and the 3.1x gap to the oracle floor is **not reachable from its
+  input**.  This also explains the shape of the error: j0's delta is perfectly determined by pose (floor 0.007) and
+  poorly by image (0.369), which is why j0 looks like a catastrophic 102x the oracle floor but only 1.6x its own
+  input's floor.  And it explains why **repeat-last is the hard null here**: the previous command is a proxy for the
+  state the model is not given.
+- **Caveats, stated because the headline is strong.**  (a) The image metric is 32x32 greyscale L2 nearest
+  neighbours — a 7B VLM can distinguish frames it calls identical, so **0.814 is a loose upper bound on the
+  irreducible error** (the policy beating it proves the looseness).  The robust half of the claim is the *pose* side:
+  a controller with proprioception could be far better than 0.695.  (b) 5 episodes per side, 2% quantiles, half-spread
+  as the bound — conventions kept from the pick-can analysis for comparability.  (c) Offline; no success rate exists.
+- **What this does NOT say.**  Nothing here is about OpenVLA-7B's quality, phase 2, the latent, the 6,000 steps or
+  the flow head.  Any arm with this observation interface faces the same floor, **including ours** — TERRA's latent
+  is predicted from the same single frame at inference, so it cannot recover the pose either.  This is the first
+  measurement that makes the real-robot numbers' *size* legible.
+- **Next decision (method, user's call — `next_task.md` §8: never change a shared setting for one arm only).**
+  The field's own fix is exactly this: OpenVLA-OFT adds **proprioception and multiple views**.  Candidates, each of
+  which must be applied to **both** arms: (i) `load_proprio=True` + the registered `state_obs_keys`; (ii) the
+  **wrist camera**, already in the RLDS and unused; (iii) the previous action / 2 frames, which is what makes
+  repeat-last competitive; (iv) the **anchored** parameterisation, which replaces "delta from an unknown pose" with
+  "delta from a pose read once", and is where Jetstream has already moved.  Nothing launched.
+- **Artifacts.**  `acdc_la/realrobot/obs_floor.py` (new), `wrist_floor.py` parameterised by `--dataset/--measured`
+  (defaults reproduce the pick-can run), `piper_policy.py --split`, train-split replay in
+  `acdc_la/results/stack_bowls_openvla_delta_{train_replay.json,TRAIN_perstep.npz}`.

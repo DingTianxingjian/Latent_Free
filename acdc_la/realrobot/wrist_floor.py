@@ -12,22 +12,38 @@ j3/j4/j5 (1.44/1.10/1.24).  Two very different causes, and they imply opposite n
 This runs the same matching as delta_floor.py but reports every quantity PER JOINT, so (a) and (b) separate.
 CPU only, no GPU, no checkpoint.
 
-  envs/univla_vla/bin/python -m acdc_la.realrobot.wrist_floor
+  envs/univla_vla/bin/python -m acdc_la.realrobot.wrist_floor                      # pick-can, arm B (the defaults)
+  envs/univla_vla/bin/python -m acdc_la.realrobot.wrist_floor --dataset stack_bowls \
+      --measured 0.593 1.254 0.918 0.125 1.177 0.102                              # any task + any arm
+
+Parameterised 2026-11-13; the defaults reproduce the pick-can run above exactly.
 """
-import os, numpy as np
+import argparse, os
+import numpy as np
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--dataset", default="piper_pick_can")
+ap.add_argument("--abs_root", default="/home/ti874297/Projects/latent_free/data/real_rlds")
+ap.add_argument("--split", default="train[95%:]", help="the held-out split the measured errors came from")
+ap.add_argument("--pose_deg", type=float, default=2.0, help="matched state: max per-joint difference")
+ap.add_argument("--img_q", type=float, default=0.02, help="matched state: closest fraction of image distances")
+ap.add_argument("--measured", type=float, nargs=6, default=[0.599, 2.022, 1.672, 0.419, 1.552, 0.062],
+                help="the policy's measured per-joint chunk[0] error, to print the ratios against")
+ARG = ap.parse_args()
+
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 import tensorflow as tf; tf.config.set_visible_devices([], "GPU")
 import tensorflow_datasets as tfds
 
-ABS = "/home/ti874297/Projects/latent_free/data/real_rlds/piper_pick_can/1.0.0"
+ABS = os.path.join(ARG.abs_root, ARG.dataset, "1.0.0")
 b = tfds.builder_from_directory(ABS)
+print(f"[floor] {ABS}  held-out {ARG.split}  pose < {ARG.pose_deg} deg, image closest {ARG.img_q:.0%}")
 
-# arm B's measured open-loop error, from the replay this morning (chunk[0], 353 held-out steps)
-B = np.array([0.599, 2.022, 1.672, 0.419, 1.552, 0.062])
+B = np.array(ARG.measured)
 
 # --- the per-joint null, on the same 8 held-out episodes
 d8 = []
-for epi in b.as_dataset(split="train[95%:]"):
+for epi in b.as_dataset(split=ARG.split):
     st = list(epi["steps"])
     a = np.stack([s["action"].numpy() for s in st]).astype(np.float64)
     j = np.stack([s["observation"]["joint_state"].numpy() for s in st]).astype(np.float64)
@@ -52,18 +68,18 @@ for i in range(0, len(IM), 256):
     blk = IM[i:i + 256]
     img_d[i:i + 256] = np.sqrt(np.maximum((blk**2).sum(1)[:, None] + (IM**2).sum(1)[None] - 2 * blk @ IM.T, 0) / IM.shape[1])
 diff_ep = E[:, None] != E[None, :]
-thr = np.quantile(img_d[diff_ep], 0.02)
-m = diff_ep & (pose_d < 2.0) & (img_d < thr)
+thr = np.quantile(img_d[diff_ep], ARG.img_q)
+m = diff_ep & (pose_d < ARG.pose_deg) & (img_d < thr)
 i, k = np.nonzero(m)
 floor = np.abs(D[i] - D[k]).mean(0) / 2.0          # bound = half the spread, per joint
-print(f"\n{len(i)} matched cross-episode pairs (pose < 2 deg, image closest 2%)\n")
+print(f"\n{len(i)} matched cross-episode pairs (pose < {ARG.pose_deg} deg, image closest {ARG.img_q:.0%})\n")
 hdr = "".join(f"{f'j{q}':>9}" for q in range(6))
 print(f"{'':<34}{hdr}{'mean':>9}")
 for lab, v in [("true |delta| per step  (= null)", null), ("std of the true delta", sd),
-               ("FLOOR  (half the matched spread)", floor), ("arm B measured, chunk[0]", B)]:
+               ("FLOOR  (half the matched spread)", floor), ("policy measured, chunk[0]", B)]:
     print(f"{lab:<34}" + "".join(f"{x:9.3f}" for x in v) + f"{v.mean():9.3f}")
 print(f"\n{'ratio  floor / null':<34}" + "".join(f"{x:9.2f}" for x in floor / null))
-print(f"{'ratio  arm B / null':<34}" + "".join(f"{x:9.2f}" for x in B / null))
-print(f"{'ratio  arm B / floor':<34}" + "".join(f"{x:9.2f}" for x in B / floor))
+print(f"{'ratio  policy / null':<34}" + "".join(f"{x:9.2f}" for x in B / null))
+print(f"{'ratio  policy / floor':<34}" + "".join(f"{x:9.2f}" for x in B / floor))
 print("\nreading: floor/null well BELOW 1 means the joint IS predictable from the observation, so arm B being")
 print("over 1 on it is our model's shortfall, not a data limit.  floor/null at or above 1 means case (a).")

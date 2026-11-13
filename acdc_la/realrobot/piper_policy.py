@@ -341,6 +341,9 @@ def main():
     ap.add_argument("--replay", metavar="DATA_ROOT", help="replay the held-out episodes out of this RLDS root")
     ap.add_argument("--dataset", default="piper_pick_can")
     ap.add_argument("--episodes", type=int, default=None, help="only the first N held-out episodes")
+    ap.add_argument("--split", default="train[95%:]", help="which episodes to replay; train[:5%] gives the same "
+                    "number of TRAINING episodes, which is how train-vs-held-out is measured with one metric "
+                    "(the logged action_l1_1step is a one-Euler-step denoising diagnostic, not a prediction error)")
     ap.add_argument("--flow_steps", type=int, default=0, help="0 = the value in ctrl_meta.json")
     ap.add_argument("--abs_root", default=None, help="delta checkpoints: the absolute RLDS root, to score the "
                     "deployment conversion to_joint_targets() against the demonstrated absolute targets")
@@ -350,7 +353,8 @@ def main():
     p = PiperPolicy(a.checkpoint, flow_steps=a.flow_steps or None, unnorm_key=_unnorm_key_for(a.checkpoint, a.dataset))
     if not a.replay:
         print("loaded; pass --replay <rlds root> to check it against the held-out episodes"); return
-    r = replay(p, a.replay, a.dataset, a.episodes, abs_root=a.abs_root, dump=a.dump)
+    r = replay(p, a.replay, a.dataset, a.episodes, split=a.split, abs_root=a.abs_root, dump=a.dump)
+    r["split"] = a.split
     if a.out: json.dump(r, open(a.out, "w"), indent=1); print(f"wrote {a.out}")
 
 
