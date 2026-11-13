@@ -33,6 +33,7 @@ huggingface-cli download Potestates/TERRA --include "<dir>/*" --local-dir .
 | **press a coloured button** | **`press_button_terra_delta`** | the only policy **confirmed working on hardware** — it presses the requested button |
 | **pick the can, place on plate** | **`piper_pick_can_openvla_delta`** | **3x better open loop** than the arm currently on the robot (1.05 vs 3.24 deg); simplest of the equals |
 | the same, with our full method | `piper_pick_can_terra_delta` | statistically **indistinguishable** from the row above (1.13 vs 1.05, CI contains 0) — either is fine |
+| **stack the bowls** | `piper_real3_anchored_fwd` | the only *policy* for this task; `stack_bowls_openvla_delta` is a **control**, and it ties "repeat the previous command" |
 | **one model for both tasks** | `piper_multi_anchored_step5500` | **experimental**, and a retrain will supersede it — see its README |
 | **compare the latent mechanism** in sim | the `libero_goal_frac10_*` **triplet** | ours / UniVLA's / **no latent at all**, identical otherwise |
 | post-train a new task | `p2fft_20k` | the **base**, not a policy |
@@ -76,6 +77,7 @@ is the **base** and the **latent channel**, which is exactly what each compariso
 |---|---|---|---|
 | `p2fft_20k` | openvla-7b, full fine-tune | **phase-2 base, not a policy** | — |
 | `press_button_terra_delta` | `p2fft_20k` | press_button, per-step delta | 0.918° ✅ on hardware |
+| **`piper_real3_anchored_fwd`** | `p2fft_20k` | **THE single robot model**: all 3 tasks (press_button x2 + pick-can + stack_bowls), **anchored**, fixed window | step 6000; `unnorm_key` **per task** — see its card |
 | `press_button_anchored_fwd_step1500` | `p2fft_20k` | press_button, anchored, fixed window | 0.96° at k=0, flat in k |
 | `piper_pick_can_terra_delta` | `p2fft_20k` | pick-can, per-step delta | 1.126° |
 | `piper_pick_can_10k` | `p2fft_20k` | pick-can, **absolute** — superseded | 3.24° |
@@ -91,6 +93,7 @@ is the **base** and the **latent channel**, which is exactly what each compariso
 |---|---|---|
 | `press_button_openvla_delta` | stock openvla-7b, **`--latent none`** — the whole package vs nothing | 1.920° (worse than not moving) |
 | `piper_pick_can_openvla_delta` | the same, on pick-can | **1.054°** — here it is a good policy |
+| **`stack_bowls_openvla_delta`** | stock openvla-7b, **`--latent none`**, stack_bowls alone, per-step delta | **0.695°** — but *repeating the previous command* scores **0.667°** on the same episodes, so one step at a time it is **not distinguishable from doing the trivial thing** |
 | `libero_goal_frac10_none` | **no latent at all**, identical otherwise (`latent_r2` ≡ 0) | 88.6 % |
 | `libero_goal_frac10_univla_cont` | **UniVLA's** deployed latent through our interface | 89.4 % |
 
@@ -147,6 +150,28 @@ doing nothing to better than it. **TERRA vs control is not a win for either side
 
 A null here is what the mechanism's own story predicts: **all 150 episodes carry the identical instruction**, so
 there is nothing for a language-grounding advantage to do. The same pair separates 2.1x on `press_button`.
+
+### `stack_bowls` — "stack the bowls", 100 episodes, **one** instruction throughout
+
+| dir | base | latent | action | `chunk[0]` | ensembled |
+|---|---|---|---|---|---|
+| `stack_bowls_openvla_delta` | stock openvla-7b | **none** | per-step delta, single task | **0.695°** | 0.585° |
+| `piper_real3_anchored_fwd` | `p2fft_20k` | `tc_cont` | **anchored**, 3-task mixture | not scored here | n/a (never ensemble anchored) |
+
+**The floor on this task is 0.667°, not 0.** On the 5 held-out episodes (184 steps) *repeating the previous
+command* scores **0.667°** and *not moving at all* **0.863°** — and the control's 0.695° is **not distinguishable**
+from repeat-last (+0.031°, 95% paired cluster bootstrap over the 5 episodes **[-0.118, +0.184]**). Only temporal
+ensembling beats it, by 0.079° [-0.147, -0.015], on an interval that one bad episode would swallow. Note the order
+**flips** against pick-can, where stay-still (1.20°) was the easier null and repeat-last (2.06°) the harder: here the
+motion is smooth and strongly drifting, so repeat-last is the one to beat.
+
+**These two directories do not pair.** The control is `stack_bowls` **alone**, **per-step** delta, **backward**
+sample window; `piper_real3_anchored_fwd` is a 350-episode **3-task mixture**, **chunk-anchored**, **forward**
+window. Only the step count, LoRA, head, query tokens, rate and chunk match, so a difference between them cannot be
+attributed to anything. Their `unnorm_key`s are also built from `anhdao69/data_real_4tasks`' episode order, which
+differs from the control's, so **the held-out 5 episodes are probably not the same 5** — check the split first. The
+control's per-step errors are in the code repo (`acdc_la/results/stack_bowls_openvla_delta_perstep.npz`) so a
+properly matched TERRA arm can be compared **paired**. Neither has been on the robot.
 
 ### `piper_multi_anchored_step2500`, `piper_multi_anchored_step5500` — ⚠ experimental
 

@@ -5937,8 +5937,23 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
 - **Artifacts.**  Merged checkpoint + `action_decoder.pt` + fixed `ctrl_meta.json` in the run dir above (not yet
   uploaded to HF); result JSON `acdc_la/results/stack_bowls_openvla_delta_replay.json`; per-step per-dim errors and
   the comparison script in this session's scratchpad.
-- **Next decision.**  (1) Relay the matched nulls (0.863 / 0.667) and the 0.695 / 0.585 baseline to Jetstream so
-  their TERRA arm is scored on the same split.  (2) Upload this baseline to `Potestates/TERRA` as
-  `stack_bowls_openvla_delta` with a card that states the null floor -- pending, no new HF dir has been created yet.
+- **PUBLISHED 16:50 UTC** as `Potestates/TERRA/stack_bowls_openvla_delta` (22 files, 15.19 GB, `trainer_state.pt`
+  skipped, **verified byte-for-byte against HF's own sizes**), card version-controlled at
+  `acdc_la/hf_cards/stack_bowls_openvla_delta.md`.  The card leads with the 0.667 deg floor, states that `chunk[0]`
+  ties repeat-last, and says what it does and does not pair with.  Root card merged (not overwritten) with a
+  `stack_bowls` section; the uploader re-fetched `README.md` immediately before writing and asserted it was
+  unchanged since the merge, rather than trusting the earlier fetch.
+- **Jetstream published `piper_real3_anchored_fwd` while this was being written, and it is NOT the other half of
+  this pair.**  Their TERRA arm is a **350-episode 3-task mixture** (`piper_real3_anc` = press_button x2 + pick-can +
+  stack_bowls), **`"action_space": "delta_anchored"`**, **forward** sample window, `dz` 256, step 6000, base
+  `p2fft_20k`.  Against this control (`stack_bowls` alone, per-step delta, backward window) **four factors move at
+  once**; only the step count, LoRA, head, query tokens, rate and chunk match.  Their `unnorm_key`s
+  (`real4_{press_button,pick_can,stack_bowls}_anc`) are built from `anhdao69/data_real_4tasks`' episode order, which
+  differs from ours, so **their held-out 5 episodes are probably not ours** -- exactly the trap recorded at 00:05.
+  Nothing can be attributed from a difference between these two directories.  Their root-card row was also written
+  with six cells for the four-column table; reflowed while merging and their "THE single robot model" kept.
+- **Next decision.**  (1) Relay the matched nulls (0.863 / 0.667) and the 0.695 / 0.585 control to Jetstream, and
+  tell them the mixture/anchored/forward arm does not pair with it -- a comparable TERRA arm would be `stack_bowls`
+  alone, per-step delta, backward window, 6,000 steps at global batch 64, scored on the same `train[95%:]`.
   (3) Unchanged and still unanswered: the phase-2 + `--latent none` third arm (attribution), a pick-can anchored
   control, and the fact that **no policy of ours has ever been scored by success rate on the robot**.
