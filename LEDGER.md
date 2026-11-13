@@ -6125,6 +6125,22 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   any claim.
 - **What we can actually put on the robot in her three-task window.**  `press_button` only, as a **pair**:
   `press_button_terra_delta` vs `press_button_openvla_delta` (chunk = 1), ideally several trials per colour, since
-  the claim under test is whether the policy follows the colour word.  `stack_bowls` has a control
-  (`stack_bowls_openvla_delta`) but **no matched TERRA arm**, so a solo run there can only show how weak the
-  baseline is.  `put_spoon_in_bowl` was excluded by the user on 2026-11-12 and no arm of ours has ever seen it.
+  the claim under test is whether the policy follows the colour word.  `put_spoon_in_bowl` was excluded by the user
+  on 2026-11-12 and no arm of ours has ever seen it.
+- **CORRECTED 20:50 (user), and the correction matters.**  The bullet above first said `stack_bowls` was not worth a
+  robot slot because it has a control but **no matched TERRA arm**.  That conflates two different things.  There IS
+  a deployable policy for it — **`piper_real3_anchored_fwd`**, the 3-task mixture, which this repo's own root card
+  already calls "the only *policy* for this task" — and the biggest hole in this project is that **no policy of ours
+  has ever been scored by success rate on a robot at all**.  Filling that hole does not require a matched pair.
+  So: **test `stack_bowls`.**  What survives of the original point is only the attribution limit — the mixture arm
+  and `stack_bowls_openvla_delta` differ in four factors (mixture vs single-task, anchored vs per-step delta,
+  forward vs backward window, different episode order), so running both yields "ours stacks the bowls, the baseline
+  does not" and **not** an attribution to the latent branch.  A matched TERRA arm (stack_bowls alone, per-step
+  delta, backward window, 6,000 steps) is still what an attribution would need.
+- **Deployment detail that will break the arm if missed: the two checkpoints use DIFFERENT action spaces.**
+  `piper_real3_anchored_fwd` is `"delta_anchored"` (verified by fetching its `ctrl_meta.json`): read `q` **once per
+  chunk**, `chunk_targets(chunk, q)`, N = 1 / 2 / 4, never ensemble; its `unnorm_key` for this task is
+  **`real4_stack_bowls_anc`** (verified: its `dataset_statistics.json` holds exactly
+  `real4_{press_button,pick_can,stack_bowls}_anc`).  `stack_bowls_openvla_delta` is per-step `"delta"`:
+  **chunk = 1**, re-read `q` every tick, `to_joint_targets(a, q)`.  Also ask for `deploy_logger.py` to be enabled on
+  every episode — without the frames and joint trace a failure cannot be diagnosed offline.
