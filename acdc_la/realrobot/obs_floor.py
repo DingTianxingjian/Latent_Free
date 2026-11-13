@@ -9,14 +9,23 @@ REMOVED, i.e. the honest floor for a policy that sees one front frame and nothin
   floor_img_only >> floor_pose+img  -> the image does NOT pin the state down, and part of the policy's error is
                                       irreducible for its input, not a modelling failure
 """
-import os, sys
+import argparse, os
 import numpy as np
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--dataset", default="stack_bowls")
+ap.add_argument("--abs_root", default="data/real_rlds")
+ap.add_argument("--measured", type=float, nargs=6, default=[0.593, 1.254, 0.918, 0.125, 1.177, 0.102],
+                help="the policy's per-joint chunk[0] error, for the ratios")
+ap.add_argument("--label", default="policy", help="which arm --measured belongs to")
+ARG = ap.parse_args()
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 import tensorflow as tf; tf.config.set_visible_devices([], "GPU")
 import tensorflow_datasets as tfds
 
-ABS = "data/real_rlds/stack_bowls/1.0.0"
-POL = np.array([0.593, 1.254, 0.918, 0.125, 1.177, 0.102])
+ABS = os.path.join(ARG.abs_root, ARG.dataset, "1.0.0")
+POL = np.array(ARG.measured)
+print(f"[obs-floor] {ABS}   measured arm: {ARG.label}")
 b = tfds.builder_from_directory(ABS)
 J, D, E, IM = [], [], [], []
 for ei, epi in enumerate(b.as_dataset(split="train")):
@@ -48,6 +57,6 @@ for lab, m in (("floor: image 2% AND pose < 2 deg", diff_ep & (pose_d < 2.0) & (
     v = np.abs(D[i] - D[k]).mean(0) / 2.0
     rows[lab] = v
     print(f"{lab:<40}" + "".join(f"{x:9.3f}" for x in v) + f"{v.mean():9.3f}   ({len(i):,} pairs)")
-print(f"{'policy measured, chunk[0]':<40}" + "".join(f"{x:9.3f}" for x in POL) + f"{POL.mean():9.3f}")
+print(f"{ARG.label + ' measured, chunk[0]':<40}" + "".join(f"{x:9.3f}" for x in POL) + f"{POL.mean():9.3f}")
 for lab, v in rows.items():
-    print(f"{'ratio policy / ' + lab.split(': ')[1]:<40}" + "".join(f"{x:9.2f}" for x in POL / v) + f"{POL.mean()/v.mean():9.2f}")
+    print(f"{'ratio ' + ARG.label + ' / ' + lab.split(': ')[1]:<40}" + "".join(f"{x:9.2f}" for x in POL / v) + f"{POL.mean()/v.mean():9.2f}")

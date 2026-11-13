@@ -6021,3 +6021,47 @@ Asked by the user: "why is OpenVLA not good enough".  Four measurements, all on 
 - **Artifacts.**  `acdc_la/realrobot/obs_floor.py` (new), `wrist_floor.py` parameterised by `--dataset/--measured`
   (defaults reproduce the pick-can run), `piper_policy.py --split`, train-split replay in
   `acdc_la/results/stack_bowls_openvla_delta_{train_replay.json,TRAIN_perstep.npz}`.
+
+### 2026-11-13 (19:00) — the observation floor **explains the two null results and predicts a third**; it does NOT weaken the press_button win. Our advantage appears exactly where the instruction carries information, and the two tasks where we tie are tasks where **nobody can win**
+
+Prompted by the user: "but TERRA is better than it — why is this bad for us?"  It is not, and the 18:00 entry's
+closing line was loose.  `obs_floor.py` run on **pick-can** (data is local; 6,462 steps, 150 episodes):
+
+| conditioned on | pick-can mean | stack_bowls mean |
+|---|---|---|
+| image (2%) AND pose (<2 deg) | 0.610 | 0.226 |
+| pose only | 0.624 | 0.236 |
+| **image only — the arms' input** | **1.203** | **0.814** |
+| control, `chunk[0]` | 1.054 = **0.88x** the image-only floor | 0.695 = **0.85x** |
+| TERRA, `chunk[0]` | 1.126 = **0.94x** | (no matched arm yet) |
+
+**Both single-instruction tasks are observation-limited, and on both, both arms sit at 0.85-0.94x of their input's
+floor.**  Two independent tasks, the same ratio.  That is why the pick-can pair is a tie (+0.072, CI
+[-0.038, +0.189], p = 0.727): **there is no headroom for either arm to win it.**  It also recovers the pick-can
+oracle floor of 0.61 that was measured independently on 2026-11-10, which is a check on the method.
+
+- **Where we are actually ahead is `press_button`, and only there**: TERRA 0.918 vs control 1.920 (2.1x), with the
+  control **exactly** language-invariant (output moves 2.4e-7 deg on a colour swap; its instruction signal is 0.28%
+  of the query-token state, under bf16 eps 7.8e-3).  `press_button` is the **only multi-instruction** real task
+  (4 colours, layout reshuffled per episode).  pick-can and stack_bowls carry **one** instruction each.
+- **So the pattern is mechanism-consistent, which is a stronger result than a win on average:** the advantage
+  appears where the instruction carries information and vanishes where it does not — and now the vanishing is
+  *explained by a measurement* rather than being an unexplained null.  Previously the pick-can tie read as a failure
+  of our method; it reads as a property of the task.
+- **Prediction, falsifiable, not yet run** (needs the press_button RLDS, which is on Jetstream): on press_button the
+  **image-only** floor should be HIGH, because cross-episode image matches mix the four colour targets, and
+  conditioning on **image + instruction** should drop it sharply.  The size of that drop is the headroom the colour
+  word creates — i.e. the quantity TERRA's 2.1x is spending.  **If the drop is small, the 2.1x needs another
+  explanation.**  Ask Jetstream to run `acdc_la/realrobot/obs_floor.py --dataset press_button`, or convert that
+  folder here from `anhdao69/data_real_4tasks`.
+- **Planning consequence: `stack_bowls` is a WEAK experiment for our claim.**  One instruction, and its control is
+  already at 0.85x of its input's floor.  A properly matched TERRA arm there will very likely also land near 0.7 and
+  the comparison will be uninformative — the same shape as pick-can.  **Do not read a stack_bowls tie as evidence
+  against the mechanism, and do not spend a GPU-day there expecting a win.**  What the claim needs is more
+  **multi-instruction** tasks.
+- **What remains genuinely uncomfortable, unchanged by any of this.**  (a) The press_button pair moves **two**
+  factors (phase-2 base + latent branch); the third arm (phase-2 base + `--latent none`) has never been run.
+  (b) 5 held-out episodes, 3 of 4 colours, one seed per arm, offline.  (c) The **only single-factor** comparison we
+  own, the `libero_goal_frac10_*` triplet, is **negative** (ours 86.8 vs no-latent 88.6 vs UniVLA 89.4) — and
+  LIBERO-Goal's 10 tasks do carry different instructions, so the "needs language" story does **not** excuse it.
+  (d) No policy of ours has a success rate on the robot.
