@@ -1,0 +1,102 @@
+[
+ {
+  "file": "pick_can_place_plate_ep000_front_0of5.png",
+  "task": "pick_can_place_plate",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 149,
+  "t_sec": 0.0,
+  "instruction": "pick up the can and place it on the plate"
+ },
+ {
+  "file": "pick_can_place_plate_ep000_front_1of5.png",
+  "task": "pick_can_place_plate",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 37,
+  "n_steps_30hz": 149,
+  "t_sec": 1.233,
+  "instruction": "pick up the can and place it on the plate"
+ },
+ {
+  "file": "pick_can_place_plate_ep000_front_2of5.png",
+  "task": "pick_can_place_plate",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 74,
+  "n_steps_30hz": 149,
+  "t_sec": 2.467,
+  "instruction": "pick up the can and place it on the plate"
+ },
+ {
+  "file": "pick_can_place_plate_ep000_front_3of5.png",
+  "task": "pick_can_place_plate",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 111,
+  "n_steps_30hz": 149,
+  "t_sec": 3.7,
+  "instruction": "pick up the can and place it on the plate"
+ },
+ {
+  "file": "pick_can_place_plate_ep000_front_4of5.png",
+  "task": "pick_can_place_plate",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 148,
+  "n_steps_30hz": 149,
+  "t_sec": 4.933,
+  "instruction": "pick up the can and place it on the plate"
+ },
+ {
+  "file": "pick_can_place_plate_ep000_wrist_0of5.png",
+  "task": "pick_can_place_plate",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 149,
+  "t_sec": 0.0,
+  "instruction": "pick up the can and place it on the plate"
+ },
+ {
+  "file": "pick_can_place_plate_ep000_wrist_1of5.png",
+  "task": "pick_can_place_plate",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 37,
+  "n_steps_30hz": 149,
+  "t_sec": 1.233,
+  "instruction": "pick up the can and place it on the plate"
+ },
+ {
+  "file": "pick_can_place_plate_ep000_wrist_2of5.png",
+  "task": "pick_can_place_plate",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 74,
+  "n_steps_30hz": 149,
+  "t_sec": 2.467,
+  "instruction": "pick up the can and place it on the plate"
+ },
+ {
+  "file": "pick_can_place_plate_ep000_wrist_3of5.png",
+  "task": "pick_can_place_plate",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 111,
+  "n_steps_30hz": 149,
+  "t_sec": 3.7,
+  "instruction": "pick up the can and place it on the plate"
+ },
+ {
+  "file": "pick_can_place_plate_ep000_wrist_4of5.png",
+  "task": "pick_can_place_plate",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 148,
+  "n_steps_30hz": 149,
+  "t_sec": 4.933,
+  "instruction": "pick up the can and place it on the plate"
+ }
+]

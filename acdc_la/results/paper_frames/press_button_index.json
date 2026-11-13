@@ -1,0 +1,402 @@
+[
+ {
+  "file": "press_button_ep000_front_0of5.png",
+  "task": "press_button",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 135,
+  "t_sec": 0.0,
+  "instruction": "press the blue button"
+ },
+ {
+  "file": "press_button_ep000_front_1of5.png",
+  "task": "press_button",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 67,
+  "n_steps_30hz": 135,
+  "t_sec": 2.233,
+  "instruction": "press the blue button"
+ },
+ {
+  "file": "press_button_ep000_front_2of5.png",
+  "task": "press_button",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 94,
+  "n_steps_30hz": 135,
+  "t_sec": 3.133,
+  "instruction": "press the blue button"
+ },
+ {
+  "file": "press_button_ep000_front_3of5.png",
+  "task": "press_button",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 114,
+  "n_steps_30hz": 135,
+  "t_sec": 3.8,
+  "instruction": "press the blue button"
+ },
+ {
+  "file": "press_button_ep000_front_4of5.png",
+  "task": "press_button",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 134,
+  "n_steps_30hz": 135,
+  "t_sec": 4.467,
+  "instruction": "press the blue button"
+ },
+ {
+  "file": "press_button_ep025_front_0of5.png",
+  "task": "press_button",
+  "episode": 25,
+  "camera": "front",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 59,
+  "t_sec": 0.0,
+  "instruction": "press the orange button"
+ },
+ {
+  "file": "press_button_ep025_front_1of5.png",
+  "task": "press_button",
+  "episode": 25,
+  "camera": "front",
+  "frame_in_episode": 29,
+  "n_steps_30hz": 59,
+  "t_sec": 0.967,
+  "instruction": "press the orange button"
+ },
+ {
+  "file": "press_button_ep025_front_2of5.png",
+  "task": "press_button",
+  "episode": 25,
+  "camera": "front",
+  "frame_in_episode": 41,
+  "n_steps_30hz": 59,
+  "t_sec": 1.367,
+  "instruction": "press the orange button"
+ },
+ {
+  "file": "press_button_ep025_front_3of5.png",
+  "task": "press_button",
+  "episode": 25,
+  "camera": "front",
+  "frame_in_episode": 49,
+  "n_steps_30hz": 59,
+  "t_sec": 1.633,
+  "instruction": "press the orange button"
+ },
+ {
+  "file": "press_button_ep025_front_4of5.png",
+  "task": "press_button",
+  "episode": 25,
+  "camera": "front",
+  "frame_in_episode": 58,
+  "n_steps_30hz": 59,
+  "t_sec": 1.933,
+  "instruction": "press the orange button"
+ },
+ {
+  "file": "press_button_ep050_front_0of5.png",
+  "task": "press_button",
+  "episode": 50,
+  "camera": "front",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 51,
+  "t_sec": 0.0,
+  "instruction": "press the pink button"
+ },
+ {
+  "file": "press_button_ep050_front_1of5.png",
+  "task": "press_button",
+  "episode": 50,
+  "camera": "front",
+  "frame_in_episode": 25,
+  "n_steps_30hz": 51,
+  "t_sec": 0.833,
+  "instruction": "press the pink button"
+ },
+ {
+  "file": "press_button_ep050_front_2of5.png",
+  "task": "press_button",
+  "episode": 50,
+  "camera": "front",
+  "frame_in_episode": 35,
+  "n_steps_30hz": 51,
+  "t_sec": 1.167,
+  "instruction": "press the pink button"
+ },
+ {
+  "file": "press_button_ep050_front_3of5.png",
+  "task": "press_button",
+  "episode": 50,
+  "camera": "front",
+  "frame_in_episode": 42,
+  "n_steps_30hz": 51,
+  "t_sec": 1.4,
+  "instruction": "press the pink button"
+ },
+ {
+  "file": "press_button_ep050_front_4of5.png",
+  "task": "press_button",
+  "episode": 50,
+  "camera": "front",
+  "frame_in_episode": 50,
+  "n_steps_30hz": 51,
+  "t_sec": 1.667,
+  "instruction": "press the pink button"
+ },
+ {
+  "file": "press_button_ep075_front_0of5.png",
+  "task": "press_button",
+  "episode": 75,
+  "camera": "front",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 73,
+  "t_sec": 0.0,
+  "instruction": "press the red button"
+ },
+ {
+  "file": "press_button_ep075_front_1of5.png",
+  "task": "press_button",
+  "episode": 75,
+  "camera": "front",
+  "frame_in_episode": 36,
+  "n_steps_30hz": 73,
+  "t_sec": 1.2,
+  "instruction": "press the red button"
+ },
+ {
+  "file": "press_button_ep075_front_2of5.png",
+  "task": "press_button",
+  "episode": 75,
+  "camera": "front",
+  "frame_in_episode": 50,
+  "n_steps_30hz": 73,
+  "t_sec": 1.667,
+  "instruction": "press the red button"
+ },
+ {
+  "file": "press_button_ep075_front_3of5.png",
+  "task": "press_button",
+  "episode": 75,
+  "camera": "front",
+  "frame_in_episode": 61,
+  "n_steps_30hz": 73,
+  "t_sec": 2.033,
+  "instruction": "press the red button"
+ },
+ {
+  "file": "press_button_ep075_front_4of5.png",
+  "task": "press_button",
+  "episode": 75,
+  "camera": "front",
+  "frame_in_episode": 72,
+  "n_steps_30hz": 73,
+  "t_sec": 2.4,
+  "instruction": "press the red button"
+ },
+ {
+  "file": "press_button_ep000_wrist_0of5.png",
+  "task": "press_button",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 135,
+  "t_sec": 0.0,
+  "instruction": "press the blue button"
+ },
+ {
+  "file": "press_button_ep000_wrist_1of5.png",
+  "task": "press_button",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 67,
+  "n_steps_30hz": 135,
+  "t_sec": 2.233,
+  "instruction": "press the blue button"
+ },
+ {
+  "file": "press_button_ep000_wrist_2of5.png",
+  "task": "press_button",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 94,
+  "n_steps_30hz": 135,
+  "t_sec": 3.133,
+  "instruction": "press the blue button"
+ },
+ {
+  "file": "press_button_ep000_wrist_3of5.png",
+  "task": "press_button",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 114,
+  "n_steps_30hz": 135,
+  "t_sec": 3.8,
+  "instruction": "press the blue button"
+ },
+ {
+  "file": "press_button_ep000_wrist_4of5.png",
+  "task": "press_button",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 134,
+  "n_steps_30hz": 135,
+  "t_sec": 4.467,
+  "instruction": "press the blue button"
+ },
+ {
+  "file": "press_button_ep025_wrist_0of5.png",
+  "task": "press_button",
+  "episode": 25,
+  "camera": "wrist",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 59,
+  "t_sec": 0.0,
+  "instruction": "press the orange button"
+ },
+ {
+  "file": "press_button_ep025_wrist_1of5.png",
+  "task": "press_button",
+  "episode": 25,
+  "camera": "wrist",
+  "frame_in_episode": 29,
+  "n_steps_30hz": 59,
+  "t_sec": 0.967,
+  "instruction": "press the orange button"
+ },
+ {
+  "file": "press_button_ep025_wrist_2of5.png",
+  "task": "press_button",
+  "episode": 25,
+  "camera": "wrist",
+  "frame_in_episode": 41,
+  "n_steps_30hz": 59,
+  "t_sec": 1.367,
+  "instruction": "press the orange button"
+ },
+ {
+  "file": "press_button_ep025_wrist_3of5.png",
+  "task": "press_button",
+  "episode": 25,
+  "camera": "wrist",
+  "frame_in_episode": 49,
+  "n_steps_30hz": 59,
+  "t_sec": 1.633,
+  "instruction": "press the orange button"
+ },
+ {
+  "file": "press_button_ep025_wrist_4of5.png",
+  "task": "press_button",
+  "episode": 25,
+  "camera": "wrist",
+  "frame_in_episode": 58,
+  "n_steps_30hz": 59,
+  "t_sec": 1.933,
+  "instruction": "press the orange button"
+ },
+ {
+  "file": "press_button_ep050_wrist_0of5.png",
+  "task": "press_button",
+  "episode": 50,
+  "camera": "wrist",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 51,
+  "t_sec": 0.0,
+  "instruction": "press the pink button"
+ },
+ {
+  "file": "press_button_ep050_wrist_1of5.png",
+  "task": "press_button",
+  "episode": 50,
+  "camera": "wrist",
+  "frame_in_episode": 25,
+  "n_steps_30hz": 51,
+  "t_sec": 0.833,
+  "instruction": "press the pink button"
+ },
+ {
+  "file": "press_button_ep050_wrist_2of5.png",
+  "task": "press_button",
+  "episode": 50,
+  "camera": "wrist",
+  "frame_in_episode": 35,
+  "n_steps_30hz": 51,
+  "t_sec": 1.167,
+  "instruction": "press the pink button"
+ },
+ {
+  "file": "press_button_ep050_wrist_3of5.png",
+  "task": "press_button",
+  "episode": 50,
+  "camera": "wrist",
+  "frame_in_episode": 42,
+  "n_steps_30hz": 51,
+  "t_sec": 1.4,
+  "instruction": "press the pink button"
+ },
+ {
+  "file": "press_button_ep050_wrist_4of5.png",
+  "task": "press_button",
+  "episode": 50,
+  "camera": "wrist",
+  "frame_in_episode": 50,
+  "n_steps_30hz": 51,
+  "t_sec": 1.667,
+  "instruction": "press the pink button"
+ },
+ {
+  "file": "press_button_ep075_wrist_0of5.png",
+  "task": "press_button",
+  "episode": 75,
+  "camera": "wrist",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 73,
+  "t_sec": 0.0,
+  "instruction": "press the red button"
+ },
+ {
+  "file": "press_button_ep075_wrist_1of5.png",
+  "task": "press_button",
+  "episode": 75,
+  "camera": "wrist",
+  "frame_in_episode": 36,
+  "n_steps_30hz": 73,
+  "t_sec": 1.2,
+  "instruction": "press the red button"
+ },
+ {
+  "file": "press_button_ep075_wrist_2of5.png",
+  "task": "press_button",
+  "episode": 75,
+  "camera": "wrist",
+  "frame_in_episode": 50,
+  "n_steps_30hz": 73,
+  "t_sec": 1.667,
+  "instruction": "press the red button"
+ },
+ {
+  "file": "press_button_ep075_wrist_3of5.png",
+  "task": "press_button",
+  "episode": 75,
+  "camera": "wrist",
+  "frame_in_episode": 61,
+  "n_steps_30hz": 73,
+  "t_sec": 2.033,
+  "instruction": "press the red button"
+ },
+ {
+  "file": "press_button_ep075_wrist_4of5.png",
+  "task": "press_button",
+  "episode": 75,
+  "camera": "wrist",
+  "frame_in_episode": 72,
+  "n_steps_30hz": 73,
+  "t_sec": 2.4,
+  "instruction": "press the red button"
+ }
+]

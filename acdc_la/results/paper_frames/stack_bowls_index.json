@@ -1,0 +1,102 @@
+[
+ {
+  "file": "stack_bowls_ep000_front_0of5.png",
+  "task": "stack_bowls",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 164,
+  "t_sec": 0.0,
+  "instruction": "stack the bowls"
+ },
+ {
+  "file": "stack_bowls_ep000_front_1of5.png",
+  "task": "stack_bowls",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 41,
+  "n_steps_30hz": 164,
+  "t_sec": 1.367,
+  "instruction": "stack the bowls"
+ },
+ {
+  "file": "stack_bowls_ep000_front_2of5.png",
+  "task": "stack_bowls",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 82,
+  "n_steps_30hz": 164,
+  "t_sec": 2.733,
+  "instruction": "stack the bowls"
+ },
+ {
+  "file": "stack_bowls_ep000_front_3of5.png",
+  "task": "stack_bowls",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 122,
+  "n_steps_30hz": 164,
+  "t_sec": 4.067,
+  "instruction": "stack the bowls"
+ },
+ {
+  "file": "stack_bowls_ep000_front_4of5.png",
+  "task": "stack_bowls",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 163,
+  "n_steps_30hz": 164,
+  "t_sec": 5.433,
+  "instruction": "stack the bowls"
+ },
+ {
+  "file": "stack_bowls_ep000_wrist_0of5.png",
+  "task": "stack_bowls",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 164,
+  "t_sec": 0.0,
+  "instruction": "stack the bowls"
+ },
+ {
+  "file": "stack_bowls_ep000_wrist_1of5.png",
+  "task": "stack_bowls",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 41,
+  "n_steps_30hz": 164,
+  "t_sec": 1.367,
+  "instruction": "stack the bowls"
+ },
+ {
+  "file": "stack_bowls_ep000_wrist_2of5.png",
+  "task": "stack_bowls",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 82,
+  "n_steps_30hz": 164,
+  "t_sec": 2.733,
+  "instruction": "stack the bowls"
+ },
+ {
+  "file": "stack_bowls_ep000_wrist_3of5.png",
+  "task": "stack_bowls",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 122,
+  "n_steps_30hz": 164,
+  "t_sec": 4.067,
+  "instruction": "stack the bowls"
+ },
+ {
+  "file": "stack_bowls_ep000_wrist_4of5.png",
+  "task": "stack_bowls",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 163,
+  "n_steps_30hz": 164,
+  "t_sec": 5.433,
+  "instruction": "stack the bowls"
+ }
+]

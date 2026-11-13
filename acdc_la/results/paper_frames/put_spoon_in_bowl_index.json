@@ -1,0 +1,102 @@
+[
+ {
+  "file": "put_spoon_in_bowl_ep000_front_0of5.png",
+  "task": "put_spoon_in_bowl",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 138,
+  "t_sec": 0.0,
+  "instruction": "put the spoon in the bowl"
+ },
+ {
+  "file": "put_spoon_in_bowl_ep000_front_1of5.png",
+  "task": "put_spoon_in_bowl",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 34,
+  "n_steps_30hz": 138,
+  "t_sec": 1.133,
+  "instruction": "put the spoon in the bowl"
+ },
+ {
+  "file": "put_spoon_in_bowl_ep000_front_2of5.png",
+  "task": "put_spoon_in_bowl",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 68,
+  "n_steps_30hz": 138,
+  "t_sec": 2.267,
+  "instruction": "put the spoon in the bowl"
+ },
+ {
+  "file": "put_spoon_in_bowl_ep000_front_3of5.png",
+  "task": "put_spoon_in_bowl",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 103,
+  "n_steps_30hz": 138,
+  "t_sec": 3.433,
+  "instruction": "put the spoon in the bowl"
+ },
+ {
+  "file": "put_spoon_in_bowl_ep000_front_4of5.png",
+  "task": "put_spoon_in_bowl",
+  "episode": 0,
+  "camera": "front",
+  "frame_in_episode": 137,
+  "n_steps_30hz": 138,
+  "t_sec": 4.567,
+  "instruction": "put the spoon in the bowl"
+ },
+ {
+  "file": "put_spoon_in_bowl_ep000_wrist_0of5.png",
+  "task": "put_spoon_in_bowl",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 0,
+  "n_steps_30hz": 138,
+  "t_sec": 0.0,
+  "instruction": "put the spoon in the bowl"
+ },
+ {
+  "file": "put_spoon_in_bowl_ep000_wrist_1of5.png",
+  "task": "put_spoon_in_bowl",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 34,
+  "n_steps_30hz": 138,
+  "t_sec": 1.133,
+  "instruction": "put the spoon in the bowl"
+ },
+ {
+  "file": "put_spoon_in_bowl_ep000_wrist_2of5.png",
+  "task": "put_spoon_in_bowl",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 68,
+  "n_steps_30hz": 138,
+  "t_sec": 2.267,
+  "instruction": "put the spoon in the bowl"
+ },
+ {
+  "file": "put_spoon_in_bowl_ep000_wrist_3of5.png",
+  "task": "put_spoon_in_bowl",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 103,
+  "n_steps_30hz": 138,
+  "t_sec": 3.433,
+  "instruction": "put the spoon in the bowl"
+ },
+ {
+  "file": "put_spoon_in_bowl_ep000_wrist_4of5.png",
+  "task": "put_spoon_in_bowl",
+  "episode": 0,
+  "camera": "wrist",
+  "frame_in_episode": 137,
+  "n_steps_30hz": 138,
+  "t_sec": 4.567,
+  "instruction": "put the spoon in the bowl"
+ }
+]

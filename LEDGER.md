@@ -6065,3 +6065,23 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   own, the `libero_goal_frac10_*` triplet, is **negative** (ours 86.8 vs no-latent 88.6 vs UniVLA 89.4) — and
   LIBERO-Goal's 10 tasks do carry different instructions, so the "needs language" story does **not** excuse it.
   (d) No policy of ours has a success rate on the robot.
+
+### 2026-11-13 (19:40) — paper example frames pulled at full resolution; `data_real_4tasks` is now LOCAL, so the press_button floor prediction can be tested here
+
+- **Frames.**  `acdc_la/realrobot/extract_paper_frames.py` (new) pulls **native 640x480** frames from a LeRobot v3
+  folder using the same v3 mapping the converters use (video time = the episode's per-camera `from_timestamp` +
+  the row's `timestamp`, matched by pts).  Our RLDS copies are 256x256 -- the policy's input, not figure material.
+  `make_task_figure.py` (new) builds two strips at native resolution into `acdc_la/results/paper_frames/`
+  (78 files, 24 MB, committed): `fig_tasks_{front,wrist}.png` (one row per task) and
+  `fig_press_button_{front,wrist}.png` (one row per colour).  press_button is sampled at explicit fractions
+  `0 / 0.5 / 0.7 / 0.85 / 1.0` because its arm is parked for the first ~40 % of the episode and equal spacing wasted
+  half the row on identical frames.  `<task>_index.json` records episode, camera, frame index, time and instruction
+  for every PNG, so a caption can be checked rather than remembered.
+- **The press_button figure is evidence, not decoration:** the four rows show four different *layouts* as well as
+  four colours, which is what makes that task the only real one where the instruction carries information -- the
+  claim behind TERRA's 2.1x there (0.918 vs 1.920) and behind the ties on the single-instruction tasks.
+- **The dataset is now on this host**: `/data/ti874297/hf_datasets/data_real_4tasks` (522 MB, all 4 folders,
+  downloaded into its own empty directory; the extractor is run with `python -I` by path, so nothing from the
+  download directory is importable).  **Consequence: the falsifiable prediction recorded at 19:00 no longer needs
+  Jetstream** -- `press_button` can be converted here and `obs_floor.py` run on it, conditioning on image alone
+  versus image + instruction.  Not run yet.
