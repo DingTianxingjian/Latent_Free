@@ -5922,6 +5922,14 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   concentrated in **j1 (1.254) and j4 (1.177)**, exactly the two joints where the model is level with repeat-last
   (1.343 / 1.226); the model's win over stay-still is almost entirely j1+j2, i.e. it has learned the drift, which is
   what repeat-last also encodes.  (d) This is still **offline only** -- no stack_bowls policy has touched the robot.
+- **This pair inherits the two-factor confound, and the TERRA arm's `INIT` has to be recorded this time.**  The
+  control is stock `openvla-7b` + `--latent none`; `acdc_la/logs/post2_terra_piper_delta.log:28` shows the pick-can
+  TERRA arm was `base VLA from /data/ti874297/p2fft_20k/vla_full.pt`, so that pair (and press_button's) compares
+  **phase-2 base + latent branch** against **stock base + no latent** -- two factors, as recorded on 2026-11-12.
+  `stack_bowls` will be the same if Jetstream initialises from `p2fft_20k`, which is the right *headline* baseline
+  ("post-train stock OpenVLA", what a reader asks for) but still cannot attribute anything to the latent branch.
+  **Ask Jetstream to state the `INIT` of their stack_bowls arm and to write it into `ctrl_meta.json`** (the `"init"`
+  field added on 2026-11-12) -- the historical runs only have it in a training log, and only because one was kept.
 - **Consequence for the pair.**  When Jetstream's TERRA arm reports a number on `stack_bowls`, the comparison that
   means anything is TERRA vs this baseline **paired over the same 5 held-out episodes** (I kept the per-step dump so
   the paired test can be run), and both must be read against 0.667 -- not against each other alone, and never with
