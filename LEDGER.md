@@ -6085,3 +6085,46 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   download directory is importable).  **Consequence: the falsifiable prediction recorded at 19:00 no longer needs
   Jetstream** -- `press_button` can be converted here and `obs_floor.py` run on it, conditioning on image alone
   versus image + instruction.  Not run yet.
+
+### 2026-11-13 (20:30) — the pick-can robot evaluation is CONFOUNDED: its front camera is not where the other three tasks' camera is. Collaborator report, checked here and confirmed
+
+- **Source.**  Anh Dao (who records the data and runs the arm), 2026-11-13, ahead of a robot session: her own
+  4-task jointly-trained model "works well on all tasks except for the pick and place can"; her explanation is that
+  the can task "is not the task that i collect", that "the cam position is quite diff" there, and her proposal is to
+  test the other three tasks and skip the can one.  **Taken as a hypothesis, not as a result**, and checked here.
+- **Check** (`acdc_la/realrobot/cam_pose_check.py`, new): phase-correlate the top 140 rows of the native 640x480
+  front frames -- wall, cable, robot mount, no task objects -- in `acdc_la/results/paper_frames/`.  Reported per
+  pair: best integer (dy, dx), the normalised cross-power **peak** (how translation-like the difference is at all)
+  and the mean |difference| after aligning.  Control = 4 episodes of the same task.
+
+  | pair | dy, dx | peak | residual |
+  |---|---|---|---|
+  | press_button ep000/025/050/075 (**control**) | 0, 0 (all 6 pairs) | 0.51 - 0.74 | 1.6 - 7.5 |
+  | stack_bowls vs press_button | 0, 0 | 0.236 | 4.7 |
+  | stack_bowls / press_button vs put_spoon | 0, +20 | 0.10 - 0.13 | 9 - 10 |
+  | **pick_can vs each of the other three** | **+5..+7, +15..+33** | **0.034** | **22 - 26** |
+
+  The camera does not move at all between episodes of one task.  `stack_bowls` and `press_button` share a pose
+  exactly; `put_spoon` is shifted ~20 px horizontally.  `pick_can` is the outlier on every pairing, and the
+  **peak collapsing by an order of magnitude says the difference is not a translation** -- a re-aimed/re-placed
+  camera, not a nudged one.  **Her report is confirmed.**
+- **Why this bites US specifically.**  Our pick-can RLDS is `jachansantiago/pick_can_place_plate_150_trimmed`,
+  proven identical (150/150 episodes, joints to 0.01 deg) to the `pick_can_place_plate` folder of
+  `anhdao69/data_real_4tasks` — i.e. the frames measured above ARE our training frames.  So every checkpoint
+  trained on pick-can — `piper_pick_can_10k`, `piper_pick_can_terra_delta`, `piper_pick_can_openvla_delta`, and the
+  pick-can branch of `piper_multi_anchored*` / `piper_real3_anchored_fwd` — is deployed today into a camera pose it
+  never saw.  **A robot score on pick-can measures that shift, not the arm.**
+- **Decision.**  (1) Accept her proposal, for a harder reason than time: **pick-can robot results are not
+  interpretable** until either the camera is restored to the old pose or the task is re-recorded under the current
+  one.  Do not quote a pick-can success rate, for us or against us.  (2) The pick-can **offline** numbers
+  (1.054 control / 1.126 TERRA, floor 1.203) are unaffected — they are scored against held-out episodes of the same
+  recording — but any paper table carrying them must say the camera pose differs from the other three tasks.
+  (3) This compounds, and does not replace, the 19:00 finding: pick-can was already the task with the **highest
+  image-only floor** (1.203 deg against a 1.20 deg zero-output null), i.e. the front frame barely determines the
+  action there even in-distribution.  Highest floor *and* a shifted camera: it is the weakest of the four tasks for
+  any claim.
+- **What we can actually put on the robot in her three-task window.**  `press_button` only, as a **pair**:
+  `press_button_terra_delta` vs `press_button_openvla_delta` (chunk = 1), ideally several trials per colour, since
+  the claim under test is whether the policy follows the colour word.  `stack_bowls` has a control
+  (`stack_bowls_openvla_delta`) but **no matched TERRA arm**, so a solo run there can only show how weak the
+  baseline is.  `put_spoon_in_bowl` was excluded by the user on 2026-11-12 and no arm of ours has ever seen it.
