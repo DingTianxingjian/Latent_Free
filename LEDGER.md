@@ -5867,16 +5867,18 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   strongly drifting (mean signed delta j1 **+1.85**, j2 **-1.38** deg/step -- the same opposite-sign teleop-lead
   signature as the other two tasks).  **Any stack_bowls policy has to be read against 0.719, not 0.901.**
 - **Baseline arm launched** (user's call: new task on the previous setting, baseline here, TERRA on Jetstream).
-  `/data/ti874297/vla_runs/none+stack_bowls+b64x1+lr0.00035+r32+s10000+fm+q4--openvla_stack_bowls_delta`, GPU 1 of
-  the shared workstation, started 2026-11-12 23:55 UTC, ETA ~13 h (arm B's 4.6 s/step).  Setting copied
+  `/data/ti874297/vla_runs/none+stack_bowls+b64x1+lr0.00035+r32+s6000+fm+q4--openvla_stack_bowls_delta`, GPU 1 of
+  the shared workstation, started 2026-11-13 00:03 UTC, ETA ~6.5 h at the measured 3.9 s/step.  Setting copied
   byte-for-byte from `openvla_piper_delta`: `INIT=none LATENT=none`, fresh LoRA r32 on official `openvla-7b`, flow
-  head, 4 query tokens, per-step delta root, **GLOBAL=64 (BS 8 x GA 8 x 1 GPU), STEPS=10000, SAVE=1000,
-  `--merge False`**.  `dataset_statistics.json` verified on the delta root (joint-1 mean 1.85, not ~111).
+  head, 4 query tokens, per-step delta root, **GLOBAL=64 (BS 8 x GA 8 x 1 GPU), SAVE=1000, `--merge False`**, and
+  **STEPS = 6000, not 10000 (user's call, 2026-11-13).**  The first launch (23:55 UTC) used the previous arms'
+  literal 10,000 and was stopped at step 75, before any checkpoint was written; its 2.3 MB stub directory is parked
+  as `ABANDONED_s10000_none+stack_bowls+...` so that no glob can pick it up.  6,000 x 64 / 3,928 = **97.8 epochs**,
+  which matches pick-can's 99 and press_button's 104 -- the EFFECTIVE budget is what is held fixed across tasks of
+  different size, and 10k here would have been 163 epochs on 60 % of pick-can's data.  `dataset_statistics.json` verified on the delta root (joint-1 mean 1.85, not ~111).
 - **What Jetstream must match for this to be a pair** (`next_task.md` section 8): dataset `stack_bowls` **alone**
   (not a mixture), per-step **delta** root, the **old backward** sample window (the `CTRL_FORWARD_WINDOW` fix is
-  still not in git), **10,000 steps at global batch 64**, LoRA r32, flow head, 4 query tokens, 10 Hz, chunk 12,
-  `GRIP_SCALE = 8.2`.  10k steps is 163 epochs here against 99 on pick-can (3,928 vs 6,462 steps of data) -- kept
-  identical rather than epoch-matched, because "the previous setting" is the thing both hosts can reproduce without
-  another agreement; it applies equally to both arms.
+  still not in git), **6,000 steps at global batch 64**, LoRA r32, flow head, 4 query tokens, 10 Hz, chunk 12,
+  `GRIP_SCALE = 8.2`.
 - **Next.**  Merge standalone (`merge_ctrl_run.py`, ~31 GB peak) then `piper_policy.py --replay` on the held-out
   episodes (the last 5, 184 steps) and compare against 0.719 / 0.901; relay the setting to Jetstream.
