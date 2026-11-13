@@ -5882,3 +5882,55 @@ open-world video, including leave-one-dataset/embodiment-out reporting.
   `GRIP_SCALE = 8.2`.
 - **Next.**  Merge standalone (`merge_ctrl_run.py`, ~31 GB peak) then `piper_policy.py --replay` on the held-out
   episodes (the last 5, 184 steps) and compare against 0.719 / 0.901; relay the setting to Jetstream.
+
+### 2026-11-13 (07:00) — `stack_bowls` OpenVLA baseline finished: **it does not beat "repeat the last command" one step at a time**; only the temporally ensembled arm does, by 0.08 deg
+
+- **Run.**  `/data/ti874297/vla_runs/none+stack_bowls+b64x1+lr0.00035+r32+s6000+fm+q4--openvla_stack_bowls_delta`,
+  started 2026-11-13 00:03 UTC, **TRAIN_EXIT=0 at 06:42 UTC**, 6,000 steps in 23,924 s (3.99 s/step).  Training
+  `action_l1_1step` 0.1277 (500) -> 0.0881 (3000) -> 0.0718 (5950); **flat from step 3000**, which confirms the
+  user's 6,000-step (epoch-matched) call -- 10k would have bought noise.  `latent_r2 == 0.000` on every logged step:
+  the no-latent control held.  Merged standalone afterwards (`merge_ctrl_run.py --min_avail_gb 8`): **51 s, peak RSS
+  32.0 GB, 34 GB still available** -- the `--merge False` + standalone-merge recipe is now 3/3 on this host.
+- **`ctrl_meta.json` fixed before anything read it**: the trainer only writes `action_space` for anchored runs, so
+  this delta run's meta had **no `action_space` key at all**, which per the HF root card means ABSOLUTE.
+  `piper_policy.py` would in fact have inferred `delta` correctly (max |joint mean| 1.9 < 20, and it prints that it
+  inferred), but a deployment that trusted the card and not the loader would have sent joint targets of ~1 deg.
+  Written explicitly now, together with `"init": "none"` (same provenance field added to the four LIBERO dirs on
+  2026-11-12).  The two pick-can delta runs already carried `"action_space": "delta"`.
+- **CORRECTION to the nulls in the 00:05 entry.**  Those (stay-still **0.901**, repeat-last **0.719**) are
+  **dataset-wide**, over all 100 episodes.  On the **held-out `train[95%:]` episodes the policy is scored on**
+  (5 episodes, 184 steps) the matched nulls are **stay-still 0.863 deg** and **repeat-last 0.667 deg** (0.667 over
+  the 179 steps where it is defined; it is undefined at t=0).  The dataset-wide pair stays on the record but **the
+  numbers to score against on this split are 0.863 / 0.667.**  The ordering conclusion is unchanged: repeat-last is
+  the harder null here, the reverse of pick-can.
+- **Result** (`acdc_la/results/stack_bowls_openvla_delta_replay.json`, per-step dump kept for the paired test):
+
+  | arm | joints 0-5 mean | vs repeat-last 0.667 | vs stay-still 0.863 |
+  |---|---|---|---|
+  | baseline, `chunk[0]` (the deployment path) | **0.695 deg** | **+0.031 [-0.118, +0.184] — NOT DISTINGUISHABLE** | -0.188 [-0.324, -0.054] better |
+  | baseline, temporally ensembled | **0.585 deg** | -0.079 [-0.147, -0.015] better (P=0.01) | -0.298 [-0.360, -0.246] better |
+
+  Intervals are a **paired cluster bootstrap resampling the 5 held-out EPISODES** (20,000 draws, the episode is the
+  independent unit, not the 184 steps), on the 179 steps where every arm is defined.  The deployment-path check
+  `to_joint_targets(chunk[0], measured q)` against the absolute demo targets gives the same 0.695 deg, as it must
+  for a delta set derived from the absolute one.  Whole-chunk L1 in normalised space 0.1082.
+- **Read this honestly.**  (a) The headline is a NEGATIVE control result: single-step, this baseline is
+  indistinguishable from repeating the previous command, so on this task the one-step delta metric has almost no
+  room in it -- **0.667 deg, not 0, is the floor any arm must clear.**  (b) **5 clusters is a very small bootstrap**;
+  the ensembled arm's interval `[-0.147, -0.015]` is thin and would not survive one bad episode, and ensembling is
+  not uniformly good (episode 0: 0.605 -> 0.766 deg, i.e. ensembling HURT there).  (c) Per joint the error is
+  concentrated in **j1 (1.254) and j4 (1.177)**, exactly the two joints where the model is level with repeat-last
+  (1.343 / 1.226); the model's win over stay-still is almost entirely j1+j2, i.e. it has learned the drift, which is
+  what repeat-last also encodes.  (d) This is still **offline only** -- no stack_bowls policy has touched the robot.
+- **Consequence for the pair.**  When Jetstream's TERRA arm reports a number on `stack_bowls`, the comparison that
+  means anything is TERRA vs this baseline **paired over the same 5 held-out episodes** (I kept the per-step dump so
+  the paired test can be run), and both must be read against 0.667 -- not against each other alone, and never with
+  `action_l1_1step`, which ranked the pick-can pair backwards.
+- **Artifacts.**  Merged checkpoint + `action_decoder.pt` + fixed `ctrl_meta.json` in the run dir above (not yet
+  uploaded to HF); result JSON `acdc_la/results/stack_bowls_openvla_delta_replay.json`; per-step per-dim errors and
+  the comparison script in this session's scratchpad.
+- **Next decision.**  (1) Relay the matched nulls (0.863 / 0.667) and the 0.695 / 0.585 baseline to Jetstream so
+  their TERRA arm is scored on the same split.  (2) Upload this baseline to `Potestates/TERRA` as
+  `stack_bowls_openvla_delta` with a card that states the null floor -- pending, no new HF dir has been created yet.
+  (3) Unchanged and still unanswered: the phase-2 + `--latent none` third arm (attribution), a pick-can anchored
+  control, and the fact that **no policy of ours has ever been scored by success rate on the robot**.
