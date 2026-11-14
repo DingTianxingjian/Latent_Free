@@ -1,0 +1,59 @@
+====================================================================================================
+PRESS_BUTTON -- the matched pair (both single-task, per-step delta, same recipe, same 5 layouts)
+====================================================================================================
+  TERRA   press_button_terra_delta    11/20 =  55.0%  [95% CI 34.2,  74.2]
+  control press_button_openvla_delta  2/22 =   9.1%  [95% CI  2.5,  27.8]
+  Fisher exact (two-sided): p = 2.16e-03   odds ratio = 12.2x
+  TERRA    episode length:  12.4 s mean (8.8-17.4),  22.9 policy steps
+  control  episode length:  33.6 s mean (19.2-57.6),  64.1 policy steps
+
+  TERRA by COLOUR:
+    blue    3/5
+    orange  3/5
+    pink    2/5
+    red     3/5
+  TERRA by LAYOUT:
+    L1          3/4
+    L2          3/3
+    L3          1/4
+    L4          2/4
+    L5          2/4
+    unrecorded  0/1
+
+  control by COLOUR:
+    blue    0/6
+    orange  1/6
+    pink    1/5
+    red     0/5
+  control by LAYOUT:
+    L1          0/4
+    L2          1/4
+    L3          0/3
+    L4          1/5
+    L5          0/4
+    unrecorded  0/2
+
+====================================================================================================
+piper_real3_anchored_fwd -- the 3-task mixture, by task (NO control was run for any of these)
+====================================================================================================
+  pick_can       0/5 =   0.0%  [95% CI -0.0,  43.4]
+  press_button   5/5 = 100.0%  [95% CI 56.6, 100.0]
+  stack_bowls    4/7 =  57.1%  [95% CI 25.0,  84.2]
+    press_button colours seen: {'red': 1, 'orange': 2, 'pink': 1, 'blue': 1}
+
+====================================================================================================
+PICK_CAN -- every arm, pooled (the camera pose differs from the other three tasks: see LEDGER 20:30)
+====================================================================================================
+  piper_pick_can_terra_delta                     1/5 =  20.0%  [95% CI  3.6,  62.4]
+  piper_pick_can_openvla_delta                   0/3 =   0.0%  [95% CI  0.0,  56.2]
+  piper_real3_anchored_fwd           [pick_can]  0/5 =   0.0%  [95% CI -0.0,  43.4]
+  ALL ARMS POOLED                                1/13 =   7.7%  [95% CI  1.4,  33.3]
+
+====================================================================================================
+CHUNK actually executed on the robot (our cards say chunk = 1 for per-step delta)
+====================================================================================================
+  piper_pick_can_openvla_delta       chunk {2: 3}   hz {5.0: 3}
+  piper_pick_can_terra_delta         chunk {2: 4, 1: 1}   hz {5.0: 5}
+  piper_real3_anchored_fwd           chunk {2: 17}   hz {5.0: 17}
+  press_button_openvla_delta         chunk {2: 21, 1: 1}   hz {5.0: 22}
+  press_button_terra_delta           chunk {1: 1, 2: 19}   hz {5.0: 20}

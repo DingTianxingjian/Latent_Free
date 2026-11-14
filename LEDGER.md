@@ -6144,3 +6144,68 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   `real4_{press_button,pick_can,stack_bowls}_anc`).  `stack_bowls_openvla_delta` is per-step `"delta"`:
   **chunk = 1**, re-read `q` every tick, `to_joint_targets(a, q)`.  Also ask for `deploy_logger.py` to be enabled on
   every episode — without the frames and joint trace a failure cannot be diagnosed offline.
+
+### 2026-11-14 (05:30) — **THE FIRST ROBOT SUCCESS RATES.** On the matched press_button pair TERRA scores **11/20 (55 %)** against the OpenVLA control's **2/22 (9 %)**, Fisher exact **p = 2.2e-3**, odds ratio 12x. The 3-task mixture arm gets 5/5 press_button and **4/7 stack_bowls** — our first stack_bowls success — and **0/5 pick-can**
+
+- **Source.**  `https://huggingface.co/anhdao69/terra` (public, 397 files, 232 MB, pushed 2026-11-14 04:26 UTC) —
+  five `<model>_res/` folders from Anh Dao's robot session of 2026-11-13, each with per-episode JSONL, LeRobot v3
+  rollouts (front + wrist video), GUI and server logs, an offline check of the deployment path, and the deploy
+  scripts as used.  Scored here by `acdc_la/realrobot/robot_eval_summary.py` (new; Fisher's exact and the Wilson
+  interval implemented in it, no scipy dependency); output kept at `acdc_la/results/robot_eval_20261113.txt`.
+  Protocol, from the folders' own READMEs: arm homed before each episode, 60 s limit, **success = the NAMED button
+  was pressed**, labelled by the operator, 5 Hz, arm speed 10 %, delta clamped to +-12 deg/step.
+- **THE RESULT — `press_button`, the matched pair, same five layouts, same operating point.**
+
+  | arm | success | 95 % Wilson | mean episode | policy steps |
+  |---|---|---|---|---|
+  | `press_button_terra_delta` (TERRA) | **11/20 = 55 %** | 34 - 74 % | 12.4 s | 22.9 |
+  | `press_button_openvla_delta` (control) | **2/22 = 9.1 %** | 2.5 - 28 % | 33.6 s | 64.1 |
+
+  **Fisher exact, two-sided: p = 2.2e-3; odds ratio 12.2x.**  Every control episode ended `"end_reason":
+  "stopped"` — the operator had to stop it; it never converged on a button.  By colour, TERRA is flat
+  (blue 3/5, orange 3/5, pink 2/5, red 3/5) while the control is at chance-or-below on all four
+  (blue 0/6, orange 1/6, pink 1/5, red 0/5) — **the pattern the language-invariance measurement predicted**: this
+  control's `lang_swap_shift_deg` is **1.5e-07 deg** (their offline check; ours was 2.4e-07), i.e. the colour word
+  moves nothing, so it can only hit the named button by luck.
+- **The offline metric predicted the robot ranking, the first time we have ever been able to check that.**
+  Offline chunk[0] on the same held-out episodes: TERRA **0.918 deg**, control **1.920 deg**, do-nothing null
+  **1.69 deg** — *the control is worse than not moving*, and it scored 2/22.  Their deployment path reproduced our
+  published numbers independently (0.932 vs 0.918; 1.920 vs 1.92; pick-can 1.043 vs 1.054 and 1.060 vs 1.126).
+  **This validates the replay chunk[0] metric as a predictor of robot outcome; it does NOT rehabilitate
+  `action_l1_1step`, which is a different quantity (see 18:00) and was never scored here.**
+- **`piper_real3_anchored_fwd`, the 3-task mixture: 9/17.**  press_button **5/5**, stack_bowls **4/7**,
+  pick-can **0/5**.  The 4/7 is **the first time any policy of ours has completed `stack_bowls` on a robot**.
+  Its press-button layouts are not the five of the pair above, so its 5/5 is **not** comparable with 11/20 — their
+  README says so itself.  Its offline check on stack_bowls reports **0.62 deg model / 0.86 null over 184 steps**:
+  that is **our** split (we measure 184 steps and a 0.863 deg zero null), and at k = 0 an anchored target equals a
+  per-step target, so this is directly comparable to our control's **0.695 deg** — the mixture arm beats the
+  repeat-last null (0.667) on stack_bowls and our control does not.
+- **`pick_can`: 1/13 pooled over all three arms** (TERRA delta 1/5, control 0/3, mixture 0/5).  Their README adds
+  an independent symptom: **every** pick-can episode drove **joint 5 to its -70 deg limit** (press and stack
+  episodes end between -28 and +43 deg), and twice the arm then refused to home for 60 s.  Consistent with
+  yesterday's camera finding (20:30) and with pick-can having the highest image-only floor.  **Nothing is
+  attributable from pick-can and no pick-can success rate should be quoted, for us or against us.**
+- **What this does NOT establish — all of it must survive into the paper.**
+  1. **The two-factor confound is untouched.**  `press_button_terra_delta` is phase-2 base `p2fft_20k` **and** the
+     latent branch; the control is stock `openvla-7b` **and** no latent.  11/20 vs 2/22 is a result for TERRA **as
+     a package**, not an attribution to the latent action.  The third arm (phase-2 base + `--latent none`) has
+     still never been run, and this result raises its value rather than lowering it.
+  2. **Not blind, and run in blocks.**  The operator knew which model was running and labelled the outcomes;
+     TERRA ran 21:00-21:38, the control 21:44-22:18.  Mitigating: the layouts were cycled in *opposite* order
+     between the two blocks (TERRA L1->L5, control L5->L1), so layout order is not confounded with the arm.
+  3. **Operating-point asymmetry — the one fairness hole worth closing.**  TERRA got a 16-episode chunk/Hz pilot on
+     2026-11-11 (5/16 while tuning); the control never got one, and both were then run at **chunk = 2**, which
+     contradicts **our own card's chunk = 1 for per-step delta**.  TERRA's pilot was in fact best at chunk 1
+     (4/5).  The control has exactly one chunk-1 episode (a fail).  **Ask: ~10 control episodes at chunk = 1**, so
+     the baseline is reported at the configuration its own card recommends.
+  4. **Two TERRA episodes were excluded and disclosed** (session 1 episode 11, which ran to the 60 s timer and was
+     never labelled, and a pink attempt during the same joint-2 wrap fault).  Counting both as failures gives
+     **11/22 = 50 %, p = 6.8e-3** — the conclusion does not depend on the exclusion, and the conservative number
+     is the one to quote if a reviewer asks.
+  5. `stack_bowls` has **no robot control**: `stack_bowls_openvla_delta` was never put on the arm.
+- **Next decisions.**  (a) Request the chunk = 1 control block and a `stack_bowls_openvla_delta` robot block —
+  those two make the table honest.  (b) The phase-2 + `--latent none` third arm is now the highest-value GPU job
+  we have, because it is the only thing standing between "TERRA works on a robot" and "the latent action is why".
+  (c) Carry the rollouts into the paper: 1,124 frames of real3 session 2 and 852 of the press-button pair, with
+  `rollout_index.json` as the authority for each rollout's true instruction (the GUI's recorder stores the
+  *previous* episode's label — documented by them, do not read the stored label).
