@@ -1,0 +1,46 @@
+arm                                     n   E_SELF   E_CORR  E_WRONG   disc%  vs do-nothing
+----------------------------------------------------------------------------------------------
+s1_acdc3                            11488    0.862    1.087    1.134    59.7  worse than predicting no change
+s1_acdc_10ep_curve_step128000        2880    0.866    1.041    1.095    63.7  worse than predicting no change
+s1_acdc_10ep_curve_step256000        2880    0.861    1.044    1.099    63.8  worse than predicting no change
+s1_acdc_10ep_curve_step384000        5760    0.859    1.042    1.097    64.1  worse than predicting no change
+s1_acdc_10ep_curve_step512000        5760    0.857    1.049    1.107    63.8  worse than predicting no change
+s1_acdc_1ep                         11456    0.859    1.039    1.094    63.8  worse than predicting no change
+s1_acdc_2ep                         11488    0.861    1.038    1.089    62.4  worse than predicting no change
+s1_acdc                             11488    0.912    1.036    1.071    61.5  worse than predicting no change
+s1_dc                               11488    0.957    0.997    1.016    63.7  BEATS predicting no change
+s1_mean_10ep_curve_step128000        2880    0.931    0.990    1.023    66.1  BEATS predicting no change
+s1_mean_10ep_curve_step256000        2880    0.927    0.990    1.024    66.9  BEATS predicting no change
+s1_mean_1ep                         11456    0.923    0.988    1.019    65.5  BEATS predicting no change
+s1_mean_2ep                         11488    0.928    0.993    1.025    64.2  BEATS predicting no change
+s1_mean                             11488    0.957    0.997    1.017    63.8  BEATS predicting no change
+s1_pair16                           11584      inf      inf      inf    53.8  worse than predicting no change
+s1_pair                             11584      inf      inf      inf    53.7  worse than predicting no change
+s2_aug_bu                           11488    0.899    1.043    1.083    62.0  worse than predicting no change
+s2_aug_u64_bu                       11488    0.899    1.043    1.083    62.0  worse than predicting no change
+s2_aug_u64                          11488    0.899    1.043    1.083    61.8  worse than predicting no change
+s2_aug                              11488    0.899    1.043    1.083    61.8  worse than predicting no change
+s2_inv                              11488    0.896    1.042    1.081    62.2  worse than predicting no change
+s2_tcti_bu                          11488    0.899    1.021    1.056    63.2  worse than predicting no change
+s2_tcti_u64_bu                      11488    0.899    1.021    1.056    63.2  worse than predicting no change
+s2_tcti_u64                         11488    0.895    1.028    1.065    62.4  worse than predicting no change
+s2_tcti                             11488    0.895    1.028    1.065    62.4  worse than predicting no change
+s2_xrec                             11488    0.898    1.029    1.066    62.6  worse than predicting no change
+s3_ctrl                             11488    0.901    1.038    1.076    61.9  worse than predicting no change
+s3_full                             11488    0.922    1.295    1.501    60.4  worse than predicting no change
+s3_latp_1ep_cont                    11488    0.875    1.959    2.598    59.5  worse than predicting no change
+s3_latp_1ep                         11456    0.871    2.235    3.120    60.9  worse than predicting no change
+s3_latp                             11488    0.928    1.239    1.402    60.0  worse than predicting no change
+s4_pcrr                             11488    1.732    2.423    2.830    51.7  worse than predicting no change
+smoke_s2                              576    0.911    1.039    1.074    62.3  worse than predicting no change
+smoke_s4                              576    5.202    5.212    5.127    46.7  worse than predicting no change
+
+[s1_acdc_1ep] partner is a different episode in 100 % of rows, a different source in 0 %
+[s1_acdc_1ep] action distance: partner 4.426  random 16.567
+[s1_acdc_1ep] relative MSE against the clip's own real future (lower better):
+    zero / do-nothing                        1.0000
+    COPY the donor's real effect DF[i^1]     2.0178
+    model, matched donor   (E_CORRECT)       1.0387
+    model, wrong   donor   (E_WRONG)         1.0940
+    model, own code        (E_SELF)          0.8589
+    the model beats COPY on 99.6 % of clips -- which is why COPY is a straw man, not a control

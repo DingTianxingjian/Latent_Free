@@ -6244,3 +6244,50 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   `liberoft_{full,recon}_s{0,1,2}` (4000 steps, lr 1e-4, batch 64).  Gate before reading transport: oracle own-z must
   be clearly better than zero (NMSE << 1).  Jobs: caches 1207825/27/29/31, pairs 1207826/28/30/32, fine-tune
   1207834-36.
+
+### 2026-11-15 — **The copy-donor reference is a straw man, and the real bar is "predict no change".** Measured on all 34 local validation dumps before building the simulator experiment
+
+- **Why this was run.**  User question: besides the registered simulator replay (2026-10-27), what else could show the
+  latent does not merely MEMORISE / paste the donor's observed effect?  Before answering, the references that
+  registered plan scores against (`copy-donor`, `zero-effect`) were checked for how much they are actually worth.
+  `acdc_la/downstream/transport_nulls.py` (new), output `acdc_la/results/transport_nulls.txt`.  CPU, no checkpoint.
+- **The val set already contains an approximate real counterfactual, for free.**  It is built as stratified
+  NEAREST-ACTION PAIRS per source (`common/dump.py:5`), partner of row i is `i^1`: **100 % of partners are a
+  different episode** (0 % a different source), action distance 4.43 vs 16.57 for a random row.  So `DF[i^1]` is a
+  real observation of "almost this action, executed somewhere else" — exactly the copy-donor prediction.
+- **Result on `s1_acdc_1ep`** (relative MSE against the clip's own real future; 1.0 = predict no change):
+
+  | reference | rel. MSE |
+  |---|---|
+  | zero / do-nothing | 1.0000 |
+  | **COPY the donor's real effect `DF[i^1]`** | **2.0178** |
+  | model, matched donor (`E_CORRECT`) | 1.0387 |
+  | model, wrong donor (`E_WRONG`) | 1.0940 |
+  | model, own code (`E_SELF`, upper bound) | 0.8589 |
+
+  **Copying the donor is twice as bad as predicting nothing**, and the model beats it on **99.6 %** of clips.  The
+  reason is geometric, not empirical: two scenes' DINO deltas are near-orthogonal, so `||a-b||^2 ~ ||a||^2+||b||^2`.
+  **A "we beat copy-donor" result in feature MSE therefore carries no information and must not be reported as
+  evidence of transport.**  This applies to the 2026-10-27 registered plan, which names copy-donor as a reference.
+- **The bar that does carry information is do-nothing (1.0), and no local arm clears it.**  Across all 34 dumps
+  (s1/s2/s3/s4 families, Sept): `E_CORRECT` ranges 0.988 - 2.42.  The best is `s1_mean_1ep` at **0.988** (a 1.2 %
+  gain over doing nothing) and the mean-pooled tokenizers are the only ones under 1.0 at all; every `s3_latp*` /
+  `s3_full` / `s4_pcrr` arm -- the ones trained WITH a transport objective -- is far worse (1.24 - 2.42).
+  **Caveat that limits all of this: the EAT arms are not among these dumps.**  `latp2_inv`, `tc_cont_plus15k` and
+  `eatabm_*_s0` exist only on Newton, so nothing here is a measurement of TERRA's labeller.  The structural points
+  (copy is a straw man, do-nothing is the bar) are arm-independent; the verdict on TERRA is NOT measured.
+- **What does survive on every arm is a RANKING signal, not a prediction gain:** matched donor beats a wrong donor
+  (`E_CORRECT < E_WRONG`) on **60 - 67 %** of clips, consistently above the 50 % chance level.  So the defensible
+  claim shape is discrimination/retrieval, not "the predicted future is right".
+- **Consequence for the registered experiment.**  It is still worth running -- it is the only way to get an EXACT
+  counterfactual for an ARBITRARY donor-recipient pair -- but (a) its copy-donor reference must be replaced by
+  do-nothing plus a recipient-swap control, and (b) its headline metric should be discrimination, with feature MSE
+  reported as a secondary number that is honest about the 1.0 bar.
+- **Alternatives proposed to the user** (none run): recipient-swap sensitivity (the mirror of the
+  `lang_swap_shift_deg` = 1.5e-07 test that settled the robot control: hold `z_donor` fixed, change only the
+  recipient, measure how far the prediction moves -- a paste-model moves 0); train-vs-held-out DONOR episodes, which
+  is the test memorisation specifically fails; infeasible-recipient cases, where the donor's effect is impossible so
+  a copy is detectably wrong without needing exact ground truth; and the action-space readout already in
+  `transport_by_source.py`, which avoids the near-orthogonality that makes feature MSE hopeless.
+- **Next decision.** Asked the user which to build; the simulator work is paused at the data-download stage
+  (`/data/ti874297/LIBERO_hdf5`, 4 suites) and `phys_replay.py` still does not exist in any commit.
