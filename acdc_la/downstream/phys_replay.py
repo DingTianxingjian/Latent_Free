@@ -19,8 +19,11 @@ import numpy as np
 H = 16                                  # control steps per clip  (T-1) * stride = 4 * 4
 STRIDE = 4
 SUITES = ["libero_spatial", "libero_object", "libero_goal", "libero_10"]
-HDF5 = "/lustre/fs1/home/ti874297/lf/latent_free/data/LIBERO_hdf5"
-OUT = "/lustre/fs1/home/ti874297/lf/latent_free/acdc_la/results/phys_replay"
+ROOT = os.environ.get("LF_ROOT", "/lustre/fs1/home/ti874297/lf/latent_free")   # Newton; override on other hosts
+HDF5 = os.environ.get("LF_LIBERO_HDF5", os.path.join(ROOT, "data/LIBERO_hdf5"))
+OUT = os.environ.get("LF_PHYS_OUT", os.path.join(ROOT, "acdc_la/results/phys_replay"))
+CKPT = os.environ.get("LF_CKPT", os.path.join(ROOT, "acdc_la/ckpt"))
+T5 = os.environ.get("LF_T5", os.path.join(ROOT, "third_party/UniVLA/t5-base"))
 
 
 def tasks_of(suite):
@@ -134,7 +137,7 @@ def probe(a):
 class LangT5:                                     # masked-mean pooled frozen t5-base = the tokenizer's `c`
     def __init__(self, dev):
         from transformers import T5EncoderModel, T5Tokenizer
-        d = "/lustre/fs1/home/ti874297/lf/latent_free/third_party/UniVLA/t5-base"
+        d = T5
         self.tok = T5Tokenizer.from_pretrained(d); self.enc = T5EncoderModel.from_pretrained(d).to(dev).eval(); self.dev = dev
 
     def __call__(self, text):
@@ -271,7 +274,7 @@ def evaluate(a):
     dev = "cuda"; cos = torch.nn.functional.cosine_similarity
     models = {}
     for tag in a.models:
-        m, dstats, ck = load_ckpt(os.path.join("/lustre/fs1/home/ti874297/lf/latent_free/acdc_la/ckpt", tag + ".pt"), dev)
+        m, dstats, ck = load_ckpt(os.path.join(CKPT, tag + ".pt"), dev)
         ar = ck.get("args", {}); models[tag] = (m.eval(), Featurizer(None, 4, ar.get("pool", "acdc"), ar.get("modes", 2), dstats, dev))
     dst = {tag: float(f.dstats) for tag, (_, f) in models.items()}
     assert len(set(round(v, 6) for v in dst.values())) == 1, dst              # one dF scale -> one Y_real for all models
