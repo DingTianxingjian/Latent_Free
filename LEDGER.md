@@ -6452,3 +6452,37 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
 - **Scope statement for the paper (not a bug).** The strata are defined by gripper contact with an entry of
   `objects_dict`, so donors whose manipulation target is a fixture (drawer handle, stove knob) are out of scope;
   with `push_the_plate` that is 3 of libero_goal's 10 tasks.
+### 2026-11-15 17:00 -- Full 4-suite probe: strata yields are fine; but the replay EJECTS an object in a few chunks
+- **Probe finished** (40 tasks, 8 demos each, `lead=6` only, `acdc_la/results/phys_replay/probe.json`):
+
+  | suite | donors w/ grasp at lead=6 | donors w/ lead in (2,4,6) | centered | offset | outside | (B) median | (B) p95 | (B) max |
+  |---|---|---|---|---|---|---|---|---|
+  | libero_spatial | 13/80 | 56/80 | 72 | 208 | 175 | 0.126 cm | 2.99 | 17.4 |
+  | libero_object | 64/80 | 70/80 | 1415 | 72 | 753 | 0.060 | 11.30 | 19.6 |
+  | libero_goal | 39/80 | 37/80 | 422 | 171 | 212 | 0.083 | 3.00 | 9.5 |
+  | libero_10 | 46/80 | 61/80 | 960 | 308 | 342 | 0.048 | 95.51 | **750.0** |
+
+  Pooled: **centered 2869 (56.1 %), offset 759 (14.9 %), outside 1482 (29.0 %)** of 5110 pairs; zero-stratum tasks
+  8 / 10 / 8 of 40.  **The earlier worry that `centered` is too thin was a libero_spatial artefact** -- pooled it is
+  the LARGEST stratum, and only libero_spatial is short (72 pairs, 50 of them from one task).  `offset` is the thin
+  one (14.9 %, zero in 10 tasks).  (A), the replay-vs-replay floor, is not in this table: the running probe predates
+  the `d95cecc` split, and (A) was measured separately at exactly 0 on 56/56 chunks (`det_split.py`).
+- **New defect: in a few chunks our own replay ejects an object.**  libero_10/5 (book into the caddy), replay vs the
+  recording over the same 16 steps: 91.15 / 750.01 / 127.48 cm against 0.00 / 0.00 / 12.74 cm, with
+  `MUJOCO WARNING: Nan, Inf or huge value in QACC at DOF 9`.  Legitimate motion in that task is median 6.35, max
+  21 cm; >50 cm is 3/38 chunks on our side and 0/38 on the recording's.  Cause: restoring a resting contact after the
+  `sim.reset()` that exact-restore added sometimes explodes on the first solve.  **Two reasons it is easy to miss:**
+  the blow-up is deterministic, so the replay-vs-replay noise floor stays exactly 0 and cannot see it; and MuJoCo's
+  warning counters caught only 1 of the 3 (the 750 cm case raised no warning and ended with finite `qacc`, and
+  `sim.reset()` clears the counters, so deltas across a restore are meaningless).  One ejected donor would contaminate
+  up to 35 pairs, since its X_D is shared by every recipient, and the DINO delta of a frame whose object has left the
+  scene is garbage.  Across the whole probe only libero_10 shows it (1 of 40 tasks above 50 cm), so the loss is small
+  -- but it must be excluded, not averaged in.
+- **Fix: measured, recorded, not silently dropped.**  `Sim.run` sets `self.moved`; every pair now stores `mv_d` and
+  `mv_r` and `collect` prints an unstable count per task (commit `87c3f37`).  Suggested threshold `MAX_MOVE = 0.50 m`
+  (0.63 m/s average over the chunk, impossible for quasi-static manipulation); the exclusion belongs in `evaluate`,
+  beside the other exclusions, so the threshold stays revisable without recollecting.
+- **Collection running here.**  `collect --leads 6 4 2 0 -4 -8 -12 -16` on the workstation, all 4 suites, GPU 0
+  (956 MiB), ~2.5 min/task => ~1.7 h total; output `acdc_la/results/phys_replay/pairs_<suite>.npz`.  This host can run
+  `collect` without Newton: it needs only MuJoCo + DINOv2, and the DINOv2 weights and hub checkout are already in
+  `cache/torch/hub`.  Only `eval` needs the 6 tokenizer checkpoints, which remain Newton-only.
