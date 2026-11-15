@@ -6364,3 +6364,25 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   the text should claim breadth, not a donor-distance trend; `L_inv` does nothing across three seeds (.730 vs .730)
   and should be conceded in the paper rather than found by a reviewer; and the only single-factor DOWNSTREAM
   comparison, `libero_goal_frac10`, is negative (86.8 vs 88.6 vs UniVLA 89.4).
+### 2026-11-15 05:30 -- Physical replay: replay was NOT deterministic (3 hidden states), fixed; residual metric replaced (positive null)
+- **Determinism.** The first collection stored, per grasp donor, the max pixel difference of executing the same state +
+  actions twice: non-zero for every donor (median 93-178 / 255).  Three pieces of state live outside the MuJoCo state
+  vector: (1) solver warm-start (object 1.4 cm off after a different previous replay) -> `sim.reset()` before
+  `set_init_state`; (2) the Panda gripper's integrated command `current_action` (+-0.01 per substep) carried over
+  from the previous replay -> rebuilt from the demo's own command history actions[:t]; (3) the OSC `goal_ori`, only
+  refreshed on a non-zero rotation command (first run != later runs, robot state 0.11 apart) -> controller
+  `update(force=True)` + `reset_goal()`.  After the fix: end state identical (max |d| 0), grasp outcome identical,
+  object vs recording 0.07-0.8 cm; a rendering residue remains (mean |dpix| 0.04-0.4 near the arm vs ~6 for the
+  motion itself), now MEASURED per donor as the replay noise floor (DINO NMSE / Psi cos between the two executions).
+  **The first pair collection (1207826/28/30/32) is invalid and deleted**; recollecting 1207875-78.  The fine-tuning
+  caches only restore + render (no stepping) and are unaffected.
+- **Residual metric (from the workstation session, LEDGER `352c625`, `transport_nulls.py --residual`).**  My claim that
+  cos(Psi(Y_hat - Y_d), Psi(Y_r - Y_d)) is clean because copy-donor scores 0 was WRONG: cosine is scale-invariant and
+  Y_r, Y_d are near-orthogonal, so every a * Y_d with a < 1 (zero included) scores the same positive value (+0.678
+  there, the model +0.658, i.e. below the null).  `phys_replay.evaluate` now reports instead: proj_cos = cos(P Psi(Y_hat),
+  P Psi(Y_real)), P = I - u u^T, u = Psi(Y_d)/|.| (the whole scaled-copy family = 0); the same decoder with a WRONG
+  donor's code (another task's donor, fixed per donor group) = what the recipient's first frame alone buys, the claim
+  being matched - wrong; DiD over recipient pairs of one donor, cos(Y_hat_B - Y_hat_C, Y_real_B - Y_real_C) (donor term
+  cancels exactly); all CIs cluster-bootstrapped over donor episodes; strata read as pre-registered: the matched -
+  wrong gap should be largest for outside and smallest for centered (flat or reversed = nuisance, not transport).
+  The raw res_cos is still printed, next to its null, so the failure is visible.

@@ -44,13 +44,30 @@ class Sim:
     def frame(self, obs):
         return np.ascontiguousarray(obs["agentview_image"][::-1, ::-1])      # upright, as the regenerated RLDS
 
-    def restore(self, state):
+    def restore(self, state, past=None):
+        """Restore a recorded state EXACTLY.  Two pieces of state live outside the MuJoCo state vector and must be
+        rebuilt, or the same state + actions do not reproduce (2026-11-15 test: object 1.4 cm off, gripper fingers
+        differ): (1) solver warm-start -> mj_resetData first; (3, below) the OSC goal; (2) the Panda gripper's integrated command
+        `current_action` (+-0.01 per sim substep toward sign(cmd), clipped) -> replayed from the demo's own command
+        history `past` (actions[:t]); zeros at episode start, as robosuite's reset."""
         self.e.timestep, self.e.done, self.e.horizon = 0, False, 10 ** 9     # replays are not episodes: no horizon
-        return self.env.set_init_state(state)
+        self.e.sim.reset()
+        ca = np.zeros(self.grip.dof)
+        if past is not None and len(past):
+            n_sub = int(round(self.e.control_timestep / self.e.model_timestep)); step = np.array([-1.0, 1.0]) * self.grip.speed
+            for g in np.sign(np.asarray(past)[:, -1]):
+                ca = np.clip(ca + step * g * n_sub, -1.0, 1.0)      # n_sub same-sign increments: clip once == clip each
+        self.grip.current_action = ca
+        obs = self.env.set_init_state(state)
+        # (3) the OSC controller keeps goal_ori across calls and only refreshes it on a non-zero rotation command, so a
+        # stale goal from the PREVIOUS replay steered the first steps (first run != later runs, robot state 0.11 apart).
+        for r in self.e.robots:
+            r.controller.update(force=True); r.controller.reset_goal()
+        return obs
 
-    def run(self, state, actions):
+    def run(self, state, actions, past=None):
         """restore + execute; frames every STRIDE steps (T=5), plus the end state."""
-        obs = self.restore(state); fr = [self.frame(obs)]
+        obs = self.restore(state, past); fr = [self.frame(obs)]
         for k, a in enumerate(actions):
             obs, _, _, _ = self.env.step(a.tolist())
             if (k + 1) % STRIDE == 0: fr.append(self.frame(obs))
@@ -86,12 +103,12 @@ def probe(a):
             for i, di in enumerate(demos):
                 A, S = D[di]["actions"][()], D[di]["states"][()]
                 for t in range(0, len(A) - H, max(1, (len(A) - H) // 4)):     # determinism: replay vs recording
-                    _, s_end = sim.run(S[t], A[t:t + H])
+                    _, s_end = sim.run(S[t], A[t:t + H], A[:t])
                     p_rep = sim.obj_pos(); sim.restore(S[t + H]); p_rec = sim.obj_pos()
                     det.append(max(np.linalg.norm(p_rep[n] - p_rec[n]) for n in p_rep))
                 cs = close_steps(A); n_close += len(cs)
                 for tc in cs[:1]:
-                    t0 = max(0, tc - a.lead); sim.run(S[t0], A[t0:t0 + H]); obj = sim.grasped()
+                    t0 = max(0, tc - a.lead); sim.run(S[t0], A[t0:t0 + H], A[:t0]); obj = sim.grasped()
                     if obj is None: strata.setdefault("donor_no_grasp", 0); strata["donor_no_grasp"] += 1; continue
                     for dj in demos:
                         if dj == di: continue
@@ -100,7 +117,7 @@ def probe(a):
                         for sh in a.shifts:
                             tj = cj[0] - a.lead + sh
                             if tj < 0 or tj >= len(Sj): continue
-                            sim.run(Sj[tj], A[t0:t0 + H]); c = sim.contact(obj)
+                            sim.run(Sj[tj], A[t0:t0 + H], Aj[:tj]); c = sim.contact(obj)
                             strata[f"{c}@{sh:+d}"] = strata.get(f"{c}@{sh:+d}", 0) + 1
             det = np.array(det)
             r = dict(lang=sim.lang, n_det=len(det), det_obj_err_cm_median=float(np.median(det) * 100), det_obj_err_cm_p95=float(np.percentile(det, 95) * 100),
@@ -153,7 +170,7 @@ def collect(a):
     for suite in a.suites:
         out = os.path.join(OUT, f"pairs_{suite}.npz")
         if os.path.exists(out): print(f"[collect] {out} exists", flush=True); continue
-        R = {k: [] for k in ("XD", "YR", "GX", "GY", "kind", "stratum", "shift", "cell", "task", "lang", "di", "dj", "det")}
+        R = {k: [] for k in ("XD", "YR", "XD2", "XD2_key", "GX", "GY", "GX2", "kind", "stratum", "shift", "cell", "task", "lang", "di", "dj", "det")}
         for ti, task, f in tasks_of(suite)[:a.tasks]:
             sim = Sim(task); D = h5py.File(f, "r")["data"]; demos = sorted(D.keys(), key=lambda s: int(s.split("_")[1]))[:a.demos]
             data = {d: (D[d]["actions"][()], D[d]["states"][()]) for d in demos}
@@ -167,10 +184,11 @@ def collect(a):
                 for tc in close_steps(A)[:1]:
                     obj = None
                     for lead in (2, 4, 6):
-                        t0 = max(0, tc - lead); xd, _ = sim.run(S[t0], A[t0:t0 + H]); obj = sim.grasped()
+                        t0 = max(0, tc - lead); xd, _ = sim.run(S[t0], A[t0:t0 + H], A[:t0]); obj = sim.grasped()
                         if obj: break
                     if obj is None: continue
-                    xd2, _ = sim.run(S[t0], A[t0:t0 + H]); det = float(np.abs(xd2.astype(int) - xd).max())   # same state+actions twice
+                    xd2, _ = sim.run(S[t0], A[t0:t0 + H], A[:t0]); det = float(np.abs(xd2.astype(int) - xd).mean())   # same state+actions twice
+                    R["XD2"].append(xd2); R["XD2_key"].append(f"{ti}_{di}")             # replay noise floor, one per donor
                     for dj in demos:
                         if dj == di: continue
                         Aj, Sj = data[dj]; cj = close_steps(Aj)
@@ -178,21 +196,22 @@ def collect(a):
                         for sh in a.shifts:
                             tj = cj[0] - lead + sh
                             if tj < 0 or tj + H > len(Sj): continue
-                            yr, _ = sim.run(Sj[tj], A[t0:t0 + H])
+                            yr, _ = sim.run(Sj[tj], A[t0:t0 + H], Aj[:tj])
                             add("grasp", xd, yr, sim.contact(obj), sh, obj_cell(sim, obj), di, dj, det)
                 # ---- generic chunks (any phase): donor at a random t, recipient demo at the same progress fraction
                 for _ in range(a.generic):
-                    t0 = int(rng.integers(0, len(A) - H)); xd, _ = sim.run(S[t0], A[t0:t0 + H])
+                    t0 = int(rng.integers(0, len(A) - H)); xd, _ = sim.run(S[t0], A[t0:t0 + H], A[:t0])
                     dj = demos[int(rng.integers(len(demos)))]
                     if dj == di: continue
                     Aj, Sj = data[dj]; tj = int(round(t0 / (len(A) - H) * (len(Aj) - H)))
-                    yr, _ = sim.run(Sj[tj], A[t0:t0 + H])
+                    yr, _ = sim.run(Sj[tj], A[t0:t0 + H], Aj[:tj])
                     add("generic", xd, yr, "generic", 0, -1, di, dj, -1.0)
             if not R.get("EX"): R["EX"] = [np.concatenate([x, y], 0) for x, y in zip(R["XD"][:12], R["YR"][:12])]
             R["GX"].append(g4(R["XD"])); R["GY"].append(g4(R["YR"])); R["XD"], R["YR"] = [], []   # frames -> g4 per task
+            R["GX2"].append(g4(R["XD2"])); R["XD2"] = []
             print(f"[collect] {suite}/{ti} pairs {len(R['kind']) - n0}  ({sim.lang})", flush=True); sim.env.close()
-        for k in ("GX", "GY"): R[k] = np.concatenate(R[k])
-        R["EX"] = np.stack(R["EX"]); del R["XD"], R["YR"]
+        for k in ("GX", "GY", "GX2"): R[k] = np.concatenate(R[k])
+        R["EX"] = np.stack(R["EX"]); del R["XD"], R["YR"], R["XD2"]
         np.savez_compressed(out, **{k: np.array(v) for k, v in R.items()})
 
 
@@ -235,85 +254,171 @@ def cache(a):
                   open(os.path.join(d, "meta.json"), "w"), indent=1)
 
 
-PREDICTORS = ["copy_donor", "zero"]
-
-
+# Nulls (LEDGER 2026-11-15, transport_nulls.py --residual): the raw residual cosine cos(Psi(Y_hat - Y_d), Psi(Y_r - Y_d))
+# is NOT 0 for predictors that ignore the recipient -- every a * Y_d with a < 1 (zero included) scores the same positive
+# value, because cosine is scale-invariant and Y_r, Y_d are near-orthogonal.  So the reported quantities are:
+#   proj_cos   cos(P Psi(Y_hat), P Psi(Y_real)),  P = I - u u^T,  u = Psi(Y_donor)/|.|   -> the whole a * Y_donor family = 0
+#   @wrongz    the same decoder with a WRONG donor's code (another task's donor, fixed per donor group): what the
+#              recipient's first frame alone buys.  The claim is matched - wrong, not distance from 0.
+#   DiD        same donor, two recipients B, C: cos(Y_hat_B - Y_hat_C, Y_real_B - Y_real_C); the donor term cancels
+#              exactly (copy / scaled copy / zero are undefined = 0).  Matched vs wrong code again.
+# Pairs sharing a donor episode are not independent: every CI is a cluster bootstrap over donor episodes (task, demo).
 def evaluate(a):
-    """Model pass on the collected pairs: per-pair Psi cosine, increment errors, object-cell errors per predictor."""
     import torch
     from ..common import features as Fz
     from ..common.model import load_ckpt
     from ..common.pipeline import Featurizer
-    dev = "cuda"; dino = None
+    dev = "cuda"; cos = torch.nn.functional.cosine_similarity
     models = {}
     for tag in a.models:
         m, dstats, ck = load_ckpt(os.path.join("/lustre/fs1/home/ti874297/lf/latent_free/acdc_la/ckpt", tag + ".pt"), dev)
-        ar = ck.get("args", {}); models[tag] = (m.eval(), Featurizer(dino, 4, ar.get("pool", "acdc"), ar.get("modes", 2), dstats, dev))
+        ar = ck.get("args", {}); models[tag] = (m.eval(), Featurizer(None, 4, ar.get("pool", "acdc"), ar.get("modes", 2), dstats, dev))
     dst = {tag: float(f.dstats) for tag, (_, f) in models.items()}
     assert len(set(round(v, 6) for v in dst.values())) == 1, dst              # one dF scale -> one Y_real for all models
     feat = next(iter(models.values()))[1]
+    rng = np.random.default_rng(0)
+
+    def code(m, fz, g, d):
+        return m.encode_batch(dict(f0=g[:, 0], dF=d), "clean")[0] if hasattr(m, "encode_batch") else m.encode(fz.cells_of(d))[0]
+
     for suite in a.suites:
         P = np.load(os.path.join(OUT, f"pairs_{suite}.npz"), allow_pickle=True); n = len(P["kind"])
-        res = {}
+        task, kind = P["task"].astype(int), P["kind"]
+        di = np.array([int(str(x).split("_")[-1]) for x in P["di"]])
+        cluster = task * 1000 + di                                             # donor episode
+        gkey = np.where(kind == "grasp", cluster, 10 ** 6 + np.arange(n))       # grasp: one donor clip per (task, demo)
+        groups, gid = np.unique(gkey, return_inverse=True)
+        first = np.array([np.flatnonzero(gid == g)[0] for g in range(len(groups))])
+        gtask, gkind = task[first], kind[first]
+        wrong = np.empty(len(groups), int)                                     # a donor of the same kind from ANOTHER task
+        for g in range(len(groups)):
+            cand = np.flatnonzero((gtask != gtask[g]) & (gkind == gkind[g]))
+            if not len(cand): cand = np.flatnonzero(gtask != gtask[g])
+            wrong[g] = rng.choice(cand)
+        wsrc = first[wrong[gid]]                                               # pair index whose donor clip is the wrong donor
+        out, keep = {}, {}
         for b in range(0, n, a.batch):
-            sl = slice(b, min(n, b + a.batch))
-            gx, gy = (torch.from_numpy(P[k][sl]).to(dev).float() for k in ("GX", "GY"))
-            dx, dy = Fz.dF_from_g4(gx, feat.dstats), Fz.dF_from_g4(gy, feat.dstats)     # (B,K,16,768)
-            c = torch.zeros(len(dx), 768, device=dev)      # training had no lang_t5 cache in any source: c was always 0
+            sl = np.arange(b, min(n, b + a.batch))
+            T = lambda k, idx: torch.from_numpy(P[k][idx]).to(dev).float()
+            gx, gy, gw = T("GX", sl), T("GY", sl), T("GX", wsrc[sl])
+            dx, dy, dw = (Fz.dF_from_g4(g, feat.dstats) for g in (gx, gy, gw))
+            c = torch.zeros(len(sl), 768, device=dev)                         # training had no lang_t5 cache: c was always 0
+            u0 = lambda m: torch.zeros(len(sl), m.d_u, device=dev)             # u = 0: the recipient's real clip cannot leak
             preds = {"copy_donor": dx, "zero": torch.zeros_like(dy)}
             with torch.no_grad():
                 for tag, (m, fz) in models.items():
-                    if hasattr(m, "encode_batch"): zmu = m.encode_batch(dict(f0=gx[:, 0], dF=dx), "clean")[0]   # donor evidence only
-                    else: zmu = m.encode(fz.cells_of(dx))[0]
-                    preds[tag] = m.decode(gy[:, 0], c, zmu, torch.zeros(len(dx), m.d_u, device=dev))  # u = 0: no recipient leak
-                    zo = m.encode_batch(dict(f0=gy[:, 0], dF=dy), "clean")[0] if hasattr(m, "encode_batch") else m.encode(fz.cells_of(dy))[0]
-                    preds[tag + "@ownz"] = m.decode(gy[:, 0], c, zo, torch.zeros(len(dx), m.d_u, device=dev))   # oracle: recipient's own code
-            cells = torch.as_tensor(P["cell"][sl], device=dev)
-            res.setdefault("_pair", {"dist": [], "real_vs_donor_cos": []})
-            res["_pair"]["dist"].append((Fz.quadrants(gy[:, 0]) - Fz.quadrants(gx[:, 0])).flatten(1).norm(dim=1))
-            res["_pair"]["real_vs_donor_cos"].append(torch.nn.functional.cosine_similarity(feat.cells_of(dy).flatten(1), feat.cells_of(dx).flatten(1), dim=1))
+                    preds[tag] = m.decode(gy[:, 0], c, code(m, fz, gx, dx), u0(m))
+                    preds[tag + "@wrongz"] = m.decode(gy[:, 0], c, code(m, fz, gw, dw), u0(m))
+                    preds[tag + "@ownz"] = m.decode(gy[:, 0], c, code(m, fz, gy, dy), u0(m))   # ceiling: its own code
             psi = lambda d: feat.cells_of(d).flatten(1)
+            py, px = psi(dy), psi(dx); uu = px / px.norm(dim=1, keepdim=True).clamp_min(1e-8)
+            proj = lambda v: v - (v * uu).sum(1, keepdim=True) * uu
+            cells = torch.as_tensor(P["cell"][sl], device=dev).clamp_min(0)
+            idx = cells[:, None, None, None].expand(-1, dy.shape[1], 1, dy.shape[-1]); oy = dy.gather(2, idx)[:, :, 0]
             for k, yh in preds.items():
-                r = res.setdefault(k, {q: [] for q in ("cos", "err", "nrm", "cos_dc", "obj_err", "obj_nrm", "obj_cos", "res_cos")})
-                cos = torch.nn.functional.cosine_similarity
-                # the recipient-specific part: does (prediction - donor effect) point where (real - donor effect) points?
-                r["res_cos"].append(cos(psi(yh - dx), psi(dy - dx), dim=1) if k != "copy_donor" else torch.zeros(len(dx), device=dev))
-                r["cos"].append(cos(psi(yh), psi(dy), dim=1)); r["cos_dc"].append(cos(yh.sum(1).flatten(1), dy.sum(1).flatten(1), dim=1))
-                r["err"].append((yh - dy).pow(2).flatten(1).sum(1)); r["nrm"].append(dy.pow(2).flatten(1).sum(1))
-                idx = cells.clamp_min(0)[:, None, None, None].expand(-1, dy.shape[1], 1, dy.shape[-1])
-                oy, oh = dy.gather(2, idx)[:, :, 0], yh.gather(2, idx)[:, :, 0]               # (B,K,768) object cell
-                r["obj_err"].append((oh - oy).pow(2).flatten(1).sum(1)); r["obj_nrm"].append(oy.pow(2).flatten(1).sum(1))
-                r["obj_cos"].append(cos(oh.flatten(1), oy.flatten(1), dim=1))
-        out = {f"{k}/{q}": torch.cat(v).cpu().numpy() for k, r in res.items() for q, v in r.items()}
-        for q in ("kind", "stratum", "shift", "cell", "task", "di", "dj", "det"): out[q] = P[q]
-        np.savez_compressed(os.path.join(OUT, f"eval_{suite}.npz"), **out); print(f"[eval] {suite} {n} pairs", flush=True)
+                ph = psi(yh); oh = yh.gather(2, idx)[:, :, 0]
+                vals = dict(cos=cos(ph, py, dim=1), proj_cos=cos(proj(ph), proj(py), dim=1),
+                            res_cos=cos(ph - px, py - px, dim=1), cos_dc=cos(yh.sum(1).flatten(1), dy.sum(1).flatten(1), dim=1),
+                            err=(yh - dy).pow(2).flatten(1).sum(1), nrm=dy.pow(2).flatten(1).sum(1),
+                            obj_err=(oh - oy).pow(2).flatten(1).sum(1), obj_nrm=oy.pow(2).flatten(1).sum(1),
+                            obj_cos=cos(oh.flatten(1), oy.flatten(1), dim=1))
+                for q, v in vals.items(): out.setdefault(f"{k}/{q}", []).append(v.cpu())
+                if k in models or k.endswith("@wrongz") or k == "_real":
+                    keep.setdefault(k, []).append(ph.half().cpu())
+            keep.setdefault("_real", []).append(py.half().cpu())
+            out.setdefault("_pair/dist", []).append((Fz.quadrants(gy[:, 0]) - Fz.quadrants(gx[:, 0])).flatten(1).norm(dim=1).cpu())
+            out.setdefault("_pair/real_vs_donor_cos", []).append(cos(py, px, dim=1).cpu())
+        res = {k: torch.cat(v).numpy() for k, v in out.items()}
+        if "GX2" in P.files and len(P["GX2"]):                               # replay noise floor (same state + actions twice)
+            key = np.array([f"{t}_{d}" for t, d in zip(P["task"], P["di"])]); first_of = {key[i]: i for i in np.flatnonzero(P["kind"] == "grasp")[::-1]}
+            i1 = np.array([first_of[k] for k in P["XD2_key"]])
+            g1, g2 = torch.from_numpy(P["GX"][i1]).float().to(dev), torch.from_numpy(P["GX2"]).float().to(dev)
+            d1, d2 = Fz.dF_from_g4(g1, feat.dstats), Fz.dF_from_g4(g2, feat.dstats)
+            res["_noise/nmse"] = ((d2 - d1).pow(2).flatten(1).sum(1) / d1.pow(2).flatten(1).sum(1)).cpu().numpy()
+            res["_noise/cos"] = cos(feat.cells_of(d2).flatten(1), feat.cells_of(d1).flatten(1), dim=1).cpu().numpy()
+        keep = {k: torch.cat(v).float() for k, v in keep.items()}
+        # ---- difference-in-differences over recipient pairs of the same grasp donor
+        D = {"did_cluster": [], "did_sb": [], "did_sc": []}
+        for g in range(len(groups)):
+            ii = np.flatnonzero(gid == g)
+            if gkind[g] != "grasp" or len(ii) < 2: continue
+            b_, c_ = np.triu_indices(len(ii), 1); B, C = ii[b_], ii[c_]
+            dr = keep["_real"][B] - keep["_real"][C]
+            for k in keep:
+                if k == "_real": continue
+                D.setdefault(f"did/{k}", []).append(cos(keep[k][B] - keep[k][C], dr, dim=1).numpy())
+            D["did_cluster"].append(cluster[B]); D["did_sb"].append(P["stratum"][B]); D["did_sc"].append(P["stratum"][C])
+        for k, v in D.items(): res[k] = np.concatenate(v) if v else np.zeros(0)
+        for q in ("kind", "stratum", "shift", "cell", "task", "di", "dj", "det"): res[q] = P[q]
+        res["cluster"] = cluster
+        np.savez_compressed(os.path.join(OUT, f"eval_{suite}.npz"), **res)
+        print(f"[eval] {suite} {n} pairs, {len(groups)} donor groups, {len(res['did_cluster'])} DiD recipient pairs", flush=True)
+
+
+def cboot(x, cl, B=2000, seed=0):
+    """mean of x and a 95% cluster-bootstrap CI (clusters = donor episodes)."""
+    x = np.asarray(x, float); ok = np.isfinite(x); x, cl = x[ok], cl[ok]
+    if not len(x): return (float("nan"),) * 3
+    u, inv = np.unique(cl, return_inverse=True); s = np.bincount(inv, x); c = np.bincount(inv).astype(float)
+    r = np.random.default_rng(seed).integers(0, len(u), (B, len(u)))
+    bs = s[r].sum(1) / c[r].sum(1)
+    return float(x.mean()), float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))
 
 
 def summarize(a):
-    rows = {}
     E = [np.load(f, allow_pickle=True) for f in sorted(glob.glob(os.path.join(OUT, "eval_*.npz")))]
     cat = lambda k: np.concatenate([e[k] for e in E])
-    kind, st = cat("kind"), cat("stratum")
-    preds = sorted({k.split("/")[0] for k in E[0].files if "/" in k and not k.startswith("_")})
-    groups = {"all": np.ones(len(kind), bool), "generic": kind == "generic", "grasp": kind == "grasp"}
+    kind, st, cl, dist = cat("kind"), cat("stratum"), cat("cluster"), cat("_pair/dist")
+    tags = sorted({k.split("/")[0] for k in E[0].files if "/" in k and not k.startswith(("_", "did"))})
+    import re
+    if all("_noise/nmse" in e.files for e in E):
+        nn_, nc_ = cat("_noise/nmse"), cat("_noise/cos")
+        print(f"replay noise floor (donor executed twice, {len(nn_)} donors): NMSE median {np.median(nn_):.4f} max {nn_.max():.4f}; Psi cos median {np.median(nc_):.4f} min {nc_.min():.4f}")
+    arm = lambda t: re.sub(r"_s\d+", "", t)                                 # seeds of one arm are averaged per pair
+    arms = {}
+    for t in tags: arms.setdefault(arm(t), []).append(t)
+    groups = {"generic": kind == "generic", "grasp": kind == "grasp"}
     for s in ("centered", "offset", "outside"): groups[s] = st == s
-    dist = cat("_pair/dist")
     for g in ("generic", "grasp"):
         m = groups[g]; med = np.median(dist[m]) if m.any() else 0
         groups[f"{g}_near"], groups[f"{g}_far"] = m & (dist <= med), m & (dist > med)
+    V = lambda A, q: np.mean([cat(f"{t}/{q}") for t in arms[A]], 0)
+    rows = {}
+    fmt = lambda r: f"{r[0]:+.3f} [{r[1]:+.3f},{r[2]:+.3f}]"
     for g, msk in groups.items():
-        rows[g] = {"n": int(msk.sum()), "real_vs_donor_cos": float(cat("_pair/real_vs_donor_cos")[msk].mean()) if msk.any() else float("nan")}
-        for p in preds:
-            v = lambda q: cat(f"{p}/{q}")[msk]
-            rows[g][p] = dict(res_cos=float(v("res_cos").mean()), cos=float(v("cos").mean()), cos_dc=float(v("cos_dc").mean()), nmse=float(v("err").sum() / v("nrm").sum()),
-                              obj_nmse=float(v("obj_err").sum() / max(v("obj_nrm").sum(), 1e-9)) if not g.startswith("generic") else None,
-                              obj_cos=float(v("obj_cos").mean()) if not g.startswith("generic") else None)
-    json.dump(rows, open(os.path.join(OUT, "summary.json"), "w"), indent=1)
-    for g, r in rows.items():
-        print(f"== {g}  n={r['n']}  real-vs-donor cos {r['real_vs_donor_cos']:.3f}")
-        for p in preds:
-            x = r[p]; print(f"  {p:26s} res_cos {x['res_cos']:+.3f}  cos {x['cos']:.3f}  cos_dc {x['cos_dc']:.3f}  NMSE {x['nmse']:.3f}" +
-                             (f"  obj NMSE {x['obj_nmse']:.3f}  obj cos {x['obj_cos']:.3f}" if x["obj_nmse"] is not None else ""))
+        R = rows[g] = {"n": int(msk.sum()), "clusters": int(len(np.unique(cl[msk]))),
+                       "real_vs_donor_cos": float(cat("_pair/real_vs_donor_cos")[msk].mean()) if msk.any() else None}
+        print(f"\n== {g}  n={R['n']} donor episodes={R['clusters']}  cos(real, donor)={R['real_vs_donor_cos']}")
+        print(f"  {'predictor':30s} {'proj_cos [95% CI]':>26s} {'raw res_cos':>11s} {'cos':>7s} {'NMSE':>7s} {'objNMSE':>8s}")
+        for A in arms:
+            pc = cboot(V(A, "proj_cos")[msk], cl[msk]); nm = V(A, "err")[msk].sum() / V(A, "nrm")[msk].sum()
+            on = V(A, "obj_err")[msk].sum() / max(V(A, "obj_nrm")[msk].sum(), 1e-9)
+            R[A] = dict(proj_cos=pc, res_cos=float(V(A, "res_cos")[msk].mean()), cos=float(V(A, "cos")[msk].mean()), nmse=float(nm),
+                        obj_nmse=None if g.startswith("generic") else float(on))
+            print(f"  {A:30s} {fmt(pc):>26s} {R[A]['res_cos']:>+11.3f} {R[A]['cos']:>7.3f} {nm:>7.3f} " +
+                  (f"{on:>8.3f}" if R[A]["obj_nmse"] is not None else ""))
+        for A in arms:                                                       # the claim: matched - wrong code
+            if A.endswith(("@wrongz", "@ownz")) or A in ("copy_donor", "zero"): continue
+            gap = cboot(V(A, "proj_cos")[msk] - V(A + "@wrongz", "proj_cos")[msk], cl[msk])
+            R[A]["gap_vs_wrongz"] = gap; print(f"  GAP {A:26s} matched - wrong donor, proj_cos: {fmt(gap)}")
+    # DiD
+    dcl, sb, sc = cat("did_cluster"), cat("did_sb"), cat("did_sc")
+    if len(dcl):
+        Dv = lambda A: np.mean([cat(f"did/{t}") for t in arms[A]], 0)
+        cats = {"all": np.ones(len(dcl), bool), "both centered": (sb == "centered") & (sc == "centered"),
+                "both outside": (sb == "outside") & (sc == "outside"), "centered vs outside": ((sb == "centered") & (sc == "outside")) | ((sb == "outside") & (sc == "centered")),
+                "any offset": (sb == "offset") | (sc == "offset")}
+        rows["did"] = {}
+        print("\n== DiD: same donor, two recipients: cos(Y_hat_B - Y_hat_C, Y_real_B - Y_real_C)")
+        for name, msk in cats.items():
+            print(f"  [{name}] recipient pairs={int(msk.sum())} donor episodes={len(np.unique(dcl[msk]))}")
+            rows["did"][name] = {}
+            for A in arms:
+                if A.endswith("@wrongz") or A.endswith("@ownz") or f"did/{arms[A][0]}" not in E[0].files: continue
+                m_ = cboot(Dv(A)[msk], dcl[msk]); w_ = cboot(Dv(A + "@wrongz")[msk], dcl[msk]); gp = cboot(Dv(A)[msk] - Dv(A + "@wrongz")[msk], dcl[msk])
+                rows["did"][name][A] = dict(matched=m_, wrong=w_, gap=gp)
+                print(f"    {A:26s} matched {fmt(m_)}  wrong {fmt(w_)}  gap {fmt(gp)}")
+    json.dump(rows, open(os.path.join(OUT, "summary.json"), "w"), indent=1, default=float)
 
 
 def main():
