@@ -6335,3 +6335,32 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   `cos(Y_hat_B - Y_hat_C, Y_real_B - Y_real_C)`.  The donor cancels exactly, so the whole scaled-copy family gives
   0 without needing the projection, and the replay protocol already produces several recipients per donor
   (demo `j` plus shifts {−8,−4,0,4,8}).  This is the cleanest form of the user's idea.
+
+### 2026-11-15 (later, correction to this day's two entries) — the two null-strength findings above were recorded without the POSITIVE transport evidence beside them. Both belong in the same place
+
+- **Why this is added.**  User: "根据之前 NMSE 实验，我们加了那几个 loss 后的发现还挺可以的…现在似乎你的意思都不太行".  Correct.
+  Today's entries ("copy-donor is a straw man", "the residual metric has a positive null") are findings about
+  METRICS, and on their own they read as a verdict on the method.  They are not one.  The evidence that the EAT
+  losses do something is in this ledger already and must be read next to them:
+  - **2026-09-25 18:30, `transport_by_source`:** transported-action NMSE, frozen model-free reader shared by both
+    arms, `tc_cont_plus15k` (reconstruction only) vs `latp2_inv` (full EAT), same start and budget — median
+    **.828 → .722**, **EAT lower on 26 of 29 sources**; farthest-quartile donors **.914 → .830** (21/29).
+  - **2026-11-15 02:30, Table 4, THREE seeds, single factor:** `L_self` (reconstruction only) **.821**, full EAT
+    **.730 ± .006**; w/o `L_effect` .971 ± .023, w/o `L_dist` .768, effect→head .883, effect→cycle .961.
+  - **2026-09-15 probes on `latp2_anchor`:** `ctx_sens` 0.465 (the operator does use the state), `replay_cos` 0.051
+    (not replaying the recipient's own motion), `effect_margin` 0.548.
+  - **Today, donor-orthogonalised residual:** matched donor +0.0985 vs deranged donor +0.0630 — a positive
+    donor-specific gap on an arm that is not even an EAT arm.
+- **Why the copy hypothesis does not explain these.**  Copying the donor's effect is equally available to the
+  RECONSTRUCTION arm; if EAT's gain were copying, the recon arm would not be systematically worse on 26 of 29
+  sources, and would not lose .09 NMSE at matched budget over three seeds.  And the reader is fitted on REAL
+  transitions and shared by both arms, so a copied effect descriptor does not buy the donor's ACTION.
+- **So the honest split, and what the paper should claim.**  (1) **"the code carries action semantics that survive
+  transport into another scene"** — supported, in ACTION space, twice, once with seeds and a single factor; this is
+  also what the latent is actually used for in TERRA (a labeller for a VLA, not a world model).
+  (2) **"we predict the correct counterfactual future"** — NOT supported: every arm sits at the do-nothing floor in
+  feature space, and that is the claim the replay experiment tests.  **The risk is the manuscript drifting from
+  (1) to (2).**  Related and still standing: Fig. 3(a)'s numbers are not reproduced in this repository (09-25), so
+  the text should claim breadth, not a donor-distance trend; `L_inv` does nothing across three seeds (.730 vs .730)
+  and should be conceded in the paper rather than found by a reviewer; and the only single-factor DOWNSTREAM
+  comparison, `libero_goal_frac10`, is negative (86.8 vs 88.6 vs UniVLA 89.4).
