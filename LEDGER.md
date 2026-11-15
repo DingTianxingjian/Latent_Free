@@ -6498,3 +6498,42 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
 - DiD (same donor, two recipients) matched − wrong: ~0 (full +0.000, recon +0.003). Code does not modulate state-dependence; recipient-specific differences come from the frame. full is negative on both-outside (−0.021).
 - Absolute: matched NMSE full 1.15 / recon 1.01 on grasp (zero predictor = 1, copy donor 1.72). recon better on absolute metrics; full and recon gaps equal. full's decoder leans more on the code (wrong-code NMSE 1.87 vs recon 1.10).
 - Decision: replay supports only the narrow claim "transplanted code moves the prediction toward the real effect of that action in a new state, beyond frame-only"; it does not support state-conditioned effect prediction (DiD) nor an EAT>recon advantage. Report as such.
+## 2026-11-15 18:00 — physical replay: the extended-lead collection finished here (4 suites, 10948 pairs)
+- `collect --leads 6 4 2 0 -4 -8 -12 -16`, workstation GPU 0, ~1.7 h, all 4 suites.  Artifacts
+  `acdc_la/results/phys_replay/pairs_{libero_spatial,libero_object,libero_goal,libero_10}.npz` (2.5 GB total).
+
+  | suite | pairs | grasp donors | centered | offset | outside | generic | from extended leads | unstable (>50 cm) |
+  |---|---|---|---|---|---|---|---|---|
+  | libero_spatial | 3112 | 77 / 80 | 1192 (38.3 %) | 714 (22.9 %) | 789 (25.4 %) | 417 | 37.0 % | 0 |
+  | libero_object | 2937 | 72 / 80 | 1563 (53.2 %) | 108 (3.7 %) | 849 (28.9 %) | 417 | 16.6 % | 0 |
+  | libero_goal | 2239 | 52 / 80 | 978 (43.7 %) | 403 (18.0 %) | 439 (19.6 %) | 419 | 42.2 % | 0 |
+  | libero_10 | 2660 | 64 / 80 | 1328 (49.9 %) | 418 (15.7 %) | 494 (18.6 %) | 420 | 19.7 % | 19 |
+  | **total** | **10948** | **265 / 320** | **5061 (46.2 %)** | **1643 (15.0 %)** | **2571 (23.5 %)** | **1673** | **28.4 %** | **19 (0.17 %)** |
+
+- **Donor yield 224/320 -> 265/320** (+41, +18 %); 28.4 % of all pairs come from leads outside the old fixed
+  `(2, 4, 6)`.  The recovered donors are the slow-grasp ones the fixed anchor dropped by whole tasks.
+- **Two checks that `--leads` did not break `evaluate`, both pass.**  (1) Every grasp donor contributes pairs at
+  exactly ONE lead (0 of 265 donors mix leads), because collect takes the first lead that qualifies -- so
+  `gkey = cluster` still means "one donor clip per (task, demo)" and the DiD's donor term still cancels exactly.
+  (2) `XD2_key` is unique per donor in all 4 suites (77/72/52/64 rows, same number of unique keys), so the noise-floor
+  row still pairs with the right `GX`.  Nothing in the eval path needs changing; older pairs files stay compatible.
+- DiD feasibility: 265 donor groups, all with >= 2 recipients, 157 675 recipient pairs (median ~40 recipients/donor).
+- Instability: 19/10948 pairs (0.17 %) over `MAX_MOVE = 0.50 m`, all in libero_10 task 5 (18/319, max 687 cm) and
+  task 6 (1/320).  Three other suites are clean.  Pooled object displacement median 1.60 cm, p95 13.5 cm.
+- **Fixed a real defect in `summarize` found in Newton's `2030bcf` caveat**: `cluster = task*1000+demo` is unique only
+  INSIDE a suite (tasks are 0..9 in each), so pooling 4 suites collided 320 donor episodes into 80 and the cluster
+  bootstrap resampled 80 units.  Now offset by suite index.  Direction of the change: the CIs in `2030bcf` are too
+  WIDE, so the significant transport gaps there stay significant and the null DiD becomes a tighter null.
+- **Status of the replay claim, after Newton's eval (`2030bcf`, 9474 pairs = the OLD 224-donor collection):** the
+  narrow transport claim holds (matched - wrong code, proj_cos, CI excludes 0 in every stratum; grasp +0.058), but
+  BOTH pre-registered falsifiers failed -- the stratum direction is flat instead of outside > centered, and the DiD
+  is ~0 (+0.000 / +0.003).  Absolute matched NMSE 1.15 (full) / 1.01 (recon) against 1.00 for predicting zero, so
+  claim (2) "we predict the correct counterfactual future" is **NOT supported**; claim (1) "the latent carries
+  transportable action semantics" remains supported, and its primary evidence stays the action-space transport
+  (.828 -> .722 recon -> EAT on 26/29 sources; three seeds .821 vs .730).  EAT (full) shows no advantage over recon
+  on this metric; recon is better on the absolute ones.
+- **Next decision:** the stratum/DiD nulls were measured on the donor population that systematically EXCLUDED
+  slow-grasp donors (libero_spatial task 7 was 0/8) -- exactly the donors whose recipient state should matter most.
+  Re-running `eval` on this 265-donor collection is therefore the fair re-test of the two failed predictions, and the
+  only outstanding reason to touch replay again.  It needs the 6 `eatabm_{full,recon}_s{0,1,2}` checkpoints, which are
+  Newton-only; the pairs files are here.

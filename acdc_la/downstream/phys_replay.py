@@ -405,7 +405,9 @@ def cboot(x, cl, B=2000, seed=0):
 
 def summarize(a):
     E = [np.load(f, allow_pickle=True) for f in sorted(glob.glob(os.path.join(OUT, "eval_*.npz")))]
-    cat = lambda k: np.concatenate([e[k] for e in E])
+    # cluster = task*1000+demo is only unique INSIDE a suite (tasks are 0..9 in every suite), so pooling suites
+    # collided 320 donor episodes into 80 and the cluster bootstrap resampled 80 units -> CIs too wide.
+    cat = lambda k: np.concatenate([e[k] + i * 10 ** 6 if k == "cluster" else e[k] for i, e in enumerate(E)])
     kind, st, cl, dist = cat("kind"), cat("stratum"), cat("cluster"), cat("_pair/dist")
     tags = sorted({k.split("/")[0] for k in E[0].files if "/" in k and not k.startswith(("_", "did"))})
     import re
