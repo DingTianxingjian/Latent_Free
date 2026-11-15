@@ -6486,3 +6486,15 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   (956 MiB), ~2.5 min/task => ~1.7 h total; output `acdc_la/results/phys_replay/pairs_<suite>.npz`.  This host can run
   `collect` without Newton: it needs only MuJoCo + DINOv2, and the DINOv2 weights and hub checkout are already in
   `cache/torch/hub`.  Only `eval` needs the 6 tokenizer checkpoints, which remain Newton-only.
+
+## 2026-11-15 15:00 — physical replay: results (liberoft fine-tune, 4 suites, 3 seeds averaged)
+- Eval jobs 1209277–80; summary in acdc_la/logs/phys_summary.txt. 9474 pairs (1668 generic, 7840 grasp: 4630 centered / 943 offset / 2267 outside).
+- CAVEAT: cluster id = task*1000+demo collides across suites -> 80 clusters instead of 320; CIs are conservative (too wide), not anti-conservative.
+- Oracle gate PASSES (modestly): @ownz NMSE full 0.81–0.86, recon 0.75–0.81 (zero-shot eatabm was ~1.0).
+- Transport claim (proj_cos, matched − wrong-donor code): positive and CI-excluding-0 in every stratum.
+  generic full +0.137 / recon +0.152; grasp +0.058 / +0.058; centered +0.063/+0.059; offset +0.058/+0.053; outside +0.049/+0.057.
+  Fine-tune ~3x the zero-shot gap (eatabm grasp +0.018 / +0.007).
+- Pre-registered stratum reading (gap largest outside, smallest centered): NOT supported — gap is flat across strata.
+- DiD (same donor, two recipients) matched − wrong: ~0 (full +0.000, recon +0.003). Code does not modulate state-dependence; recipient-specific differences come from the frame. full is negative on both-outside (−0.021).
+- Absolute: matched NMSE full 1.15 / recon 1.01 on grasp (zero predictor = 1, copy donor 1.72). recon better on absolute metrics; full and recon gaps equal. full's decoder leans more on the code (wrong-code NMSE 1.87 vs recon 1.10).
+- Decision: replay supports only the narrow claim "transplanted code moves the prediction toward the real effect of that action in a new state, beyond frame-only"; it does not support state-conditioned effect prediction (DiD) nor an EAT>recon advantage. Report as such.
