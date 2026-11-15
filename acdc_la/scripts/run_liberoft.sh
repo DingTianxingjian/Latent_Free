@@ -2,9 +2,9 @@
 #SBATCH --account=ytian
 #SBATCH --partition=preemptable
 #SBATCH --qos=preemptable
-#SBATCH --gres=gpu:nvidia_h100_pcie:1
+#SBATCH --gres=gpu:1
 #SBATCH --exclude=evc11
-#SBATCH -N 1 -n 1 -c 16 --mem=96G
+#SBATCH -N 1 -n 1 -c 8 --mem=64G
 #SBATCH -t 8:00:00
 #SBATCH -J liberoft
 #SBATCH -o /lustre/fs1/home/ti874297/lf/latent_free/acdc_la/logs/liberoft_%j.out

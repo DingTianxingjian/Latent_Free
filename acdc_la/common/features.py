@@ -46,7 +46,8 @@ def dino_g4(dino, x):
 def clip_g4(dino, frames):
     """frames (B,T,3,IMG,IMG) -> g4 (B,T,16,768), bf16 autocast on cuda."""
     B, T = frames.shape[:2]
-    with torch.autocast("cuda", dtype=torch.bfloat16, enabled=frames.is_cuda):
+    # bf16 autocast where the card has it (every training run in the ledger); fp32 on cards without bf16 (V100)
+    with torch.autocast("cuda", dtype=torch.bfloat16, enabled=frames.is_cuda and torch.cuda.is_bf16_supported()):
         return dino_g4(dino, frames.reshape(B * T, *frames.shape[2:])).float().view(B, T, 16, DINO_DIM)
 
 
