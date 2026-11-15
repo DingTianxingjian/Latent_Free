@@ -66,6 +66,8 @@ def main():
     ap.add_argument("--arms", required=True, help="comma list from: " + ",".join(ARMS))
     ap.add_argument("--tau", type=float, default=0.99); ap.add_argument("--buffer", type=int, default=16)
     ap.add_argument("--rtc-groups", type=int, default=16); ap.add_argument("--psi-dim", type=int, default=512)
+    ap.add_argument("--finetune-from", default=None, help="PREFIX: an arm without its own ckpt starts from "
+                    "ckpt/PREFIX_<arm>_s<seed>.pt (weights, EMA teacher, T0, buffer, A5 head) with a FRESH optimiser and schedule")
     a = ap.parse_args()
     names = a.arms.split(","); assert all(n in ARMS for n in names), names
     assert a.init_from, "every arm continues --init-from"
@@ -94,19 +96,25 @@ def main():
     R = {}                                                           # per-arm state
     for n in names:
         x = A[n]
-        model, dstats, _ = load_ckpt(paths[n] if n in res else resolve_ckpt(a.init_from), dev)
+        ft = None
+        if n not in res and a.finetune_from:
+            fp = os.path.join(CKPT, f"{a.finetune_from}_{n}_s{a.seed}.pt"); ft = torch.load(fp, map_location=dev)
+            print(f"[{x.tag}] fine-tuning from {fp} (its step {ft.get('step')})", flush=True)
+        model, dstats, _ = load_ckpt(paths[n] if n in res else (fp if ft is not None else resolve_ckpt(a.init_from)), dev)
         ctx = dict(proj=proj, distractor=distractor, dev=dev)
         params = [p for p in model.parameters() if p.requires_grad]
         if x.lam_head > 0:                                            # A5's predictor; trained with the arm, saved with it
             ctx["head"] = torch.nn.Sequential(torch.nn.Linear(model.n_tokens * model.d, 512), torch.nn.GELU(),
                                               torch.nn.Linear(512, a.psi_dim)).to(dev)
             if n in res and "head" in res[n]: ctx["head"].load_state_dict(res[n]["head"])
+            elif ft is not None and "head" in ft: ctx["head"].load_state_dict(ft["head"])
             params += list(ctx["head"].parameters())
         opt = torch.optim.AdamW(params, lr=a.lr, weight_decay=0.01)
         sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min(1.0, (s + 1) / 500) * 0.5 * (1 + math.cos(math.pi * min(s, a.steps) / a.steps)))
         if n in res and "opt" in res[n]: opt.load_state_dict(res[n]["opt"]); sched.load_state_dict(res[n]["sched"])
-        if n in res and "v2ctx" in res[n]:                            # EMA teacher, frozen T0, buffer, whitening: exact resume
-            c = res[n]["v2ctx"]; ctx["teacher"] = copy.deepcopy(model).eval().requires_grad_(False); ctx["teacher"].load_state_dict(c["teacher"])
+        src = res[n] if n in res else ft
+        if src is not None and "v2ctx" in src:                        # EMA teacher, frozen T0, buffer, whitening: exact resume
+            c = src["v2ctx"]; ctx["teacher"] = copy.deepcopy(model).eval().requires_grad_(False); ctx["teacher"].load_state_dict(c["teacher"])
             ctx["T0"] = copy.deepcopy(model).eval().requires_grad_(False); ctx["T0"].load_state_dict(c["T0"])
             for k in ("zmu", "zvar", "psi_proj", "psi_mu", "psi_var", "b1"): ctx[k] = c[k].to(dev)
             ctx["buf"] = [(z.to(dev), s_, g_) for z, s_, g_ in c["buf"]]

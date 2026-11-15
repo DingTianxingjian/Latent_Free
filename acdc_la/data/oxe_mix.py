@@ -35,6 +35,9 @@ UNIVLA_W = {
     "berkeley_gnm_recon": 2.0, "berkeley_gnm_cory_hall": 2.0, "berkeley_gnm_sac_son": 2.0,
 }
 
+# Sources that are NOT part of the UniVLA mix (never picked up by available_sources()); only used when named explicitly.
+EXTRA_W = {f"libero_sim_{s}": 1.0 for s in ("spatial", "object", "goal", "10")}     # phys_replay fine-tuning caches
+
 # Bridge V2 train split in the RAIL copy (data/bridge_raw/dataset_info.json); our bridge_big holds 5,000 of these.
 BRIDGE_EPISODES_AVAILABLE = 53192
 
@@ -101,7 +104,7 @@ class MixDS(torch.utils.data.Dataset):
                 for t in range(0, L - span): rows.append((si, s + t, ep_off + e, e))
             meta = json.load(open(os.path.join(d, "meta.json"))) if os.path.exists(os.path.join(d, "meta.json")) else {}
             self.abs_action.append(meta.get("action_kind") == "absolute")
-            per.append(dict(source=name, cache=d, w=float((weights or UNIVLA_W)[name]), episodes=len(eps), clips=len(rows) - n0,
+            per.append(dict(source=name, cache=d, w=float((weights or {**UNIVLA_W, **EXTRA_W})[name]), episodes=len(eps), clips=len(rows) - n0,
                             lang=self.lang[-1] is not None, action_kind=meta.get("action_kind", "delta" if name == "bridge_big" else "unknown"),
                             episodes_all=int(len(starts)), frames=int(lengths.sum()),
                             episodes_available=meta.get("episodes_available", BRIDGE_EPISODES_AVAILABLE if name == "bridge_big" else None)))

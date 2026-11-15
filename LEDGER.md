@@ -6215,3 +6215,32 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   (the s0 Drop gap 22.5 vs 18.9 does NOT survive seeds); w/o L_effect Act .971+-.023 Far 1.145; head .883 / 1.010;
   cycle .961 / 1.145; L_self .821 / .880; w/o L_dist .768 / .804; w/o L_rel .724+-.013 (= full, decoder-only term).
 - User: "i don't care about table 4 anymore" -> priority now the LIBERO physical-replay experiment.
+
+### 2026-11-15 03:00 -- Physical replay in LIBERO (reviewer: Psi(Y_hat_{j<-i}) vs Psi(Y^real_{j<-i})): zero-shot is uninformative -> LIBERO fine-tune first
+- **Code.** `acdc_la/downstream/phys_replay.py` (probe / cache / collect / eval / summary), launchers
+  `scripts/run_phys_replay.sh`, `scripts/run_liberoft.sh`; `train_multi --finetune-from PREFIX` (fresh optimiser,
+  weights + EMA teacher + T0 + buffer + head from PREFIX_<arm>_s<seed>); `oxe_mix.EXTRA_W` registers the
+  `libero_sim_*` caches without adding them to the default mix.
+- **Protocol.** Clip = tokenizer geometry (T=5, stride 4 = 16 control steps).  Donor: restore demo i's recorded MuJoCo
+  state at t, execute its recorded actions[t:t+16].  Recipient: restore demo j (same task) and execute THE SAME
+  actions (physical-action identity, not task-semantic).  Grasp chunks aligned on the close command (lead 2/4/6
+  until the donor's own replay ends in a grasp); recipient at its own close step + shift {-8,-4,0,4,8}.  Strata at
+  chunk end on the donor's grasped object: centered = robosuite `_check_grasp`, offset = gripper contact only,
+  outside = none.  Plus generic chunks (random t, recipient at the same progress fraction).  Predictors: model
+  decode(f0_recipient, c=0, z(donor), u=0) [c=0 because no training cache has lang_t5; u=0 so the recipient's real
+  clip cannot leak], copy-donor dF, zero, and the ORACLE decode with the recipient's own z (ceiling).  Metrics: Psi
+  (= ACDC effect cells) cosine, net-displacement cosine, increment NMSE (sum err / sum ||Y_real||^2), object-cell
+  NMSE/cosine (object centre projected to the 4x4 grid), residual cosine cos(Psi(Y_hat - Y_donor), Psi(Y_real -
+  Y_donor)) = "does the decoder use the recipient state", near/far halves by first-frame DINO distance.
+- **Feasibility probe (8 tasks x 6 demos).**  Replay vs recording: object end-position error median 0.04-0.3 cm, p95
+  1-20 cm (grasped/sliding objects); the experiment never uses recorded frames, only sim re-execution.  Strata occur
+  naturally and depend on the shift as expected (e.g. libero_object/1: 83 centered / 18 offset / 49 outside).
+- **Smoke (zero-shot, libero_object task 0, 23 pairs, eatabm_*_s0).**  copy-donor Psi cos .34 / NMSE 1.62; EAT
+  transport .21 / 1.79; recon transport .21 / 1.18; **oracle own-z: EAT .48 / 1.44, recon .43 / 1.01** -- the decoder
+  cannot even reconstruct LIBERO (not one of the 29 sources; tiny objects in a 4x4 grid).  **Conclusion status: the
+  zero-shot comparison measures domain gap, not transport; not to be reported.**
+- **Decision (user agreed).** Fine-tune both arms identically on LIBERO demos 8-27 (val 26-27; demos 0-7 = replay test
+  pairs, never trained on): caches `cache/oxe/libero_sim_{spatial,object,goal,10}` (restored-state renders, 256 px),
+  `liberoft_{full,recon}_s{0,1,2}` (4000 steps, lr 1e-4, batch 64).  Gate before reading transport: oracle own-z must
+  be clearly better than zero (NMSE << 1).  Jobs: caches 1207825/27/29/31, pairs 1207826/28/30/32, fine-tune
+  1207834-36.
