@@ -17,7 +17,14 @@ another clip, and `DF[i^1]` is what that action really produced THERE.  Hence:
 
 All relative to the clip's OWN real future DF[i]: rel = mean((P - DF)^2) / mean(DF^2).
 
-    PYTHONPATH=. envs/univla_vla/bin/python -m acdc_la.downstream.transport_nulls [--full <tag>]
+    PYTHONPATH=. envs/univla_vla/bin/python -m acdc_la.downstream.transport_nulls [--full <tag>] [--residual <tag>]
+
+--residual checks the RESIDUAL metric of `phys_replay.py:280`, cos(Psi(Y_hat - Y_donor), Psi(Y_real - Y_donor)),
+proposed to answer "does the decoder use the recipient state, or just copy the donor".  copy-donor is 0 there by
+construction, but cosine is SCALE-INVARIANT, so every predictor of the form `a * Y_donor` with a < 1 -- which uses
+no recipient information at all -- gets the SAME positive score as predicting zero.  Only a = 1 is excluded, a
+measure-zero point.  Fix: project the donor direction out of both sides first, which sends the whole family to 0
+exactly; and compare a matched donor against a deranged one, or the remaining signal may be the first frame alone.
 """
 import argparse, glob, os
 import numpy as np
@@ -62,10 +69,42 @@ def full(tag):
           f"which is why COPY is a straw man, not a control")
 
 
+def residual(tag):
+    """The phys_replay residual metric and its donor-orthogonalised repair, with a wrong-donor control."""
+    from .transport_by_source import donor_index
+    d = np.load(os.path.join(RESULTS, f"{tag}_val.npz"), allow_pickle=True)
+    Yr = d["DF"].astype(np.float32); n = len(Yr); par = np.arange(n) ^ 1
+    cos = lambda A, B: (A * B).sum(1) / (np.linalg.norm(A, axis=1) * np.linalg.norm(B, axis=1) + 1e-9)
+    Yd, Yh = Yr[par], d["DMATCH"].astype(np.float32)
+    print(f"\n[{tag}] AS PROPOSED  cos(pred - donor, real - donor):")
+    print(f"    copy_donor  (Yh = Yd)            {0.0:+.4f}  0 by construction")
+    print(f"    ZERO        (Yh = 0)             {cos(-Yd, Yr - Yd).mean():+.4f}  <-- NO recipient information")
+    for a in (0.25, 0.5, 0.75, 1.25):
+        print(f"    scaled copy a={a:<5}              {cos((a - 1) * Yd, Yr - Yd).mean():+.4f}  <-- NO recipient information")
+    print(f"    model       (Yh = DMATCH)        {cos(Yh - Yd, Yr - Yd).mean():+.4f}")
+    print(f"    cos(real, donor) = {cos(Yr, Yd).mean():+.4f}: near-orthogonal, which is where the positive null comes from")
+
+    def ortho(P_hat, P_don, keep):
+        u = P_don / (np.linalg.norm(P_don, axis=1, keepdims=True) + 1e-9)
+        pr = lambda A: A - (A * u).sum(1, keepdims=True) * u
+        return float(cos(pr(P_hat), pr(Yr))[keep].mean())
+
+    di = donor_index(d["ACT"], d["ASW"], d["GE"], d["DONOR_GE"], d["SI"]); ok = di >= 0
+    print(f"[{tag}] REPAIRED  cos(P(pred), P(real)), P removing the donor direction:")
+    print(f"    zero / any scaled copy           {0.0:+.4f}  0 for the WHOLE family, not one point")
+    print(f"    model, matched donor             {ortho(Yh, Yd, np.ones(n, bool)):+.4f}")
+    print(f"    model, WRONG (deranged) donor    {ortho(d['DSW'].astype(np.float32), Yr[np.where(ok, di, 0)], ok):+.4f}"
+          f"   n={ok.sum()}  <-- the first-frame-only level")
+    print("    the donor-specific claim is the GAP between the last two, not the distance from 0.")
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--full", default=None, help="also compute the copy-donor reference for this tag (loads DF)")
+    ap.add_argument("--residual", default=None, help="check the phys_replay residual metric on this tag")
     A = ap.parse_args()
     table()
     if A.full:
         full(A.full)
+    if A.residual:
+        residual(A.residual)

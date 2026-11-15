@@ -6291,3 +6291,47 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   `transport_by_source.py`, which avoids the near-orthogonality that makes feature MSE hopeless.
 - **Next decision.** Asked the user which to build; the simulator work is paused at the data-download stage
   (`/data/ti874297/LIBERO_hdf5`, 4 suites) and `phys_replay.py` still does not exist in any commit.
+
+### 2026-11-15 (later) — the residual metric `phys_replay.py:280` answers the right question but has a **positive null**: every under-shooting scaled copy of the donor scores the same as predicting zero. Repair + wrong-donor control
+
+- **The proposal (user).**  Reviewers fear EAT only copies the donor, so compare the DIFFERENCES: true residual
+  `Y_real - Y_donor` against predicted residual `Y_hat - Y_donor`; copy-donor is identically 0, so "correlation > 0"
+  would mean the decoder really used the recipient state.  Report by centered / offset / outside.
+  **Already implemented** as `res_cos` in Newton's `acdc_la/downstream/phys_replay.py:280`, with `zero` among the
+  predictors — so the problem below will show up in its own output.
+- **The hole, measured** (`transport_nulls.py --residual`, on `s1_acdc_1ep`'s pair-matched val set, 11,456 rows;
+  Y_donor = the nearest-action partner's REAL effect `DF[i^1]`, Y_real = `DF[i]`, Y_hat = `DMATCH`):
+
+  | predictor | res_cos as proposed |
+  |---|---|
+  | copy-donor (`a = 1`) | +0.0000 (by construction) |
+  | **zero / predict no change** | **+0.6784** |
+  | **scaled copy `a` = 0.25 / 0.5 / 0.75** | **+0.6784 (identical)** |
+  | scaled copy `a` = 1.25 | −0.6784 |
+  | model (`DMATCH`) | +0.6579 |
+
+  **Cosine is scale-invariant, so the entire family `Y_hat = a * Y_donor`, `a < 1`, scores exactly what predicting
+  zero scores** — none of it uses one bit of recipient information.  The metric excludes only `a = 1`, a
+  measure-zero point.  The null is positive and large because `cos(Y_real, Y_donor) = +0.059` (near-orthogonal), so
+  subtracting `Y_donor` leaves a shared `-Y_donor` component in both residuals.  On this arm **the model (+0.658)
+  scores BELOW the zero predictor (+0.678)** while still "passing" a `> 0` test.
+- **Repair: project the donor direction out of both sides**, i.e. `cos(P Y_hat, P Y_real)` with
+  `P = I - u u^T`, `u = Y_donor/||Y_donor||`.  Identical in spirit (the residual after the donor is removed) but it
+  sends the **whole** scaled-copy family to exactly 0, not one point.  Values: model, matched donor **+0.0985**.
+- **A second control is required, and it costs two thirds of the signal.**  The prediction is
+  `decode(f0_recipient, z_donor)`, so part of any recipient-dependence is the first frame, not the donor's action.
+  Re-running with the DERANGED donor (`DSW`, donor row recovered as in `transport_by_source.donor_index`) gives
+  **+0.0630** on 10,844 rows.  **The donor-specific claim is the GAP, ~+0.036, not the distance from zero.**
+- **Pre-registered reading for the strata, which the design already supports.**  The TRUE residual is small in
+  `centered` (donor and recipient both grasp, outcomes similar — mostly noise, low power) and large in `outside`
+  (donor grasped, recipient missed).  So the gap should be **largest in `outside`, smallest in `centered`**.  Flat
+  across strata, or largest in `centered`, indicates a nuisance correlate rather than transport.
+- **Statistical unit:** pairs sharing a donor episode are not independent — cluster bootstrap on the donor episode,
+  the same lesson as the robot replay (2026-11-12).
+- **Caveat on every number here.**  `s1_acdc_1ep` is a stage-1 tokenizer, NOT an EAT arm; `latp2_inv` and
+  `eatabm_*` dumps live on Newton.  The geometry (scale-invariance ⇒ the family collapses) is exact and holds under
+  any `Psi`; the VALUES are not a measurement of TERRA.
+- **Also proposed, not run: difference-in-differences across two recipients of one donor** —
+  `cos(Y_hat_B - Y_hat_C, Y_real_B - Y_real_C)`.  The donor cancels exactly, so the whole scaled-copy family gives
+  0 without needing the projection, and the replay protocol already produces several recipients per donor
+  (demo `j` plus shifts {−8,−4,0,4,8}).  This is the cleanest form of the user's idea.

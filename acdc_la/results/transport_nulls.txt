@@ -44,3 +44,19 @@ smoke_s4                              576    5.202    5.212    5.127    46.7  wo
     model, wrong   donor   (E_WRONG)         1.0940
     model, own code        (E_SELF)          0.8589
     the model beats COPY on 99.6 % of clips -- which is why COPY is a straw man, not a control
+smoke_s4                              576    5.202    5.212    5.127    46.7  worse than predicting no change
+
+[s1_acdc_1ep] AS PROPOSED  cos(pred - donor, real - donor):
+    copy_donor  (Yh = Yd)            +0.0000  0 by construction
+    ZERO        (Yh = 0)             +0.6784  <-- NO recipient information
+    scaled copy a=0.25               +0.6784  <-- NO recipient information
+    scaled copy a=0.5                +0.6784  <-- NO recipient information
+    scaled copy a=0.75               +0.6784  <-- NO recipient information
+    scaled copy a=1.25               -0.6784  <-- NO recipient information
+    model       (Yh = DMATCH)        +0.6579
+    cos(real, donor) = +0.0589: near-orthogonal, which is where the positive null comes from
+[s1_acdc_1ep] REPAIRED  cos(P(pred), P(real)), P removing the donor direction:
+    zero / any scaled copy           +0.0000  0 for the WHOLE family, not one point
+    model, matched donor             +0.0985
+    model, WRONG (deranged) donor    +0.0630   n=10844  <-- the first-frame-only level
+    the donor-specific claim is the GAP between the last two, not the distance from 0.
