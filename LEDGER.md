@@ -6421,3 +6421,34 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   scratch logs under this session's scratchpad.  Unchanged asks: the 6 tokenizer checkpoints on a private HF repo so
   recipient-swap and train-vs-held-out-donor can run here, and the phase-2-base + `--latent none` third arm (~6.6 h,
   GPU 0 free) which is still the only thing that converts "TERRA works on the robot" into "the latent is why".
+### 2026-11-15 16:50 -- Donor yield: the fixed chunk anchor drops slow-grasp donors by WHOLE TASKS (recoverable, nothing invalidated)
+- **Setup.** `acdc_la/downstream/grasp_yield.py` and `lead_sweep.py`, workstation, 4 suites x 10 tasks x 8 demos,
+  donor chunks only (no recipient replays).  `collect` anchors the donor chunk at `t0 = close - lead`, tries
+  `lead` in (2, 4, 6) in order, and requires `_check_grasp` at the END of the 16-step chunk.
+- **Qualification under the current rule: 224/320 donors.**  spatial 56/80 `[7 6 5 7 6 6 6 0 6 7]`, object 70/80
+  `[7 7 7 6 5 7 8 7 8 8]`, goal 37/80 `[0 6 8 2 4 0 8 0 5 4]`, libero_10 61/80 `[7 8 0 7 3 8 8 8 7 5]`.
+- **Cause: in the slow-grasp tasks the grasp forms 4-12 steps AFTER the close command**, so a sweep over positive
+  leads only never sees it.  Extending to `6 4 2 0 -4 -8 -12 -16`:
+
+  | task | (2,4,6) | extended | first qualifying lead |
+  |---|---|---|---|
+  | libero_spatial/7 bowl on the stove | **0/8** | **8/8** | -8 -4 -4 -8 -8 0 -8 0 |
+  | libero_spatial/2 bowl from table center | 5/8 | 8/8 | -12 4 -4 6 2 6 4 0 |
+  | libero_goal/3 open drawer + put bowl inside | 2/8 | **8/8** | -4 -4 -4 4 -12 6 -4 -4 |
+  | libero_goal/4 bowl on top of cabinet | 4/8 | 6/8 | 4 4 -12 -4 4 2 |
+  | libero_goal/9 wine bottle on the rack | 4/8 | 6/8 | 6 6 -4 -16 6 6 |
+  | libero_goal/0 open the middle drawer | 0/8 | 0/8 | -- `close_events = 0`, no gripper-close command at all |
+  | libero_goal/5 push the plate | 0/8 | 0/8 | -- never grasps anything in `objects_dict` |
+  | libero_goal/7 turn on the stove | 0/8 | 0/8 | -- ditto (knob/handle are fixtures) |
+
+  15/64 -> 44/64 on those 8 tasks.  The loss is **systematic, not random**: it removes whole tasks, and the chunks it
+  removes are the ones where the grasp forms slowly -- i.e. where the recipient's state should matter most.
+- **Nothing is invalidated and 1207875-78 do not need to be killed.**  `--leads` added with the default (2, 4, 6), and
+  the extended list is tried in the same order, so it is a strict **superset**: every donor that qualified still
+  qualifies at the same lead.  Each pair now records its `lead`, so the added population is identifiable and an
+  extended collection can be pooled with, or simply replace, the current one.  Commit `898e4f7`.
+  **Recommended sequencing:** let 1207875-78 finish and read them; then recollect with
+  `--leads 6 4 2 0 -4 -8 -12 -16` for the final numbers, reporting the (2,4,6) subset as the comparison.
+- **Scope statement for the paper (not a bug).** The strata are defined by gripper contact with an entry of
+  `objects_dict`, so donors whose manipulation target is a fixture (drawer handle, stove knob) are out of scope;
+  with `push_the_plate` that is 3 of libero_goal's 10 tasks.
