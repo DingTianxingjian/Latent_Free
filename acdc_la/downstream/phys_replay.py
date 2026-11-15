@@ -185,20 +185,27 @@ def collect(a):
     for suite in a.suites:
         out = os.path.join(OUT, f"pairs_{suite}.npz")
         if os.path.exists(out): print(f"[collect] {out} exists", flush=True); continue
-        R = {k: [] for k in ("XD", "YR", "XD2", "XD2_key", "GX", "GY", "GX2", "kind", "stratum", "shift", "cell", "task", "lang", "di", "dj", "det")}
+        R = {k: [] for k in ("XD", "YR", "XD2", "XD2_key", "GX", "GY", "GX2", "kind", "stratum", "shift", "cell", "task", "lang", "di", "dj", "det", "lead")}
         for ti, task, f in tasks_of(suite)[:a.tasks]:
             sim = Sim(task); D = h5py.File(f, "r")["data"]; demos = sorted(D.keys(), key=lambda s: int(s.split("_")[1]))[:a.demos]
             data = {d: (D[d]["actions"][()], D[d]["states"][()]) for d in demos}
-            def add(kind, xd, yr, st, sh, cell, di, dj, det):
-                for k, v in zip(("XD", "YR", "kind", "stratum", "shift", "cell", "task", "lang", "di", "dj", "det"),
-                                (xd, yr, kind, st, sh, cell, ti, sim.lang, di, dj, det)): R[k].append(v)
+            def add(kind, xd, yr, st, sh, cell, di, dj, det, lead=99):
+                for k, v in zip(("XD", "YR", "kind", "stratum", "shift", "cell", "task", "lang", "di", "dj", "det", "lead"),
+                                (xd, yr, kind, st, sh, cell, ti, sim.lang, di, dj, det, lead)): R[k].append(v)
             n0 = len(R["kind"])
             for di in demos:
                 A, S = data[di]
                 # ---- grasp chunks: the close command inside the chunk, donor's own replay ends in a grasp
                 for tc in close_steps(A)[:1]:
                     obj = None
-                    for lead in (2, 4, 6):
+                    # The chunk is anchored at t0 = tc - lead and must END in a grasp.  In the slow-grasp
+                    # tasks the grasp only forms 4-12 steps AFTER the close command, so a sweep over positive
+                    # leads alone drops those donors -- systematically, by whole task (libero_spatial/7:
+                    # 0/8 donors with (2,4,6), 8/8 once 0/-4/-8 are allowed, first qualifying lead -8/-4/0).
+                    # --leads keeps (2,4,6) as the default so a run already in flight is unchanged, and the
+                    # extended list is a strict SUPERSET in that order: donors that qualified still qualify
+                    # at the same lead, so an extended collection can be pooled with an old one.
+                    for lead in a.leads:
                         t0 = max(0, tc - lead); xd, _ = sim.run(S[t0], A[t0:t0 + H], A[:t0]); obj = sim.grasped()
                         if obj: break
                     if obj is None: continue
@@ -212,7 +219,7 @@ def collect(a):
                             tj = cj[0] - lead + sh
                             if tj < 0 or tj + H > len(Sj): continue
                             yr, _ = sim.run(Sj[tj], A[t0:t0 + H], Aj[:tj])
-                            add("grasp", xd, yr, sim.contact(obj), sh, obj_cell(sim, obj), di, dj, det)
+                            add("grasp", xd, yr, sim.contact(obj), sh, obj_cell(sim, obj), di, dj, det, lead)
                 # ---- generic chunks (any phase): donor at a random t, recipient demo at the same progress fraction
                 for _ in range(a.generic):
                     t0 = int(rng.integers(0, len(A) - H)); xd, _ = sim.run(S[t0], A[t0:t0 + H], A[:t0])
@@ -364,7 +371,8 @@ def evaluate(a):
                 D.setdefault(f"did/{k}", []).append(cos(keep[k][B] - keep[k][C], dr, dim=1).numpy())
             D["did_cluster"].append(cluster[B]); D["did_sb"].append(P["stratum"][B]); D["did_sc"].append(P["stratum"][C])
         for k, v in D.items(): res[k] = np.concatenate(v) if v else np.zeros(0)
-        for q in ("kind", "stratum", "shift", "cell", "task", "di", "dj", "det"): res[q] = P[q]
+        for q in ("kind", "stratum", "shift", "cell", "task", "di", "dj", "det", "lead"):
+            if q in P: res[q] = P[q]
         res["cluster"] = cluster
         np.savez_compressed(os.path.join(OUT, f"eval_{suite}.npz"), **res)
         print(f"[eval] {suite} {n} pairs, {len(groups)} donor groups, {len(res['did_cluster'])} DiD recipient pairs", flush=True)
@@ -444,7 +452,11 @@ def main():
     ap.add_argument("--batch", type=int, default=32)
     ap.add_argument("--suites", nargs="+", default=SUITES)
     ap.add_argument("--tasks", type=int, default=10); ap.add_argument("--demos", type=int, default=8)
-    ap.add_argument("--lead", type=int, default=6, help="chunk starts this many steps before the close command")
+    ap.add_argument("--lead", type=int, default=6, help="probe only: chunk starts this many steps before the close command")
+    ap.add_argument("--leads", type=int, nargs="+", default=[2, 4, 6],
+                    help="collect: anchor offsets tried in order, first whose chunk ends in a grasp wins. "
+                         "Negative = chunk starts AFTER the close command; 6 4 2 0 -4 -8 -12 -16 recovers the "
+                         "slow-grasp tasks and is a strict superset of the default")
     ap.add_argument("--shifts", type=int, nargs="+", default=[-8, -4, 0, 4, 8])
     ap.add_argument("--save-png", action="store_true")
     a = ap.parse_args(); os.makedirs(OUT, exist_ok=True)
