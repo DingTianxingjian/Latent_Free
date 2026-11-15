@@ -102,12 +102,21 @@ def probe(a):
     for suite in a.suites:
         for ti, task, f in tasks_of(suite)[:a.tasks]:
             sim = Sim(task); D = h5py.File(f, "r")["data"]; demos = sorted(D.keys(), key=lambda s: int(s.split("_")[1]))[:a.demos]
-            det, strata, n_close = [], {}, 0
+            det, det2, strata, n_close = [], [], {}, 0
             for i, di in enumerate(demos):
                 A, S = D[di]["actions"][()], D[di]["states"][()]
-                for t in range(0, len(A) - H, max(1, (len(A) - H) // 4)):     # determinism: replay vs recording
-                    _, s_end = sim.run(S[t], A[t:t + H], A[:t])
-                    p_rep = sim.obj_pos(); sim.restore(S[t + H]); p_rec = sim.obj_pos()
+                for t in range(0, len(A) - H, max(1, (len(A) - H) // 4)):
+                    # TWO different quantities, kept apart (2026-11-15, workstation): (A) replay vs replay is the
+                    # experiment's own noise floor and must be 0 after the exact-restore fix; (B) replay vs the
+                    # RECORDED state at t+H is a property of LIBERO's demos in this robosuite build (they were not
+                    # produced by this code path: solver warm-start and the gripper's integrated command evolved
+                    # along the whole original episode).  (B) does NOT enter the metric -- both X_D and Y_real are
+                    # replayed -- so it must not be used to gate collection.  Measured: (A) 0.0000 cm on 56/56
+                    # chunks, (B) median 0.12 / p95 1.30 / max 9.71 cm.
+                    _, s_end = sim.run(S[t], A[t:t + H], A[:t]); p_rep = {k: v.copy() for k, v in sim.obj_pos().items()}
+                    sim.run(S[t], A[t:t + H], A[:t]); p_rep2 = sim.obj_pos()
+                    det2.append(max(np.linalg.norm(p_rep[n] - p_rep2[n]) for n in p_rep))
+                    sim.restore(S[t + H], A[:t + H]); p_rec = sim.obj_pos()
                     det.append(max(np.linalg.norm(p_rep[n] - p_rec[n]) for n in p_rep))
                 cs = close_steps(A); n_close += len(cs)
                 for tc in cs[:1]:
@@ -123,8 +132,11 @@ def probe(a):
                             sim.run(Sj[tj], A[t0:t0 + H], Aj[:tj]); c = sim.contact(obj)
                             strata[f"{c}@{sh:+d}"] = strata.get(f"{c}@{sh:+d}", 0) + 1
             det = np.array(det)
-            r = dict(lang=sim.lang, n_det=len(det), det_obj_err_cm_median=float(np.median(det) * 100), det_obj_err_cm_p95=float(np.percentile(det, 95) * 100),
-                     det_obj_err_cm_max=float(det.max() * 100), close_events=n_close, strata=strata)
+            det2 = np.array(det2)
+            r = dict(lang=sim.lang, n_det=len(det),
+                     replay_vs_replay_cm_max=float(det2.max() * 100), replay_vs_replay_zero_frac=float((det2 < 1e-11).mean()),
+                     vs_recording_cm_median=float(np.median(det) * 100), vs_recording_cm_p95=float(np.percentile(det, 95) * 100),
+                     vs_recording_cm_max=float(det.max() * 100), close_events=n_close, strata=strata)
             rep[f"{suite}/{ti}"] = r; print(f"[probe] {suite}/{ti} {json.dumps(r)}", flush=True)
             sim.env.close()
             if a.save_png:
