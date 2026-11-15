@@ -6209,3 +6209,9 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   (c) Carry the rollouts into the paper: 1,124 frames of real3 session 2 and 852 of the press-button pair, with
   `rollout_index.json` as the authority for each rollout's true instruction (the GUI's recorder stores the
   *previous* episode's label — documented by them, do not read the stored label).
+### 2026-11-15 02:30 -- Table 4 seeds 0-2 done (rebuttal EAT ablation) -- closed, user deprioritised
+- s1/s2 TIMEOUT at 20 h, resumed by 1201487/88 (done 11-13 04:42).  Eval `logs/eatab_table_s12.out`, `results/eatab_table.json`.
+- 3-seed mean+-sd: full EAT Act .730+-.006 Far .785+-.010 Drop 20.2+-1.8; w/o L_inv Act .730+-.005 (identical) Drop 20.6+-1.9
+  (the s0 Drop gap 22.5 vs 18.9 does NOT survive seeds); w/o L_effect Act .971+-.023 Far 1.145; head .883 / 1.010;
+  cycle .961 / 1.145; L_self .821 / .880; w/o L_dist .768 / .804; w/o L_rel .724+-.013 (= full, decoder-only term).
+- User: "i don't care about table 4 anymore" -> priority now the LIBERO physical-replay experiment.
