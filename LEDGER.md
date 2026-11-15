@@ -6386,3 +6386,38 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   cancels exactly); all CIs cluster-bootstrapped over donor episodes; strata read as pre-registered: the matched -
   wrong gap should be largest for outside and smallest for centered (flat or reversed = nuisance, not transport).
   The raw res_cos is still printed, next to its null, so the failure is visible.
+### 2026-11-15 16:40 -- Replay prerequisites measured on the workstation: noise floor is EXACTLY zero; probe's det number was the wrong quantity
+- **Host/config.** UCF workstation (not Newton), `univla_vla` + `PYTHONPATH=envs/LIBERO`, EGL, CPU MuJoCo, GPU 0 idle.
+  The 4 LIBERO suites are now local: `/data/ti874297/LIBERO_hdf5`, 40 HDF5, **33.78 GB**, 2000 demos, every file opened
+  and checked for `states`/`actions`.  `phys_replay.py`'s four Lustre paths made env-overridable (`LF_ROOT`,
+  `LF_LIBERO_HDF5`, `LF_PHYS_OUT`, `LF_CKPT`, `LF_T5`; Newton's values stay the defaults, Slurm unaffected),
+  `acdc_la/scripts/run_phys_replay_local.sh` added -- commits `5dba154`, `d95cecc`.  `collect`/`eval` still cannot run
+  here: the 6 `eatabm_{full,recon}_s{0,1,2}` checkpoints are on Newton only.
+- **The probe's `det` mixed two quantities** (`acdc_la/downstream/det_split.py`, 56 chunks, libero_spatial tasks 0-1,
+  on `b8666cd`'s exact restore):
+
+  | | median | p95 | max | zero fraction |
+  |---|---|---|---|---|
+  | (A) replay vs replay (same state + same actions twice) | 0.0000 cm | 0.0000 | **0.0000** | **56/56** |
+  | (B) replay vs the RECORDED state at t+H | 0.119 cm | 1.303 | 9.708 | 0/56 |
+
+  **(A) = 0 everywhere: the 05:30 exact-restore fix is complete** and the experiment has a clean zero noise floor --
+  X_D and Y_real carry no replay noise at all.  **(B) is a property of LIBERO's demos, not of our restore**: they were
+  not produced by this code path (solver warm-start and the gripper's integrated command evolved along the whole
+  original episode; `sim.reset()` + rebuilding from `actions[:t]` is a different history), and contact amplifies it --
+  hence 9.7 cm chunks here and a 17.4 cm chunk in the full probe.  (B) never enters the metric, because both the donor
+  effect and the recipient's real effect are replayed by us and never read from the recording, so **it must not gate
+  collection**.  CORRECTION to the 05:30 entry: its post-fix "object vs recording 0.07-0.8 cm" is (B), not the noise
+  floor; the noise floor is 0.  `probe` now reports `replay_vs_replay_cm_max`/`_zero_frac` beside `vs_recording_*`.
+- **Donor yield: probe's `donor_no_grasp` is NOT collect's yield** (`acdc_la/downstream/grasp_yield.py`).  probe tries
+  only `lead=6` and found 59/72 libero_spatial donors with no grasp, which looked like too thin a `centered` stratum
+  for the pre-registered centered-vs-outside reading.  `collect` sweeps `lead` in (2, 4, 6), and under that rule
+  libero_spatial tasks 0-4 give **7, 6, 5, 7, 6 of 8** donors (vs 1, 1, 2, 2, 8 at lead=6 alone).  Thinness was a probe
+  artefact: **the running recollection 1207875-78 does NOT need more demos per task.**  Suite difference understood:
+  spatial's first gripper-close command precedes the actual bowl grasp, object's does not (libero_object tasks 0-2:
+  1-2/8 no-grasp, 134-159 centered pairs per task at lead=6 alone).
+- **Status / next.** Full 4-suite probe + yield sweep still running in tmux (`physprobe`, `yield`); the stratum-yield
+  table will be appended here when they finish.  Artifacts: `acdc_la/results/phys_replay/probe.json`,
+  scratch logs under this session's scratchpad.  Unchanged asks: the 6 tokenizer checkpoints on a private HF repo so
+  recipient-swap and train-vs-held-out-donor can run here, and the phase-2-base + `--latent none` third arm (~6.6 h,
+  GPU 0 free) which is still the only thing that converts "TERRA works on the robot" into "the latent is why".
