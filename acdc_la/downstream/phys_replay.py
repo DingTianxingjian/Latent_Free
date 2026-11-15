@@ -17,6 +17,8 @@ import argparse, glob, json, os, sys
 import numpy as np
 
 H = 16                                  # control steps per clip  (T-1) * stride = 4 * 4
+MAX_MOVE = 0.50                         # m: an object cannot travel this far in 16 steps (0.8 s) in a quasi-static
+                                        # manipulation -- above it the solve has blown up, see Sim.run
 STRIDE = 4
 SUITES = ["libero_spatial", "libero_object", "libero_goal", "libero_10"]
 ROOT = os.environ.get("LF_ROOT", "/lustre/fs1/home/ti874297/lf/latent_free")   # Newton; override on other hosts
@@ -69,11 +71,21 @@ class Sim:
         return obs
 
     def run(self, state, actions, past=None):
-        """restore + execute; frames every STRIDE steps (T=5), plus the end state."""
+        """restore + execute; frames every STRIDE steps (T=5), plus the end state.
+
+        Sets `self.moved` = the largest object displacement during THIS execution (m).  Restoring a resting contact
+        after `sim.reset()` sometimes makes the first solve explode and eject an object: on libero_10/5 the book
+        travels 750 / 127 / 91 cm in 3 of 38 chunks where the recording moves it 0.0 / 12.7 / 0.0 cm (legitimate
+        median 6.3, max 21 cm).  The blow-up is DETERMINISTIC, so the replay-vs-replay floor stays 0 and cannot see
+        it, and MuJoCo's own warning counters caught only 1 of the 3 (`sim.reset()` also clears them).  A physical
+        bound is the only reliable detector -- hence this number, recorded per pair rather than silently dropped."""
         obs = self.restore(state, past); fr = [self.frame(obs)]
+        p0 = {k: v.copy() for k, v in self.obj_pos().items()}
         for k, a in enumerate(actions):
             obs, _, _, _ = self.env.step(a.tolist())
             if (k + 1) % STRIDE == 0: fr.append(self.frame(obs))
+        p1 = self.obj_pos()
+        self.moved = float(max((np.linalg.norm(p1[n] - p0[n]) for n in p0), default=0.0))
         return np.stack(fr), self.e.sim.get_state().flatten().copy()
 
     def contact(self, name):
@@ -185,13 +197,14 @@ def collect(a):
     for suite in a.suites:
         out = os.path.join(OUT, f"pairs_{suite}.npz")
         if os.path.exists(out): print(f"[collect] {out} exists", flush=True); continue
-        R = {k: [] for k in ("XD", "YR", "XD2", "XD2_key", "GX", "GY", "GX2", "kind", "stratum", "shift", "cell", "task", "lang", "di", "dj", "det", "lead")}
+        R = {k: [] for k in ("XD", "YR", "XD2", "XD2_key", "GX", "GY", "GX2", "kind", "stratum", "shift", "cell", "task", "lang", "di", "dj", "det", "lead", "mv_d", "mv_r")}
         for ti, task, f in tasks_of(suite)[:a.tasks]:
             sim = Sim(task); D = h5py.File(f, "r")["data"]; demos = sorted(D.keys(), key=lambda s: int(s.split("_")[1]))[:a.demos]
             data = {d: (D[d]["actions"][()], D[d]["states"][()]) for d in demos}
-            def add(kind, xd, yr, st, sh, cell, di, dj, det, lead=99):
-                for k, v in zip(("XD", "YR", "kind", "stratum", "shift", "cell", "task", "lang", "di", "dj", "det", "lead"),
-                                (xd, yr, kind, st, sh, cell, ti, sim.lang, di, dj, det, lead)): R[k].append(v)
+            def add(kind, xd, yr, st, sh, cell, di, dj, det, lead=99, mv_d=-1.0, mv_r=-1.0):
+                for k, v in zip(("XD", "YR", "kind", "stratum", "shift", "cell", "task", "lang", "di", "dj", "det",
+                                 "lead", "mv_d", "mv_r"),
+                                (xd, yr, kind, st, sh, cell, ti, sim.lang, di, dj, det, lead, mv_d, mv_r)): R[k].append(v)
             n0 = len(R["kind"])
             for di in demos:
                 A, S = data[di]
@@ -206,7 +219,7 @@ def collect(a):
                     # extended list is a strict SUPERSET in that order: donors that qualified still qualify
                     # at the same lead, so an extended collection can be pooled with an old one.
                     for lead in a.leads:
-                        t0 = max(0, tc - lead); xd, _ = sim.run(S[t0], A[t0:t0 + H], A[:t0]); obj = sim.grasped()
+                        t0 = max(0, tc - lead); xd, _ = sim.run(S[t0], A[t0:t0 + H], A[:t0]); mv_d = sim.moved; obj = sim.grasped()
                         if obj: break
                     if obj is None: continue
                     xd2, _ = sim.run(S[t0], A[t0:t0 + H], A[:t0]); det = float(np.abs(xd2.astype(int) - xd).mean())   # same state+actions twice
@@ -219,19 +232,21 @@ def collect(a):
                             tj = cj[0] - lead + sh
                             if tj < 0 or tj + H > len(Sj): continue
                             yr, _ = sim.run(Sj[tj], A[t0:t0 + H], Aj[:tj])
-                            add("grasp", xd, yr, sim.contact(obj), sh, obj_cell(sim, obj), di, dj, det, lead)
+                            add("grasp", xd, yr, sim.contact(obj), sh, obj_cell(sim, obj), di, dj, det, lead, mv_d, sim.moved)
                 # ---- generic chunks (any phase): donor at a random t, recipient demo at the same progress fraction
                 for _ in range(a.generic):
-                    t0 = int(rng.integers(0, len(A) - H)); xd, _ = sim.run(S[t0], A[t0:t0 + H], A[:t0])
+                    t0 = int(rng.integers(0, len(A) - H)); xd, _ = sim.run(S[t0], A[t0:t0 + H], A[:t0]); mv_d = sim.moved
                     dj = demos[int(rng.integers(len(demos)))]
                     if dj == di: continue
                     Aj, Sj = data[dj]; tj = int(round(t0 / (len(A) - H) * (len(Aj) - H)))
                     yr, _ = sim.run(Sj[tj], A[t0:t0 + H], Aj[:tj])
-                    add("generic", xd, yr, "generic", 0, -1, di, dj, -1.0)
+                    add("generic", xd, yr, "generic", 0, -1, di, dj, -1.0, 99, mv_d, sim.moved)
             if not R.get("EX"): R["EX"] = [np.concatenate([x, y], 0) for x, y in zip(R["XD"][:12], R["YR"][:12])]
             R["GX"].append(g4(R["XD"])); R["GY"].append(g4(R["YR"])); R["XD"], R["YR"] = [], []   # frames -> g4 per task
             R["GX2"].append(g4(R["XD2"])); R["XD2"] = []
-            print(f"[collect] {suite}/{ti} pairs {len(R['kind']) - n0}  ({sim.lang})", flush=True); sim.env.close()
+            bad = sum(1 for a, b in zip(R["mv_d"][n0:], R["mv_r"][n0:]) if max(a, b) > MAX_MOVE)
+            print(f"[collect] {suite}/{ti} pairs {len(R['kind']) - n0}  unstable(>{MAX_MOVE*100:.0f}cm) {bad}  ({sim.lang})", flush=True)
+            sim.env.close()
         for k in ("GX", "GY", "GX2"): R[k] = np.concatenate(R[k])
         R["EX"] = np.stack(R["EX"]); del R["XD"], R["YR"], R["XD2"]
         np.savez_compressed(out, **{k: np.array(v) for k, v in R.items()})
@@ -371,7 +386,7 @@ def evaluate(a):
                 D.setdefault(f"did/{k}", []).append(cos(keep[k][B] - keep[k][C], dr, dim=1).numpy())
             D["did_cluster"].append(cluster[B]); D["did_sb"].append(P["stratum"][B]); D["did_sc"].append(P["stratum"][C])
         for k, v in D.items(): res[k] = np.concatenate(v) if v else np.zeros(0)
-        for q in ("kind", "stratum", "shift", "cell", "task", "di", "dj", "det", "lead"):
+        for q in ("kind", "stratum", "shift", "cell", "task", "di", "dj", "det", "lead", "mv_d", "mv_r"):
             if q in P: res[q] = P[q]
         res["cluster"] = cluster
         np.savez_compressed(os.path.join(OUT, f"eval_{suite}.npz"), **res)
