@@ -6584,3 +6584,21 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   failure mode), which would make this comparison stratifiable without re-running anything.
 - Artifacts (this host, scratchpad): `sheets/bowl_{TERRA,OPENVLA}_{0,1}.jpg` (bowl-zoom scoring sheets),
   `fl_{TERRA,OPENVLA}_{0,1}.jpg` (first|last frame pairs), `score.py` (the per-episode calls and the test).
+
+## 2026-11-15 23:40 -- Physical replay, round 2 REGISTERED (Newton): decoder probe + 3-seed ensemble on the 265-donor-style collection
+- **Why.** `train_v2.py` L_effect = 1 - cos(Psi(T(F_j0, z_i)), Psi(dF_i)) trains the decoder to reproduce the DONOR's
+  effect on a new state (its own docstring names "T ignores s_j and replays dF_i" as an exact minimiser); proj_cos
+  removes exactly that direction.  So the replay numbers read the ORIGINAL DECODER's training target as much as the
+  code.  The question the reviewer asks is about the code.
+- **Decoder probe (`phys_replay.py probe_train`).**  Freeze each model's encoder; re-fit only `m.dec` (init from the
+  trained decoder) on replay pairs from TRAIN demos 8-17 and 18-27 (`pairs_<suite>_tr8/_tr18.npz`, pairs within each
+  group of 10), loss MSE(T(f0_j, z_i), dY_real) + 0.5 MSE(T(f0_j, z_j), dY_real); AdamW 1e-4, 4000 steps x 128,
+  cosine; unstable (>50 cm) pairs dropped.  Test pairs are demos 0-7 only -- disjoint.  Identical recipe for
+  liberoft_{full,recon}_s{0,1,2} -> `<tag>_probe.pt`.  Read: GAP (matched - wrong code) of `*_probe` vs the original.
+- **Ensemble.**  eval adds `<arm>_ens`: mean of the 3 seeds' predictions (not of their metrics).
+- **Collection.**  Test pairs recollected on Newton with `--leads 6 4 2 0 -4 -8 -12 -16` (same as the workstation's
+  10948-pair set); old 224-donor files moved to `results/phys_replay/old_224donor/`.  summarize now drops >50 cm pairs
+  and offsets did_cluster per suite too.
+- **Smoke (1211095, goal, probe trained ON test pairs -- pipeline check only, numbers optimistic and NOT reported):**
+  probe GAP grasp +0.16 vs original +0.03; ensemble = original within 0.002.
+- Jobs: collect 1210380-91, probe_train 1211573-78, eval 1211580/82/89/90 (dependency chain), normal partition.

@@ -113,7 +113,7 @@ def probe(a):
     rep = {}
     for suite in a.suites:
         for ti, task, f in tasks_of(suite)[:a.tasks]:
-            sim = Sim(task); D = h5py.File(f, "r")["data"]; demos = sorted(D.keys(), key=lambda s: int(s.split("_")[1]))[:a.demos]
+            sim = Sim(task); D = h5py.File(f, "r")["data"]; demos = sorted(D.keys(), key=lambda s: int(s.split("_")[1]))[a.demo_start:a.demo_start + a.demos]
             det, det2, strata, n_close = [], [], {}, 0
             for i, di in enumerate(demos):
                 A, S = D[di]["actions"][()], D[di]["states"][()]
@@ -195,11 +195,11 @@ def collect(a):
         return np.concatenate(out) if out else np.zeros((0, 5, 16, 768), np.float16)
     rng = np.random.default_rng(0)
     for suite in a.suites:
-        out = os.path.join(OUT, f"pairs_{suite}.npz")
+        out = os.path.join(OUT, f"pairs_{suite}{a.out_tag}.npz")
         if os.path.exists(out): print(f"[collect] {out} exists", flush=True); continue
         R = {k: [] for k in ("XD", "YR", "XD2", "XD2_key", "GX", "GY", "GX2", "kind", "stratum", "shift", "cell", "task", "lang", "di", "dj", "det", "lead", "mv_d", "mv_r")}
         for ti, task, f in tasks_of(suite)[:a.tasks]:
-            sim = Sim(task); D = h5py.File(f, "r")["data"]; demos = sorted(D.keys(), key=lambda s: int(s.split("_")[1]))[:a.demos]
+            sim = Sim(task); D = h5py.File(f, "r")["data"]; demos = sorted(D.keys(), key=lambda s: int(s.split("_")[1]))[a.demo_start:a.demo_start + a.demos]
             data = {d: (D[d]["actions"][()], D[d]["states"][()]) for d in demos}
             def add(kind, xd, yr, st, sh, cell, di, dj, det, lead=99, mv_d=-1.0, mv_r=-1.0):
                 for k, v in zip(("XD", "YR", "kind", "stratum", "shift", "cell", "task", "lang", "di", "dj", "det",
@@ -308,8 +308,16 @@ def evaluate(a):
     dev = "cuda"; cos = torch.nn.functional.cosine_similarity
     models = {}
     for tag in a.models:
-        m, dstats, ck = load_ckpt(os.path.join(CKPT, tag + ".pt"), dev)
+        base = tag[:-len("_probe")] if tag.endswith("_probe") else tag
+        m, dstats, ck = load_ckpt(os.path.join(CKPT, base + ".pt"), dev)
+        if base != tag:                                                       # frozen encoder + decoder re-fit on train-demo replays
+            m.dec.load_state_dict(torch.load(os.path.join(CKPT, tag + ".pt"), map_location=dev)["dec"])
         ar = ck.get("args", {}); models[tag] = (m.eval(), Featurizer(None, 4, ar.get("pool", "acdc"), ar.get("modes", 2), dstats, dev))
+    import re
+    ens = {}                                                                  # 3-seed ensemble: mean of the seeds' PREDICTIONS
+    for tag in models:
+        if re.search(r"_s\d+", tag): ens.setdefault(re.sub(r"_s\d+", "_ens", tag), []).append(tag)
+    ens = {k: v for k, v in ens.items() if len(v) > 1}
     dst = {tag: float(f.dstats) for tag, (_, f) in models.items()}
     assert len(set(round(v, 6) for v in dst.values())) == 1, dst              # one dF scale -> one Y_real for all models
     feat = next(iter(models.values()))[1]
@@ -347,6 +355,8 @@ def evaluate(a):
                     preds[tag] = m.decode(gy[:, 0], c, code(m, fz, gx, dx), u0(m))
                     preds[tag + "@wrongz"] = m.decode(gy[:, 0], c, code(m, fz, gw, dw), u0(m))
                     preds[tag + "@ownz"] = m.decode(gy[:, 0], c, code(m, fz, gy, dy), u0(m))   # ceiling: its own code
+                for e, mem in ens.items():
+                    for suf in ("", "@wrongz", "@ownz"): preds[e + suf] = torch.stack([preds[t + suf] for t in mem]).mean(0)
             psi = lambda d: feat.cells_of(d).flatten(1)
             py, px = psi(dy), psi(dx); uu = px / px.norm(dim=1, keepdim=True).clamp_min(1e-8)
             proj = lambda v: v - (v * uu).sum(1, keepdim=True) * uu
@@ -360,7 +370,7 @@ def evaluate(a):
                             obj_err=(oh - oy).pow(2).flatten(1).sum(1), obj_nrm=oy.pow(2).flatten(1).sum(1),
                             obj_cos=cos(oh.flatten(1), oy.flatten(1), dim=1))
                 for q, v in vals.items(): out.setdefault(f"{k}/{q}", []).append(v.cpu())
-                if k in models or k.endswith("@wrongz") or k == "_real":
+                if k in models or k in ens or k.endswith("@wrongz"):
                     keep.setdefault(k, []).append(ph.half().cpu())
             keep.setdefault("_real", []).append(py.half().cpu())
             out.setdefault("_pair/dist", []).append((Fz.quadrants(gy[:, 0]) - Fz.quadrants(gx[:, 0])).flatten(1).norm(dim=1).cpu())
@@ -374,10 +384,11 @@ def evaluate(a):
             res["_noise/nmse"] = ((d2 - d1).pow(2).flatten(1).sum(1) / d1.pow(2).flatten(1).sum(1)).cpu().numpy()
             res["_noise/cos"] = cos(feat.cells_of(d2).flatten(1), feat.cells_of(d1).flatten(1), dim=1).cpu().numpy()
         keep = {k: torch.cat(v).float() for k, v in keep.items()}
+        stable = np.maximum(P["mv_d"], P["mv_r"]) <= MAX_MOVE if "mv_d" in P.files else np.ones(n, bool)
         # ---- difference-in-differences over recipient pairs of the same grasp donor
         D = {"did_cluster": [], "did_sb": [], "did_sc": []}
         for g in range(len(groups)):
-            ii = np.flatnonzero(gid == g)
+            ii = np.flatnonzero((gid == g) & stable)
             if gkind[g] != "grasp" or len(ii) < 2: continue
             b_, c_ = np.triu_indices(len(ii), 1); B, C = ii[b_], ii[c_]
             dr = keep["_real"][B] - keep["_real"][C]
@@ -391,6 +402,66 @@ def evaluate(a):
         res["cluster"] = cluster
         np.savez_compressed(os.path.join(OUT, f"eval_{suite}.npz"), **res)
         print(f"[eval] {suite} {n} pairs, {len(groups)} donor groups, {len(res['did_cluster'])} DiD recipient pairs", flush=True)
+
+
+def probe_train(a):
+    """Decoder probe: freeze the ENCODER of each model and re-fit only its decoder `m.dec` on replay pairs from the
+    TRAIN demos (pairs_<suite>_tr*.npz, demos >= 8): decode(recipient f0, donor code) -> recipient's REAL dF under the
+    donor's actions.  Test pairs (demos 0-7) are never seen.  This reads how much physically transportable action
+    information the frozen code carries, independent of what the original decoder was trained to do with it
+    (L_effect trains it toward reproducing the DONOR's effect).  Identical recipe for every model; the own-code
+    reconstruction term keeps the decoder a decoder.  Saves CKPT/<tag>_probe.pt = {"dec": state_dict}."""
+    import torch, time
+    from ..common import features as Fz
+    from ..common.model import load_ckpt
+    dev = "cuda"; F = torch.nn.functional
+    files = sorted(f for s in a.suites for f in glob.glob(os.path.join(OUT, f"pairs_{s}_tr*.npz")))
+    GX, GY, CL = [], [], []
+    for i, f in enumerate(files):
+        P = np.load(f, allow_pickle=True)
+        ok = np.maximum(P["mv_d"], P["mv_r"]) <= MAX_MOVE if "mv_d" in P.files else np.ones(len(P["kind"]), bool)
+        di = np.array([int(str(x).split("_")[-1]) for x in P["di"]])
+        GX.append(P["GX"][ok]); GY.append(P["GY"][ok]); CL.append((i * 10 ** 6 + P["task"].astype(int) * 1000 + di)[ok])
+        print(f"[probe] {os.path.basename(f)}: {int(ok.sum())} pairs (dropped {int((~ok).sum())} unstable)", flush=True)
+    GX, GY, CL = np.concatenate(GX), np.concatenate(GY), np.concatenate(CL)
+    rng = np.random.default_rng(0); uc = np.unique(CL); hold = set(rng.choice(uc, max(1, len(uc) // 20), replace=False))
+    va = np.isin(CL, list(hold)); tr = np.flatnonzero(~va); va = np.flatnonzero(va)          # 5 % of donor episodes held out
+    print(f"[probe] {len(GX)} pairs, train {len(tr)}, held-out {len(va)} ({len(hold)} donor episodes)", flush=True)
+    for tag in a.models:
+        m, dstats, _ = load_ckpt(os.path.join(CKPT, tag + ".pt"), dev); m.eval()
+        for q in m.parameters(): q.requires_grad_(False)
+        Z, ZO = [], []
+        with torch.no_grad():                                                 # frozen codes, computed once
+            for b in range(0, len(GX), 256):
+                gx, gy = (torch.from_numpy(G[b:b + 256]).to(dev).float() for G in (GX, GY))
+                Z.append(m.encode_batch(dict(f0=gx[:, 0], dF=Fz.dF_from_g4(gx, dstats)), "clean")[0].cpu())
+                ZO.append(m.encode_batch(dict(f0=gy[:, 0], dF=Fz.dF_from_g4(gy, dstats)), "clean")[0].cpu())
+        Z, ZO = torch.cat(Z), torch.cat(ZO)
+        dec = m.dec; dec.train()
+        for q in dec.parameters(): q.requires_grad_(True)
+        opt = torch.optim.AdamW(dec.parameters(), lr=a.probe_lr, weight_decay=0.01)
+        sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda t: min(1, (t + 1) / 100) * 0.5 * (1 + np.cos(np.pi * t / a.probe_steps)))
+        def batch(idx):
+            gy = torch.from_numpy(GY[idx]).to(dev).float(); dy = Fz.dF_from_g4(gy, dstats)
+            c = torch.zeros(len(idx), 768, device=dev); u = torch.zeros(len(idx), m.d_u, device=dev)
+            return gy[:, 0], c, u, dy, Z[idx].to(dev), ZO[idx].to(dev)
+        def held():
+            dec.eval(); e = n_ = 0
+            with torch.no_grad():
+                for b in range(0, len(va), 256):
+                    f0, c, u, dy, z, _ = batch(va[b:b + 256])
+                    e += (dec_(f0, c, z, u) - dy).pow(2).sum().item(); n_ += dy.pow(2).sum().item()
+            dec.train(); return e / max(n_, 1e-9)
+        dec_ = lambda f0, c, z, u: m.decode(f0, c, z, u)
+        t0 = time.time(); print(f"[probe] {tag}: held-out transport NMSE before {held():.4f}", flush=True)
+        for step in range(a.probe_steps):
+            f0, c, u, dy, z, zo = batch(np.sort(rng.choice(tr, a.probe_batch, replace=False)))
+            loss = F.mse_loss(dec_(f0, c, z, u), dy) + a.probe_self * F.mse_loss(dec_(f0, c, zo, u), dy)
+            opt.zero_grad(set_to_none=True); loss.backward(); torch.nn.utils.clip_grad_norm_(dec.parameters(), 1.0); opt.step(); sched.step()
+            if (step + 1) % 500 == 0:
+                print(f"[probe] {tag} step {step + 1} loss {loss.item():.4f} held-out NMSE {held():.4f} ({time.time() - t0:.0f}s)", flush=True)
+        torch.save({"dec": dec.state_dict(), "base": tag, "steps": a.probe_steps, "files": files}, os.path.join(CKPT, tag + "_probe.pt"))
+        del m, dec, opt, Z, ZO; torch.cuda.empty_cache()
 
 
 def cboot(x, cl, B=2000, seed=0):
@@ -407,7 +478,7 @@ def summarize(a):
     E = [np.load(f, allow_pickle=True) for f in sorted(glob.glob(os.path.join(OUT, "eval_*.npz")))]
     # cluster = task*1000+demo is only unique INSIDE a suite (tasks are 0..9 in every suite), so pooling suites
     # collided 320 donor episodes into 80 and the cluster bootstrap resampled 80 units -> CIs too wide.
-    cat = lambda k: np.concatenate([e[k] + i * 10 ** 6 if k == "cluster" else e[k] for i, e in enumerate(E)])
+    cat = lambda k: np.concatenate([e[k] + i * 10 ** 6 if k in ("cluster", "did_cluster") else e[k] for i, e in enumerate(E)])
     kind, st, cl, dist = cat("kind"), cat("stratum"), cat("cluster"), cat("_pair/dist")
     tags = sorted({k.split("/")[0] for k in E[0].files if "/" in k and not k.startswith(("_", "did"))})
     import re
@@ -417,8 +488,10 @@ def summarize(a):
     arm = lambda t: re.sub(r"_s\d+", "", t)                                 # seeds of one arm are averaged per pair
     arms = {}
     for t in tags: arms.setdefault(arm(t), []).append(t)
-    groups = {"generic": kind == "generic", "grasp": kind == "grasp"}
-    for s in ("centered", "offset", "outside"): groups[s] = st == s
+    ok = (np.maximum(cat("mv_d"), cat("mv_r")) <= MAX_MOVE) if all("mv_d" in e.files for e in E) else np.ones(len(kind), bool)
+    print(f"excluded {int((~ok).sum())} of {len(ok)} pairs whose replay moved an object > {MAX_MOVE * 100:.0f} cm (sim blow-up)")
+    groups = {"generic": (kind == "generic") & ok, "grasp": (kind == "grasp") & ok}
+    for s in ("centered", "offset", "outside"): groups[s] = (st == s) & ok
     for g in ("generic", "grasp"):
         m = groups[g]; med = np.median(dist[m]) if m.any() else 0
         groups[f"{g}_near"], groups[f"{g}_far"] = m & (dist <= med), m & (dist > med)
@@ -463,12 +536,16 @@ def summarize(a):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("mode", choices=["probe", "collect", "eval", "summary", "cache"])
+    ap.add_argument("mode", choices=["probe", "collect", "eval", "summary", "cache", "probe_train"])
     ap.add_argument("--generic", type=int, default=6, help="generic (non-grasp) donor chunks per demo")
     ap.add_argument("--models", nargs="+", default=[f"eatabm_{m}_s{s}" for m in ("full", "recon") for s in (0, 1, 2)])
     ap.add_argument("--batch", type=int, default=32)
     ap.add_argument("--suites", nargs="+", default=SUITES)
     ap.add_argument("--tasks", type=int, default=10); ap.add_argument("--demos", type=int, default=8)
+    ap.add_argument("--demo-start", type=int, default=0, help="first demo index; 0-7 = test pairs, >= 8 = probe-train pairs")
+    ap.add_argument("--probe-steps", type=int, default=4000); ap.add_argument("--probe-batch", type=int, default=128)
+    ap.add_argument("--probe-lr", type=float, default=1e-4); ap.add_argument("--probe-self", type=float, default=0.5)
+    ap.add_argument("--out-tag", default="", help="suffix of pairs_<suite><tag>.npz (e.g. _tr8 for probe-train pairs)")
     ap.add_argument("--lead", type=int, default=6, help="probe only: chunk starts this many steps before the close command")
     ap.add_argument("--leads", type=int, nargs="+", default=[2, 4, 6],
                     help="collect: anchor offsets tried in order, first whose chunk ends in a grasp wins. "
@@ -477,7 +554,7 @@ def main():
     ap.add_argument("--shifts", type=int, nargs="+", default=[-8, -4, 0, 4, 8])
     ap.add_argument("--save-png", action="store_true")
     a = ap.parse_args(); os.makedirs(OUT, exist_ok=True)
-    {"cache": cache, "probe": probe, "collect": collect, "eval": evaluate, "summary": summarize}[a.mode](a)
+    {"cache": cache, "probe": probe, "collect": collect, "eval": evaluate, "summary": summarize, "probe_train": probe_train}[a.mode](a)
 
 
 if __name__ == "__main__":
