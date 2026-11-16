@@ -6602,3 +6602,25 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
 - **Smoke (1211095, goal, probe trained ON test pairs -- pipeline check only, numbers optimistic and NOT reported):**
   probe GAP grasp +0.16 vs original +0.03; ensemble = original within 0.002.
 - Jobs: collect 1210380-91, probe_train 1211573-78, eval 1211580/82/89/90 (dependency chain), normal partition.
+
+## 2026-11-16 00:30 -- Physical replay round 2 RESULT: decoder probe (train demos 8-27, test demos 0-7), 10943 test pairs, 265 grasp donors
+- Summary: `acdc_la/logs/phys_summary_r2.txt`.  23 pairs excluded (>50 cm).  Noise floor (265 donors): NMSE median 0.105, Psi cos 0.978.
+- Probe training (6 jobs, 4000 steps, ~7 min): held-out transport NMSE full 1.21 -> 0.879, recon 1.015 -> 0.878 (3 seeds each, identical).
+- Grasp pairs (n=9259, 3 seeds averaged), proj_cos / NMSE:
+  | | matched | wrong code | GAP [95% CI] | NMSE |
+  |---|---|---|---|---|
+  | copy donor / zero | 0 / 0 | | | 1.81 / 1.00 |
+  | full, original decoder | .099 | .039 | +.060 [.051,.068] | 1.18 |
+  | recon, original decoder | .231 | .169 | +.062 [.054,.070] | 1.03 |
+  | **full, probe decoder** | **.442** | .369 | **+.073 [.064,.083]** | **0.898** |
+  | **recon, probe decoder** | **.450** | .358 | **+.092 [.081,.103]** | **0.901** |
+  | own-code ceiling (full probe) | .665 | | | 0.800 |
+  generic: full_probe .432 (GAP +.147), recon_probe .461 (+.157).  Strata (full_probe GAP): centered +.071, offset +.074, outside +.075 -- flat.
+- DiD (same donor, two recipients), matched - wrong: original full +.003 [-.003,.008]; **probe full +.020 [.017,.023]**, probe recon +.017 [.014,.020] -- the probe decoder makes the code's effect state-dependent; the original decoder did not.
+- Ensemble = single-seed average within 0.005 everywhere: no gain.
+- **Reading.**  (1) With a decoder fit on disjoint train demos, both codes predict the real counterfactual better than
+  "no change" (NMSE 0.90 < 1.00) and much better than copying the donor (1.81); absolute proj_cos 0.08/0.23 -> 0.44/0.45.
+  Most of that jump is the probe using the recipient state (wrong-code also rises to .36-.37); the code's own share
+  (GAP) rises modestly, .060 -> .073 (full) / .062 -> .092 (recon).  (2) EAT does not beat recon on replay under
+  either decoder (GAP recon > full under the probe; absolute equal).  (3) Pre-registered stratum ordering: flat again.
+  (4) DiD becomes positive and significant under the probe.
