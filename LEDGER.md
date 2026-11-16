@@ -6548,11 +6548,21 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   action / observation.state / timestamp / images.  Scored here by eye from three frames per episode (t=0, t=-6, final)
   cropped to the bowl, located by saturation in frame 0.  **This is OUR reading of the video, not Anh Dao's record.**
 
-  | condition | TERRA | OpenVLA-7B | diff | 95% CI | Fisher p |
+  **RETRACTED 2026-11-16 (same day): the TERRA column below was scored wrongly.**  The user watched the spoon
+  session live and reports TERRA **13/18 (72 %)** in-distribution, against the 9/18 (50 %) read off the frames here.
+  A three-frame read (t=0, t=-6, final) misses placements that complete off those frames and miscounts the
+  bowl-flip episodes; the live observation supersedes it.  The OpenVLA column was scored by the SAME bad method and
+  is therefore also unverified -- it has NOT been corrected, only flagged.  Original (wrong) table kept for the record:
+
+  | condition | TERRA (WRONG) | OpenVLA-7B (unverified) | diff | 95% CI | Fisher p |
   |---|---|---|---|---|---|
   | all episodes | 12/22 (55 %) | 13/20 (65 %) | -10.5 % | [-39, +19] | 0.54 |
   | wood table (in-distribution) | 9/18 (50 %) | 12/16 (75 %) | -25.0 % | [-55, +6] | 0.17 |
   | white mat (shifted background) | 3/4 (75 %) | 1/4 (25 %) | +50.0 % | [-25, +100] | 0.49 |
+
+  Corrected in-distribution TERRA = **13/18 (72 %)** (observed live).  Against the unverified control 12/16 (75 %)
+  that is still a tie, so the conclusion below does not change -- but no number in this entry may be cited until
+  BOTH arms are counted from the same, stated source.  **Open: the control's true count on the 19:15 session.**
 
   (`piper_spoon_openvla.../191519/000` excluded: 16 frames, 3.2 s, the spoon is ALREADY in the bowl at t=0.)
   Bowl-colour and background mixes are comparable across arms (TERRA blue 8 / orange 7 / red 5 / teal 2, 18 wood +
