@@ -6537,3 +6537,40 @@ oracle floor of 0.61 that was measured independently on 2026-11-10, which is a c
   Re-running `eval` on this 265-donor collection is therefore the fair re-test of the two failed predictions, and the
   only outstanding reason to touch replay again.  It needs the 6 `eatabm_{full,recon}_s{0,1,2}` checkpoints, which are
   Newton-only; the pairs files are here.
+
+## 2026-11-16 — real robot, NEW task "put the spoon in the bowl": TERRA vs matched OpenVLA-7B control
+- Source: Anh Dao's public HF repo `anhdao69/terra`, uploaded 2026-11-15.  Seven `*_res` directories hold LeRobot v3
+  rollout recordings (5 Hz, front + wrist, 480x640).  **Two of them are a matched pair on the new spoon task:**
+  `piper_spoon_anchored_fwd_res` (TERRA, 22 episodes, sessions 15:56 + 16:44) and
+  `piper_spoon_openvla_anchored_fwd_res` (official OpenVLA-7B, same recipe/action space, 21 episodes, 19:15).
+  Also present: `piper_real3_anchored_fwd_res` (multi-task, 15 episodes over 6 instructions incl. "stack the bowls").
+- **The recordings carry NO success label** -- no `next.success`, no reward, no README.  Features are only
+  action / observation.state / timestamp / images.  Scored here by eye from three frames per episode (t=0, t=-6, final)
+  cropped to the bowl, located by saturation in frame 0.  **This is OUR reading of the video, not Anh Dao's record.**
+
+  | condition | TERRA | OpenVLA-7B | diff | 95% CI | Fisher p |
+  |---|---|---|---|---|---|
+  | all episodes | 12/22 (55 %) | 13/20 (65 %) | -10.5 % | [-39, +19] | 0.54 |
+  | wood table (in-distribution) | 9/18 (50 %) | 12/16 (75 %) | -25.0 % | [-55, +6] | 0.17 |
+  | white mat (shifted background) | 3/4 (75 %) | 1/4 (25 %) | +50.0 % | [-25, +100] | 0.49 |
+
+  (`piper_spoon_openvla.../191519/000` excluded: 16 frames, 3.2 s, the spoon is ALREADY in the bowl at t=0.)
+  Bowl-colour and background mixes are comparable across arms (TERRA blue 8 / orange 7 / red 5 / teal 2, 18 wood +
+  4 mat; OpenVLA blue 10 / orange 6 / red 3 / teal 2, 16 wood + 4 mat).
+- **CONCLUSION: this is NOT evidence that TERRA helps on the spoon task, and it is not reportable as a success rate.**
+  Anh Dao states he varied the difficulty on purpose ("we can easily make the task simpler to achieve a higher
+  success rate or more challenging to expose failure cases"), chiefly **spoon orientation** -- which is the one
+  factor NOT matched between the two sessions and which he names as the main failure driver.  So the pooled numbers
+  above are biased by an unknown amount in an unknown direction, and the honest statement is that the two arms are
+  indistinguishable on 42 episodes of an unmatched protocol.
+- Failure modes seen in TERRA's 10: never grasped / bowl empty at end (6), grasped but still in the gripper at the
+  end (3), **bowl flipped over (2: 155640/003, 155640/014)** -- mode (2) matches Anh Dao's own description.
+- **Next decision:** do NOT select episodes.  The protocol must be declared before the next session: a fixed list of
+  setups, the same list for both arms, spoon orientation held fixed inside each block, ~15 episodes per arm
+  in-distribution and ~15 per arm shifted (novel bowl colour + novel background).  The only place TERRA currently
+  looks better is the shifted background (3/4 vs 1/4, n=4 per arm) -- that is where the thin data is and where a
+  real effect would be, so that is the block worth powering.  Also requested from Anh Dao: a per-episode label table
+  for the 43 recordings already made (orientation, bowl colour in/out of training, background in/out, outcome,
+  failure mode), which would make this comparison stratifiable without re-running anything.
+- Artifacts (this host, scratchpad): `sheets/bowl_{TERRA,OPENVLA}_{0,1}.jpg` (bowl-zoom scoring sheets),
+  `fl_{TERRA,OPENVLA}_{0,1}.jpg` (first|last frame pairs), `score.py` (the per-episode calls and the test).
